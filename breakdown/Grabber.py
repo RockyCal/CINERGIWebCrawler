@@ -7,7 +7,7 @@ class Thread(threading.Thread):
     def run(self):
         while True:
             next_url = self.u_queue.get()
-            #data = requests.get(next_url)
+            data = requests.get(next_url)
             while self.c_queue.full():
                 pass
             self.c_queue.put(data)
