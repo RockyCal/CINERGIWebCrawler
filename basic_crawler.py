@@ -1,5 +1,5 @@
 from breakdown import Parser, Grabber
-from Queue import Queue
+from queue import Queue
 
 num_threads = 4
 max_size = 1000
