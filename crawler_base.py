@@ -12,6 +12,9 @@ while len(urls) > 0:
         htmlText = r.text
     except TimeoutError:
         print('{}: Timeout error'.format(url[0]))
+    except ConnectionError:
+        print('{}: Connection error'.format(url[0]))
+    
     soup = BeautifulSoup(htmlText)
     urls.pop(0)
 
