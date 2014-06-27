@@ -16,7 +16,9 @@ while len(urls) > 0:
         print('{}: Connection error'.format(url[0]))
     except requests.TooManyRedirects:
         print('{}: Too Many Redirects'.format(url[0]))
-        
+    except requests.HTTPError:
+        print('{}: HTTP Error'.format(url[0]))
+
     soup = BeautifulSoup(htmlText)
     urls.pop(0)
 
