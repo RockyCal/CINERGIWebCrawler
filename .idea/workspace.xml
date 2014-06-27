@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="374675a3-9fb0-4b1c-903a-cc810a8a12fa" name="Default" comment="" />
+    <list default="true" id="374675a3-9fb0-4b1c-903a-cc810a8a12fa" name="Default" comment="">
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
+    </list>
     <ignored path="CINERGiWebCrawler.iws" />
     <ignored path=".idea/workspace.xml" />
     <option name="TRACKING_ENABLED" value="true" />
@@ -34,7 +36,7 @@
       <file leaf-file-name="crawler_base.py" pinned="false" current="true" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/crawler_base.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="13" column="49" selection-start="362" selection-end="362" vertical-scroll-proportion="0.39253998" vertical-offset="0" max-vertical-offset="563">
+            <state line="16" column="4" selection-start="448" selection-end="448" vertical-scroll-proportion="0.4831261" vertical-offset="0" max-vertical-offset="563">
               <folding>
                 <element signature="e#0#29#0" expanded="true" />
               </folding>
@@ -350,7 +352,11 @@
       <created>1403896928834</created>
       <updated>1403896928834</updated>
     </task>
-    <option name="localTasksCounter" value="3" />
+    <task id="LOCAL-00003" summary="Added Connection Error">
+      <created>1403897642130</created>
+      <updated>1403897642130</updated>
+    </task>
+    <option name="localTasksCounter" value="4" />
     <servers />
   </component>
   <component name="TodoView" selected-index="0">
@@ -414,7 +420,8 @@
       <TodoPanelSettings />
     </option>
     <MESSAGE value="Merge branch 'master' of https://github.com/RockyCal/CINERGiWebCrawler&#10;&#10;Conflicts:&#10;&#9;.idea/workspace.xml&#10;&#9;crawler_base.py&#10;" />
-    <option name="LAST_COMMIT_MESSAGE" value="Merge branch 'master' of https://github.com/RockyCal/CINERGiWebCrawler&#10;&#10;Conflicts:&#10;&#9;.idea/workspace.xml&#10;&#9;crawler_base.py&#10;" />
+    <MESSAGE value="Added Connection Error" />
+    <option name="LAST_COMMIT_MESSAGE" value="Added Connection Error" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager />
@@ -436,7 +443,7 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/crawler_base.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="13" column="49" selection-start="362" selection-end="362" vertical-scroll-proportion="0.39253998" vertical-offset="0" max-vertical-offset="563">
+        <state line="16" column="4" selection-start="448" selection-end="448" vertical-scroll-proportion="0.4831261" vertical-offset="0" max-vertical-offset="563">
           <folding>
             <element signature="e#0#29#0" expanded="true" />
           </folding>
