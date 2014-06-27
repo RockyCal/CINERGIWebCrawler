@@ -10,7 +10,7 @@ while len(urls) > 0:
     try:
         r = requests.get(urls[0])
         htmlText = r.text
-    except TimeoutError:
+    except requests.Timeout:
         print('{}: Timeout error'.format(url[0]))
     except ConnectionError:
         print('{}: Connection error'.format(url[0]))
