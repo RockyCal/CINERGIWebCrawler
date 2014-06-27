@@ -17,3 +17,4 @@ while len(urls) > 0:
 
 for tag in soup.findAll('a', href=True):
     print(tag)
+    print("Raquel")
