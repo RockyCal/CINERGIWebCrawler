@@ -34,7 +34,7 @@
       <file leaf-file-name="crawler_base.py" pinned="false" current="true" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/crawler_base.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state line="18" column="14" selection-start="470" selection-end="470" vertical-scroll-proportion="0.5435169" vertical-offset="0" max-vertical-offset="563">
+            <state line="13" column="49" selection-start="362" selection-end="362" vertical-scroll-proportion="0.39253998" vertical-offset="0" max-vertical-offset="563">
               <folding>
                 <element signature="e#0#29#0" expanded="true" />
               </folding>
@@ -436,7 +436,7 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/crawler_base.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state line="18" column="14" selection-start="470" selection-end="470" vertical-scroll-proportion="0.5435169" vertical-offset="0" max-vertical-offset="563">
+        <state line="13" column="49" selection-start="362" selection-end="362" vertical-scroll-proportion="0.39253998" vertical-offset="0" max-vertical-offset="563">
           <folding>
             <element signature="e#0#29#0" expanded="true" />
           </folding>
