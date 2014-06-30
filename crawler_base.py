@@ -1,10 +1,11 @@
 from bs4 import BeautifulSoup
 import requests
 
+HTTP = 'http://'
 url = "http://www.greenseas.eu/content/standards-and-related-web-information"
 
 urls = [url]  # stack of urls to scrape
-visited = [url]  #urls visited
+visited = [url]  # urls visited
 
 while len(urls) > 0:
     try:
@@ -23,4 +24,5 @@ while len(urls) > 0:
     urls.pop(0)
 
 for tag in soup.findAll('a', href=True):
-    print(tag)
+        if HTTP in tag['href']:
+            print(tag)
