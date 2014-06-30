@@ -1,20 +1,22 @@
 from bs4 import BeautifulSoup
 import requests
 
-asOfVisited = []
-
+#Function printTitles prints all the titles of the links on a given site
 def printTitles(url):
+    asOfVisited = []
 
     HTTP = 'http://'
 
     urls = [url]  # stack of urls to scrape
     visited = [url]  # urls visited
 
+    r = requests.get(url)
+    htmlText = r.text
     soup = BeautifulSoup(htmlText)
 
-    for tag in soup.findAll('a', href=True):
-            if HTTP in tag['href']:
-                asOfVisited.append(tag)
+    for tag in soup.findAll('a', href=True): # filters out the a tag so we can access the right section of HTML
+        if HTTP in tag['href']:
+            asOfVisited.append(tag)
     for each in asOfVisited:
         print(each.text)
     return asOfVisited
@@ -46,13 +48,9 @@ for tag in soup.findAll('a', href=True):
             urls.append(tag['href'])
             visited.append(tag['href'])
 
-print(visited)
-
 firstRun = printTitles(url)
-visited = firstRun
-print("Entering specific ")
-print(visited)
 
+#Follows the links and crawls the sub-sites
 for each in visited:
-    #print(each)
-    printTitles(each)
+    print(each)
+    secondRun = printTitles(each)
