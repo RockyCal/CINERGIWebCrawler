@@ -7,9 +7,6 @@ def printTitles(url):
 
     HTTP = 'http://'
 
-    urls = [url]  # stack of urls to scrape
-    visited = [url]  # urls visited
-
     r = requests.get(url)
     htmlText = r.text
     soup = BeautifulSoup(htmlText)
