@@ -1,9 +1,13 @@
 from bs4 import BeautifulSoup
 import requests
+from openpyxl import Workbook
+from openpyxl.compat import range
+from openpyxl.cell import get_column_letter
 
 #Function printTitles prints all the titles of the links on a given site
 def printTitles(url):
     asOfVisited = []
+    titles = []
 
     HTTP = 'http://'
 
@@ -19,7 +23,16 @@ def printTitles(url):
             asOfVisited.append(tag)
     for each in asOfVisited:
         print(each.text)
-    return asOfVisited
+        titles.append(each.text)
+    return titles
+
+wb = Workbook()
+
+dest_filename = 'Crawl.xlsx'
+
+ws = wb.active
+
+ws.title = "First run"
 
 HTTP = 'http://'
 url = "http://www.greenseas.eu/content/standards-and-related-web-information"
@@ -50,7 +63,23 @@ for tag in soup.findAll('a', href=True):
 
 firstRun = printTitles(url)
 
+for col_idx in range(1, 2):
+    col = get_column_letter(col_idx)
+    for row in range(1, 15):
+        ws.cell('%s%s'%(col, row)).value = firstRun[row-1]
+
+log = 1
 #Follows the links and crawls the sub-sites
-for each in visited:
-    print(each)
-    secondRun = printTitles(each)
+for each in range(1, len(visited)):
+    print(visited[each])
+    secondRun = printTitles(visited[each])
+    log2 = 0
+
+    for col_idx in range(2, len(secondRun)+1):
+        col = get_column_letter(col_idx)
+        ws.cell('%s%s'%(col, log)).value = secondRun[log2]
+        log2 = log2 + 1
+
+    log = log + 1
+
+wb.save(filename = dest_filename)
