@@ -86,6 +86,6 @@ for each in range(1, len(visited)):
     log = log + 1
 
 #print(visited)
-print(allVisited)
+#print(allVisited)
 print("Length: " + str(len(allVisited)))
 wb.save(filename = dest_filename)
