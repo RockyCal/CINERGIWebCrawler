@@ -12,8 +12,20 @@ def printTitles(url):
     HTTP = 'http://'
 
     urls = [url]  # stack of urls to scrape
+    visited = [url]
+    print(url)
 
-    r = requests.get(url)
+    try:
+        r = requests.get(url)
+        #htmlText = r.text
+    except requests.Timeout:
+        print('{}: Timeout error'.format(url))
+    except requests.ConnectionError:
+        print('{}: Connection error'.format(url))
+    except requests.TooManyRedirects:
+        print('{}: Too Many Redirects'.format(url))
+    except requests.HTTPError:
+        print('{}: HTTP Error'.format(url))
     htmlText = r.text
     soup = BeautifulSoup(htmlText)
 
@@ -22,7 +34,7 @@ def printTitles(url):
             asOfVisited.append(tag)
             visited.append(tag)
     for each in asOfVisited:
-        print(each.text)
+        #print(each.text)
         titles.append(each.text)
     return titles
 
@@ -71,7 +83,8 @@ for col_idx in range(1, 2):
 log = 1
 #Follows the links and crawls the sub-sites
 for each in range(1, len(visited)):
-    print(visited[each])
+    #print(visited[each])
+    print("second run")
     secondRun = printTitles(visited[each])
     log2 = 0
 
