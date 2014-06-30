@@ -4,6 +4,7 @@ from openpyxl import Workbook
 from openpyxl.compat import range
 from openpyxl.cell import get_column_letter
 
+allVisited = []
 #Function printTitles prints all the titles of the links on a given site
 def printTitles(url):
     asOfVisited = []
@@ -33,6 +34,7 @@ def printTitles(url):
         if HTTP in tag['href']:
             asOfVisited.append(tag)
             visited.append(tag)
+            allVisited.append(tag['href'])
     for each in asOfVisited:
         #print(each.text)
         titles.append(each.text)
@@ -95,6 +97,6 @@ for each in range(1, len(visited)):
     log = log + 1
 
 #print(visited)
-#print(allVisited)
+print(allVisited)
 print("Length: " + str(len(allVisited)))
 wb.save(filename = dest_filename)
