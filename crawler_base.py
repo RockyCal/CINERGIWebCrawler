@@ -24,5 +24,8 @@ while len(urls) > 0:
     urls.pop(0)
 
 for tag in soup.findAll('a', href=True):
-        if HTTP in tag['href']:
-            print(tag
+        if HTTP in tag['href'] and tag['href'] not in visited:
+            urls.append(tag['href'])
+            visited.append(tag['href'])
+
+print (visited)
