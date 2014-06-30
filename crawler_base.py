@@ -25,4 +25,4 @@ while len(urls) > 0:
 
 for tag in soup.findAll('a', href=True):
         if HTTP in tag['href']:
-            print(tag)
+            print(tag
