@@ -84,7 +84,6 @@ log = 1
 #Follows the links and crawls the sub-sites
 for each in range(1, len(visited)):
     #print(visited[each])
-    print("second run")
     secondRun = printTitles(visited[each])
     log2 = 0
 
