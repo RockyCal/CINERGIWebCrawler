@@ -37,16 +37,18 @@ def build_titles(url):
     for each in asOfVisited:
         titles.append(each.text)
     return titles
+# end build_Titles
 
+# Create excel file
 wb = Workbook()
-
 dest_filename = 'Crawl.xlsx'
-
 ws = wb.active
-
 ws.title = "First run"
 
+# Constant for HTTP
 HTTP = 'http://'
+
+# start url
 url = "http://www.greenseas.eu/content/standards-and-related-web-information"
 
 urls = [url]  # stack of urls to scrape
