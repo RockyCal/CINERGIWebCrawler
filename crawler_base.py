@@ -12,7 +12,6 @@ def printTitles(url):
     HTTP = 'http://'
 
     urls = [url]  # stack of urls to scrape
-    visited = [url]  # urls visited
 
     r = requests.get(url)
     htmlText = r.text
@@ -21,6 +20,7 @@ def printTitles(url):
     for tag in soup.findAll('a', href=True): # filters out the a tag so we can access the right section of HTML
         if HTTP in tag['href']:
             asOfVisited.append(tag)
+            visited.append(tag)
     for each in asOfVisited:
         print(each.text)
         titles.append(each.text)
@@ -82,4 +82,5 @@ for each in range(1, len(visited)):
 
     log = log + 1
 
+print(visited)
 wb.save(filename = dest_filename)
