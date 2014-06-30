@@ -5,8 +5,8 @@ from openpyxl.compat import range
 from openpyxl.cell import get_column_letter
 
 allVisited = []
-#Function printTitles prints all the titles of the links on a given site
-def printTitles(url):
+#Function build_titles prints all the titles of the links on a given site
+def build_titles(url):
     asOfVisited = []
     titles = []
 
@@ -18,7 +18,6 @@ def printTitles(url):
 
     try:
         r = requests.get(url)
-        #htmlText = r.text
     except requests.Timeout:
         print('{}: Timeout error'.format(url))
     except requests.ConnectionError:
@@ -36,7 +35,6 @@ def printTitles(url):
             visited.append(tag)
             allVisited.append(tag['href'])
     for each in asOfVisited:
-        #print(each.text)
         titles.append(each.text)
     return titles
 
@@ -75,7 +73,7 @@ for tag in soup.findAll('a', href=True):
             urls.append(tag['href'])
             visited.append(tag['href'])
 
-firstRun = printTitles(url)
+firstRun = build_titles(url)
 
 for col_idx in range(1, 2):
     col = get_column_letter(col_idx)
@@ -86,7 +84,7 @@ log = 1
 #Follows the links and crawls the sub-sites
 for each in range(1, len(visited)):
     #print(visited[each])
-    secondRun = printTitles(visited[each])
+    secondRun = build_titles(visited[each])
     log2 = 0
 
     for col_idx in range(2, len(secondRun)+1):
