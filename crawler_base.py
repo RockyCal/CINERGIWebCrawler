@@ -1,6 +1,24 @@
 from bs4 import BeautifulSoup
 import requests
 
+asOfVisited = []
+
+def printTitles(url):
+
+    HTTP = 'http://'
+
+    urls = [url]  # stack of urls to scrape
+    visited = [url]  # urls visited
+
+    soup = BeautifulSoup(htmlText)
+
+    for tag in soup.findAll('a', href=True):
+            if HTTP in tag['href']:
+                asOfVisited.append(tag)
+    for each in asOfVisited:
+        print(each.text)
+    return asOfVisited
+
 HTTP = 'http://'
 url = "http://www.greenseas.eu/content/standards-and-related-web-information"
 
@@ -28,4 +46,13 @@ for tag in soup.findAll('a', href=True):
             urls.append(tag['href'])
             visited.append(tag['href'])
 
-print (visited)
+print(visited)
+
+firstRun = printTitles(url)
+visited = firstRun
+print("Entering specific ")
+print(visited)
+
+for each in visited:
+    #print(each)
+    printTitles(each)
