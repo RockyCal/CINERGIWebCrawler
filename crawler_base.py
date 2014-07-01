@@ -39,9 +39,9 @@ def build_titles(url):
             asOfVisited.append(tag) # visited tags with links
             #print('as of visited: \n{} \nas of visited END.'.format(asOfVisited))
             #visited.append(tag)
-            #print('visited: \n{} \nvisited END.'.format(asOfVisited))
+            #print('visited: \n{} \n visited END.'.format(asOfVisited))
             visitedLinks.append(tag['href']) # visited links
-            #print('allVisited: \n{} \nallVisited END.'.format(allVisited))
+            #print('allVisited: \n{} \n allVisited END.'.format(allVisited))
     for each in asOfVisited:
         titles.append(each.text)
     return titles
@@ -57,31 +57,28 @@ ws.title = "First run"
 HTTP = 'http://'
 
 # start url
-url = "http://www.greenseas.eu/content/standards-and-related-web-information"
+start_url = "http://www.greenseas.eu/content/standards-and-related-web-information"
 
-urls = [url]  # stack of urls to scrape
-visited = [url]  # urls visited
+# Block to check functioning of start url
+try:
+    r = requests.get(start_url)
+    htmlText = r.text
+except requests.Timeout:
+    print('{}: Timeout error'.format(start_url))
+except requests.ConnectionError:
+    print('{}: Connection error'.format(start_url))
+except requests.TooManyRedirects:
+    print('{}: Too Many Redirects'.format(start_url))
+except requests.HTTPError:
+    print('{}: HTTP Error'.format(start_url))
 
-while len(urls) > 0:
-    try:
-        r = requests.get(urls[0])
-        htmlText = r.text
-    except requests.Timeout:
-        print('{}: Timeout error'.format(url[0]))
-    except requests.ConnectionError:
-        print('{}: Connection error'.format(url[0]))
-    except requests.TooManyRedirects:
-        print('{}: Too Many Redirects'.format(url[0]))
-    except requests.HTTPError:
-        print('{}: HTTP Error'.format(url[0]))
-
-    soup = BeautifulSoup(htmlText)
-    urls.pop(0)
+# Make the soup
+soup = BeautifulSoup(htmlText)
 
 for tag in soup.findAll('a', href=True):
-        if HTTP in tag['href'] and tag['href'] not in visited:
-            urls.append(tag['href'])
-            visited.append(tag['href'])
+    if HTTP in tag['href'] and tag['href'] not in visited:
+        urls.append(tag['href'])
+        visited.append(tag['href'])
 
 firstRun = build_titles(url)
 
