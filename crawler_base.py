@@ -4,9 +4,15 @@ from openpyxl import Workbook
 from openpyxl.compat import range
 from openpyxl.cell import get_column_letter
 
-allVisited = []
+visitedLinks = []
 #Function build_titles prints all the titles of the links on a given site
 def build_titles(url):
+    """
+
+    @param url: Web page to extract titles from
+    @return: List of visited urls
+
+    """
     asOfVisited = []
     titles = []
 
@@ -14,7 +20,6 @@ def build_titles(url):
 
     urls = [url]  # stack of urls to scrape
     visited = [url]
-    print(url)
 
     try:
         r = requests.get(url)
@@ -29,11 +34,14 @@ def build_titles(url):
     htmlText = r.text
     soup = BeautifulSoup(htmlText)
 
-    for tag in soup.findAll('a', href=True): # filters out the a tag so we can access the right section of HTML
+    for tag in soup.findAll('a', href=True): # Finds all tags with links on the page
         if HTTP in tag['href']:
-            asOfVisited.append(tag)
-            visited.append(tag)
-            allVisited.append(tag['href'])
+            asOfVisited.append(tag) # visited tags with links
+            #print('as of visited: \n{} \nas of visited END.'.format(asOfVisited))
+            #visited.append(tag)
+            #print('visited: \n{} \nvisited END.'.format(asOfVisited))
+            visitedLinks.append(tag['href']) # visited links
+            #print('allVisited: \n{} \nallVisited END.'.format(allVisited))
     for each in asOfVisited:
         titles.append(each.text)
     return titles
@@ -97,6 +105,6 @@ for each in range(1, len(visited)):
     log = log + 1
 
 #print(visited)
-print(allVisited)
-print("Length: " + str(len(allVisited)))
+print(visitedLinks)
+print("Length: " + str(len(visitedLinks)))
 wb.save(filename = dest_filename)
