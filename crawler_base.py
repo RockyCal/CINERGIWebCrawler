@@ -20,10 +20,12 @@ def crawl_links(soup):
         if HTTP in tag['href'] and tag['href'] not in visited:
             # check functioning
             check_link(tag['href'])
-            # add to list of urls
+            # add to list of urls found
             urls_found.append(tag['href'])
             # Create list of tags
             # html_tags.append(tag)
+            # mark as visited
+            # visited.append(tag['href'])
     # build_titles(html_tags)
     return urls_found
 
@@ -119,20 +121,22 @@ else:
     exit()
 
 first_run = crawl_links(soup)
+print(first_run)
 first_titles = build_titles(soup)
 second_run = []
 second_titles = []
 
 for each in first_run:
-    print(each)
-    hText = (requests.get(each)).text
-    crawlSoup = BeautifulSoup(hText)
-    # links found on page
-    linksFound = crawl_links(crawlSoup)
-    titles_made = build_titles(crawlSoup)
-    visited.append(each)
-    second_run = second_run + linksFound
-    second_titles = second_titles + titles_made
+    if each not in brokenLinks:
+        print(each)
+        print(second_run)
+        hText = (requests.get(each)).text
+        crawlSoup = BeautifulSoup(hText)
+        # links found on page
+        linksFound = crawl_links(crawlSoup)
+        titles_made = build_titles(crawlSoup)
+        second_run = second_run + linksFound
+        second_titles = second_titles + titles_made
 
 #for url in urls:
 #    print(url)
@@ -155,11 +159,9 @@ for col_idx in range(1, 2):
     for row in range(1, max_first):
         ws.cell('%s%s' % (col, row)).value = first_titles[row - 1]
 
-i = 0
 for row in ws.range('B1:B%s' % (len(first_run) - 1)):
     for cell in row:
-        cell.value = first_run[i]
-        i += 0
+        cell.value = first_run[row-1]
 
 ws1 = wb.create_sheet()
 ws1.title = "Second run"
@@ -170,11 +172,9 @@ for col_idy in range(1, 2):
     for row in range(1, max_second):
         ws1.cell('%s%s' % (col, row)).value = second_titles[row - 1]
 
-j = 0
 for row in ws1.range('B1:B%s' % (len(second_run) - 1)):
     for cell in row:
-        cell.value = second_run[j]
-        j += 0
+        cell.value = second_run[row-1]
 """
 log = 1
 #Follows the links and crawls the sub-sites
@@ -192,6 +192,4 @@ for each in range(1, len(visited)):
 """
 print('visited: {}'.format(visited))
 print('broken links: {}'.format(brokenLinks))
-print('titles: {}'.format(titles))
-print('Length: ' + str(len(visited)))
 wb.save(filename)
