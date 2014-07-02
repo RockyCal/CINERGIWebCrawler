@@ -11,7 +11,6 @@ HTTP = 'http://'
 
 def crawl_links(soup):
     # Html tags to investigate
-    #cole's comment
     urls_found = []
     # html_tags = []
     # Add links to url stack
@@ -125,11 +124,12 @@ first_run = crawl_links(soup)
 first_titles = build_titles(soup)
 second_run = []
 second_titles = []
-print(first_run)
+#print(first_run)
 
+print(brokenLinks)
 for each in first_run:
     if each not in brokenLinks:
-        print(each)
+        #print(each)
         hText = (requests.get(each)).text
         crawlSoup = BeautifulSoup(hText)
         # links found on page
@@ -137,18 +137,6 @@ for each in first_run:
         titles_made = build_titles(crawlSoup)
         second_run = second_run + linksFound
         second_titles = second_titles + titles_made
-#print(second_run)
-
-for each in first_run:
-    #print(each)
-    hText = (requests.get(each)).text
-    crawlSoup = BeautifulSoup(hText)
-    # links found on page
-    linksFound = crawl_links(crawlSoup)
-    titles_made = build_titles(crawlSoup)
-    visited.append(each)
-    second_run = second_run + linksFound
-    second_titles = second_titles + titles_made
 
 print(second_run)
 #for url in urls:
@@ -172,9 +160,11 @@ for col_idx in range(1, 2):
     for row in range(1, max_first):
         ws.cell('%s%s' % (col, row)).value = first_titles[row - 1]
 
+"""
 for row in ws.range('B1:B%s' % (len(first_run) - 1)):
     for cell in row:
         cell.value = first_run[row-1]
+"""
 # Needs work
 i = 0
 for row in ws.range('B1:B%s' % (len(first_run) - 1)):
@@ -191,9 +181,11 @@ for col_idy in range(1, 2):
     for row in range(1, max_second):
         ws1.cell('%s%s' % (col, row)).value = second_titles[row - 1]
 
+j = 0
 for row in ws1.range('B1:B%s' % (len(second_run) - 1)):
     for cell in row:
-        cell.value = second_run[row-1]
+        cell.value = second_run[j]
+        j += 1
 
 """
 log = 1
