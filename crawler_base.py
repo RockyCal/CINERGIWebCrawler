@@ -2,7 +2,7 @@ from bs4 import BeautifulSoup
 import requests
 from openpyxl import Workbook
 from openpyxl.compat import range
-from openpyxl.cell import get_column_letter
+from openpyxl.cell import get_column_letter, coordinate_from_string
 
 
 
@@ -188,12 +188,13 @@ max_second = len(second_run)
 for col_idy in range(1, 2):
     col = get_column_letter(col_idy)
     for row in range(1, max_second):
-        ws1.cell('%s%s' % (col, row)).value = second_titles[row - 1]
+        coord = coordinate_from_string(cell.coordinate)
+        ws1.cell('%s%s' % (col, row)).value = second_titles[row-1]
 
 j = 0
 for row in ws1.range('B1:B%s' % (len(second_run) - 1)):
     for cell in row:
-        cell.value = second_run[j]
+        cell.value = visited[j]
         j += 1
 
 """
