@@ -59,6 +59,10 @@ def check_link(url):
         works = 0
         print('{}: HTTP Error'.format(url))
         brokenLinks.append(url)
+    except:
+        works = 0
+        print('{}: Unexpected Error'.format(url))
+        brokenLinks.append(url)
     else:
         if c != 200:
             works = 0
@@ -136,7 +140,7 @@ for each in first_run:
         titles_made = build_titles(crawlSoup)
         second_run = second_run + linksFound
         second_titles = second_titles + titles_made
-
+print(brokenLinks)
 print(second_run)
 #for url in urls:
 #    print(url)
@@ -164,7 +168,7 @@ for row in ws.range('B1:B%s' % (len(first_run) - 1)):
     for cell in row:
         cell.value = first_run[row-1]
 """
-# Needs work
+
 i = 0
 for row in ws.range('B1:B%s' % (len(first_run) - 1)):
     for cell in row:
@@ -182,7 +186,6 @@ for col_idy in range(1, 2):
 
 j = 0
 for row in ws1.range('B1:B%s' % (len(second_run) - 1)):
-    print(row)
     for cell in row:
         cell.value = second_run[j]
         j += 1
