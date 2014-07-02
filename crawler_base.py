@@ -121,7 +121,7 @@ else:
     exit()
 
 first_run = crawl_links(soup)
-print(first_run)
+#print(first_run)
 first_titles = build_titles(soup)
 second_run = []
 second_titles = []
@@ -129,7 +129,6 @@ second_titles = []
 for each in first_run:
     if each not in brokenLinks:
         print(each)
-        print(second_run)
         hText = (requests.get(each)).text
         crawlSoup = BeautifulSoup(hText)
         # links found on page
@@ -137,7 +136,7 @@ for each in first_run:
         titles_made = build_titles(crawlSoup)
         second_run = second_run + linksFound
         second_titles = second_titles + titles_made
-
+print(second_run)
 #for url in urls:
 #    print(url)
 #    hText = (requests.get(url)).text
