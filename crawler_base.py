@@ -20,6 +20,7 @@ def crawl_links(soup):
     # Add tags
     for tag in soup.find_all('a', href=True):
         if HTTP in tag['href'] and tag['href'] not in visited:
+            visited.append(tag['href'])
             # check functioning
             check_link(tag['href'])
             # add to list of urls found
@@ -85,7 +86,7 @@ Returns: List of titles
 
 def build_titles(soup):
     for tag in soup.find_all('a', href=True):
-        if HTTP in tag['href'] and tag['href'] not in visited:
+        if HTTP in tag['href']:
             titles.append(tag.text)
     # ######################
     # Use this code if passing in tags
