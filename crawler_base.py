@@ -38,7 +38,6 @@ Returns: 1 if link works w/o error
          Exits if link is broken
 """
 
-
 def check_link(url):
     works = 1
     try:
@@ -125,6 +124,7 @@ first_run = crawl_links(soup)
 first_titles = build_titles(soup)
 second_run = []
 second_titles = []
+print(first_run)
 
 for each in first_run:
     if each not in brokenLinks:
@@ -137,6 +137,19 @@ for each in first_run:
         second_run = second_run + linksFound
         second_titles = second_titles + titles_made
 print(second_run)
+
+"""for each in first_run:
+    print(each)
+    hText = (requests.get(each)).text
+    crawlSoup = BeautifulSoup(hText)
+    # links found on page
+    linksFound = crawl_links(crawlSoup)
+    titles_made = build_titles(crawlSoup)
+    visited.append(each)
+    second_run = second_run + linksFound
+    second_titles = second_titles + titles_made
+"""
+
 #for url in urls:
 #    print(url)
 #    hText = (requests.get(url)).text
@@ -161,10 +174,16 @@ for col_idx in range(1, 2):
 for row in ws.range('B1:B%s' % (len(first_run) - 1)):
     for cell in row:
         cell.value = first_run[row-1]
+# Needs work
+i = 0
+for row in ws.range('B1:B%s' % (len(first_run) - 1)):
+    for cell in row:
+        cell.value = first_run[i]
+        i += 1
 
 ws1 = wb.create_sheet()
 ws1.title = "Second run"
-
+"""
 max_second = len(second_run)
 for col_idy in range(1, 2):
     col = get_column_letter(col_idy)
@@ -174,6 +193,7 @@ for col_idy in range(1, 2):
 for row in ws1.range('B1:B%s' % (len(second_run) - 1)):
     for cell in row:
         cell.value = second_run[row-1]
+"""
 """
 log = 1
 #Follows the links and crawls the sub-sites
@@ -191,4 +211,6 @@ for each in range(1, len(visited)):
 """
 print('visited: {}'.format(visited))
 print('broken links: {}'.format(brokenLinks))
+print('titles: {}'.format(titles))
+print('Length: ' + str(len(visited)))
 wb.save(filename)
