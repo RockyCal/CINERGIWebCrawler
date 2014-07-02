@@ -4,6 +4,8 @@ from openpyxl import Workbook
 from openpyxl.compat import range
 from openpyxl.cell import get_column_letter
 
+
+
 # Http constant
 HTTP = 'http://'
 
@@ -21,12 +23,14 @@ def crawl_links(soup):
             # check functioning
             check_link(tag['href'])
             # add to list of urls found
-            urls_found.append(tag['href'])
+            if tag['href'] not in brokenLinks:
+                urls_found.append(tag['href'])
             # Create list of tags
             # html_tags.append(tag)
             # mark as visited
             # visited.append(tag['href'])
     # build_titles(html_tags)
+
     return urls_found
 
 
@@ -93,6 +97,7 @@ def build_titles(soup):
 brokenLinks = []
 # List of titles - the text attribute of tag
 titles = []
+
 
 # start url
 start_url = 'http://www.greenseas.eu/content/standards-and-related-web-information'
