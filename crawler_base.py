@@ -11,6 +11,7 @@ HTTP = 'http://'
 
 def crawl_links(soup):
     # Html tags to investigate
+    #cole's comment
     urls_found = []
     # html_tags = []
     # Add links to url stack
