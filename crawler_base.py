@@ -136,10 +136,10 @@ for each in first_run:
         titles_made = build_titles(crawlSoup)
         second_run = second_run + linksFound
         second_titles = second_titles + titles_made
-print(second_run)
+#print(second_run)
 
-"""for each in first_run:
-    print(each)
+for each in first_run:
+    #print(each)
     hText = (requests.get(each)).text
     crawlSoup = BeautifulSoup(hText)
     # links found on page
@@ -148,8 +148,8 @@ print(second_run)
     visited.append(each)
     second_run = second_run + linksFound
     second_titles = second_titles + titles_made
-"""
 
+print(second_run)
 #for url in urls:
 #    print(url)
 #    hText = (requests.get(url)).text
@@ -183,7 +183,7 @@ for row in ws.range('B1:B%s' % (len(first_run) - 1)):
 
 ws1 = wb.create_sheet()
 ws1.title = "Second run"
-"""
+
 max_second = len(second_run)
 for col_idy in range(1, 2):
     col = get_column_letter(col_idy)
@@ -193,7 +193,7 @@ for col_idy in range(1, 2):
 for row in ws1.range('B1:B%s' % (len(second_run) - 1)):
     for cell in row:
         cell.value = second_run[row-1]
-"""
+
 """
 log = 1
 #Follows the links and crawls the sub-sites
