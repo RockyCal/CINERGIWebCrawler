@@ -120,15 +120,15 @@ else:
     exit()
 
 first_run = crawl_links(soup)
-#print(first_run)
 first_titles = build_titles(soup)
 second_run = []
 second_titles = []
-print(first_run)
+#print(first_run)
 
+print(brokenLinks)
 for each in first_run:
-    #if each not in brokenLinks:
-        print(each)
+    if each not in brokenLinks:
+        #print(each)
         hText = (requests.get(each)).text
         crawlSoup = BeautifulSoup(hText)
         # links found on page
@@ -159,9 +159,11 @@ for col_idx in range(1, 2):
     for row in range(1, max_first):
         ws.cell('%s%s' % (col, row)).value = first_titles[row - 1]
 
+"""
 for row in ws.range('B1:B%s' % (len(first_run) - 1)):
     for cell in row:
         cell.value = first_run[row-1]
+"""
 # Needs work
 i = 0
 for row in ws.range('B1:B%s' % (len(first_run) - 1)):
@@ -178,9 +180,12 @@ for col_idy in range(1, 2):
     for row in range(1, max_second):
         ws1.cell('%s%s' % (col, row)).value = second_titles[row - 1]
 
+j = 0
 for row in ws1.range('B1:B%s' % (len(second_run) - 1)):
+    print(row)
     for cell in row:
-        cell.value = second_run[row-1]
+        cell.value = second_run[j]
+        j += 1
 
 """
 log = 1
