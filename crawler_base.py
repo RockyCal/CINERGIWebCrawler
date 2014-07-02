@@ -134,7 +134,7 @@ second_run = []
 second_titles = []
 #print(first_run)
 
-print(brokenLinks)
+#print(brokenLinks)
 for each in first_run:
     if each not in brokenLinks:
         #print(each)
@@ -145,8 +145,8 @@ for each in first_run:
         titles_made = build_titles(crawlSoup)
         second_run = second_run + linksFound
         second_titles = second_titles + titles_made
-print(brokenLinks)
-print(second_run)
+#print(brokenLinks)
+#print(second_run)
 #for url in urls:
 #    print(url)
 #    hText = (requests.get(url)).text
@@ -210,8 +210,11 @@ for each in range(1, len(visited)):
 
     log = log + 1
 """
+urls = first_run + second_run
 print('visited: {}'.format(visited))
+print('Length of visited: ' + str(len(visited)))
 print('broken links: {}'.format(brokenLinks))
+print('Length of broken links: ' + str(len(brokenLinks)))
+print('urls: {}'.format(urls))
 print('titles: {}'.format(titles))
-print('Length: ' + str(len(visited)))
 wb.save(filename)
