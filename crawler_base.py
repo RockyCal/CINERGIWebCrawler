@@ -4,6 +4,8 @@ from openpyxl import Workbook, cell
 from openpyxl.compat import range
 from openpyxl.cell import get_column_letter, coordinate_from_string
 
+
+
 # Http constant
 HTTP = 'http://'
 
@@ -18,15 +20,18 @@ def crawl_links(soup):
     # Add tags
     for tag in soup.find_all('a', href=True):
         if HTTP in tag['href'] and tag['href'] not in visited:
+            visited.append(tag['href'])
             # check functioning
             check_link(tag['href'])
             # add to list of urls found
-            urls_found.append(tag['href'])
+            if tag['href'] not in brokenLinks:
+                urls_found.append(tag['href'])
             # Create list of tags
             # html_tags.append(tag)
             # mark as visited
             # visited.append(tag['href'])
     # build_titles(html_tags)
+
     return urls_found
 
 
@@ -59,6 +64,10 @@ def check_link(url):
         works = 0
         print('{}: HTTP Error'.format(url))
         brokenLinks.append(url)
+    except:
+        works = 0
+        print('{}: Unexpected Error'.format(url))
+        brokenLinks.append(url)
     else:
         if c != 200:
             works = 0
@@ -78,7 +87,7 @@ Returns: List of titles
 def build_titles(soup):
     titles = []
     for tag in soup.find_all('a', href=True):
-        if HTTP in tag['href'] and tag['href'] not in visited:
+        if HTTP in tag['href']:
             titles.append(tag.text)
     # ######################
     # Use this code if passing in tags
@@ -94,6 +103,7 @@ def build_titles(soup):
 brokenLinks = []
 # List of titles - the text attribute of tag
 titles = []
+
 
 # start url
 start_url = 'http://www.greenseas.eu/content/standards-and-related-web-information'
@@ -166,9 +176,6 @@ for row in range(2, len(first_titles)):
 rowIdTitles = -1
 rowIdLinks = 0
 for each in first_run:
-    #id += 1
-    rowIdTitles += 2 # starts at 1
-    rowIdLinks += 2 # starts at 2
     if each not in brokenLinks:
         #print(each)
         hText = (requests.get(each)).text
@@ -204,6 +211,8 @@ for each in first_run:
                 ind += 1
 
 print(second_run)
+#print(brokenLinks)
+#print(second_run)
 #for url in urls:
 #    print(url)
 #    hText = (requests.get(url)).text
@@ -285,9 +294,10 @@ for each in range(1, len(first_run)):
                 ind += 1
 
 """
-
 print('visited: {}'.format(visited))
+print('Length of visited: ' + str(len(visited)))
 print('broken links: {}'.format(brokenLinks))
+print('Length of broken links: ' + str(len(brokenLinks)))
+print('urls: {}'.format(urls))
 print('titles: {}'.format(titles))
-print('Length: ' + str(len(visited)))
 wb.save(filename)
