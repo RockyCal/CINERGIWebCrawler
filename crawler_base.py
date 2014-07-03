@@ -4,8 +4,6 @@ from openpyxl import Workbook
 from openpyxl.compat import range
 from openpyxl.cell import get_column_letter, coordinate_from_string
 
-
-
 # Http constant
 HTTP = 'http://'
 
