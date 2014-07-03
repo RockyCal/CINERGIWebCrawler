@@ -1,8 +1,8 @@
 from bs4 import BeautifulSoup
 import requests
-from openpyxl import Workbook
+from openpyxl import Workbook, cell
 from openpyxl.compat import range
-from openpyxl.cell import get_column_letter
+from openpyxl.cell import get_column_letter, coordinate_from_string
 
 # Http constant
 HTTP = 'http://'
@@ -76,6 +76,7 @@ Returns: List of titles
 
 
 def build_titles(soup):
+    titles = []
     for tag in soup.find_all('a', href=True):
         if HTTP in tag['href'] and tag['href'] not in visited:
             titles.append(tag.text)
@@ -125,27 +126,6 @@ second_run = []
 second_titles = []
 #print(first_run)
 
-print(brokenLinks)
-for each in first_run:
-    if each not in brokenLinks:
-        #print(each)
-        hText = (requests.get(each)).text
-        crawlSoup = BeautifulSoup(hText)
-        # links found on page
-        linksFound = crawl_links(crawlSoup)
-        titles_made = build_titles(crawlSoup)
-        second_run = second_run + linksFound
-        second_titles = second_titles + titles_made
-
-print(second_run)
-#for url in urls:
-#    print(url)
-#    hText = (requests.get(url)).text
-#    crawlSoup = BeautifulSoup(hText)
-#    visited.append(url)
-#    urls.pop(0)
-#    second_run = crawl_links(crawlSoup)
-
 print('Creating xlsx file')
 # Create excel file
 wb = Workbook()
@@ -159,12 +139,7 @@ for col_idx in range(1, 2):
     for row in range(1, max_first):
         ws.cell('%s%s' % (col, row)).value = first_titles[row - 1]
 
-"""
-for row in ws.range('B1:B%s' % (len(first_run) - 1)):
-    for cell in row:
-        cell.value = first_run[row-1]
-"""
-# Needs work
+# May need work
 i = 0
 for row in ws.range('B1:B%s' % (len(first_run) - 1)):
     for cell in row:
@@ -174,34 +149,143 @@ for row in ws.range('B1:B%s' % (len(first_run) - 1)):
 ws1 = wb.create_sheet()
 ws1.title = "Second run"
 
-max_second = len(second_run)
-for col_idy in range(1, 2):
-    col = get_column_letter(col_idy)
-    for row in range(1, max_second):
-        ws1.cell('%s%s' % (col, row)).value = second_titles[row - 1]
+curr = 0
+#print(len(first_titles))
+rowId = 2
+for row in range(2, len(first_titles)):
+    #coord = coordinate_from_string(cell.coordinate)
+    #print(coord[1])
+    if rowId % 2 == 0:
+        print(first_titles[curr])
+        ws1.cell('%s%s' % ('A', rowId)).value = first_titles[curr]
+        curr += 1
+        rowId += 2
 
-j = 0
-for row in ws1.range('B1:B%s' % (len(second_run) - 1)):
-    print(row)
+#print(brokenLinks)
+#id = 0
+rowIdTitles = -1
+rowIdLinks = 0
+for each in first_run:
+    #id += 1
+    rowIdTitles += 2 # starts at 1
+    rowIdLinks += 2 # starts at 2
+    if each not in brokenLinks:
+        #print(each)
+        hText = (requests.get(each)).text
+        crawlSoup = BeautifulSoup(hText)
+        # links found on page
+        linksFound = crawl_links(crawlSoup)
+        titles_made = build_titles(crawlSoup)
+        second_run = second_run + linksFound
+        second_titles = second_titles + titles_made
+
+        max_second = len(linksFound)
+        print("Length of links found: " + str(len(linksFound)))
+        ind = 0
+        #for row in range(1, max_second*2):
+        #coord = coordinate_from_string(cell.coordinate)
+        if rowIdTitles % 2 == 1:
+            for col_idy in range(2, max_second):
+                col = get_column_letter(col_idy)
+                print("Col: " + str(col))
+                print("Row: " + str(rowIdTitles))
+                print("Title: " + str(titles_made[ind]))
+                ws1.cell('%s%s' % (col, rowIdTitles)).value = titles_made[ind]
+                ind += 1
+
+        max_second = len(linksFound)
+        ind = 0
+        #for row in range(1, max_second*2):
+        #coord = coordinate_from_string(cell.coordinate)
+        if rowIdLinks % 2 == 0:
+            for col_idy in range(2, max_second):
+                col = get_column_letter(col_idy)
+                ws1.cell('%s%s' % (col, rowIdLinks)).value = linksFound[ind]
+                ind += 1
+
+print(second_run)
+#for url in urls:
+#    print(url)
+#    hText = (requests.get(url)).text
+#    crawlSoup = BeautifulSoup(hText)
+#    visited.append(url)
+#    urls.pop(0)
+#    second_run = crawl_links(crawlSoup)
+
+
+"""
+for row in ws.range('B1:B%s' % (len(first_run) - 1)):
     for cell in row:
-        cell.value = second_run[j]
-        j += 1
+        cell.value = first_run[row-1]
+"""
 
 """
-log = 1
+curr = 0
+for row in range(1, len(first_titles)):
+    coord = coordinate_from_string(cell.coordinate)
+    if coord[1] % 2 == 0:
+        ws1.cell('%s%s' % (1, row)).value = first_titles[curr]
+        curr += 1
+    else:
+        curr = curr
+
+max_second = len(second_run)
+ind = 0
+for row in range(1, max_second*2):
+    coord = coordinate_from_string(cell.coordinate)
+    if coord[1] % 2 == 1:
+        for col_idy in range(2, max_second):
+            col = get_column_letter(col_idy)
+            ws1.cell('%s%s' % (col, row)).value = second_titles[ind]
+            ind += 1
+
+max_second = len(second_run)
+ind = 0
+for row in range(1, max_second*2):
+    coord = coordinate_from_string(cell.coordinate)
+    if coord[1] % 2 == 0:
+        for col_idy in range(2, max_second):
+            col = get_column_letter(col_idy)
+            ws1.cell('%s%s' % (col, row)).value = second_run[ind]
+            ind += 1
+
+id = -1
 #Follows the links and crawls the sub-sites
-for each in range(1, len(visited)):
+for each in range(1, len(first_run)):
     #print(visited[each])
-    secondRun = build_titles(visited[each])
-    log2 = 0
+    id += 1
 
-    for col_idx in range(2, len(secondRun)+1):
-        col = get_column_letter(col_idx)
-        ws.cell('%s%s'%(col, log)).value = secondRun[log2]
-        log2 = log2 + 1
+    curr = 0
+    for row in range(1, len(first_titles)):
+        coord = coordinate_from_string(cell.coordinate)
+        if coord[1] % 2 == 0:
+            ws1.cell('%s%s' % (1, row)).value = first_titles[curr]
+            curr += 1
+        else:
+            curr = curr
 
-    log = log + 1
+    max_second = len(second_run)
+    ind = 0
+    for row in range(1, max_second*2):
+        coord = coordinate_from_string(cell.coordinate)
+        if coord[1] % 2 == 1:
+            for col_idy in range(2, max_second):
+                col = get_column_letter(col_idy)
+                ws1.cell('%s%s' % (col, row)).value = second_titles[ind]
+                ind += 1
+
+    max_second = len(second_run)
+    ind = 0
+    for row in range(1, max_second*2):
+        coord = coordinate_from_string(cell.coordinate)
+        if coord[1] % 2 == 0:
+            for col_idy in range(2, max_second):
+                col = get_column_letter(col_idy)
+                ws1.cell('%s%s' % (col, row)).value = second_run[ind]
+                ind += 1
+
 """
+
 print('visited: {}'.format(visited))
 print('broken links: {}'.format(brokenLinks))
 print('titles: {}'.format(titles))
