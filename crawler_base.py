@@ -128,7 +128,7 @@ else:
     # exit if start url is broken
     exit()
 
-first_run = crawl_links(soup)
+first_run = urls + crawl_links(soup)
 first_titles = build_titles(soup)
 second_run = []
 second_titles = []
