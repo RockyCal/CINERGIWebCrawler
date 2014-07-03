@@ -1,8 +1,7 @@
 from bs4 import BeautifulSoup
 import requests
 from openpyxl import Workbook, cell
-from openpyxl.compat import range
-from openpyxl.cell import get_column_letter
+from openpyxl.cell import coordinate_from_string
 
 # Http constant
 HTTP = 'http://'
@@ -23,7 +22,10 @@ def crawl_links(soup):
             check_link(tag['href'])
             # add to list of urls found
             if tag['href'] not in brokenLinks:
+                # add to list of working urls found to be written
                 urls_found.append(tag['href'])
+                # add to global list of working urls
+                urls.append(tag['href'])
             # Create list of tags
             # html_tags.append(tag)
             # mark as visited
@@ -99,11 +101,14 @@ def build_titles(soup):
 
 
 # #####################
-# List to hold all broken links
+# Total visited links
+visited = []
+# Total working links found
+urls = []
+# Total broken links
 brokenLinks = []
-# List of titles - the text attribute of tag
+# Total titles - the text attribute of tag
 titles = []
-
 
 # start url
 start_url = 'http://www.greenseas.eu/content/standards-and-related-web-information'
@@ -111,10 +116,6 @@ start_title = 'GreenSeas Standards and Info'
 
 status = check_link(start_url)  # Check functioning of start url
 
-# Links to visit
-urls = []
-# visited links
-visited = []
 tags = []
 
 # Add start url link and title to lists
@@ -130,8 +131,12 @@ else:
     # exit if start url is broken
     exit()
 
-first_run = urls + crawl_links(soup)
-first_titles = titles + build_titles(soup)
+# Create lists for first run, to be written out to first sheet
+first_run = [start_url]  # add the base url
+first_titles = [start_title]  # add the base title
+# Use extend function to add all urls and titles found in first run
+first_run.extend(crawl_links(soup))
+first_titles.extend(build_titles(soup))
 # not being used as of 7/3/2014 but may be used later
 # second_run = []
 # second_titles = []
@@ -144,10 +149,10 @@ ws = wb.active
 ws.title = 'First run'
 
 max_first = len(first_run)
-for col_idx in range(1, 2):
-    col = get_column_letter(col_idx)
-    for row in range(1, max_first):
-        ws.cell('%s%s' % (col, row)).value = first_titles[row - 1]
+for row in ws.range('A1:A%s' % max_first):
+    for cell in row:
+        coord = coordinate_from_string(cell.coordinate)
+        cell.value = first_titles[coord[1] - 1]
 
 i = 0
 for row in ws.range('B1:B%s' % (len(first_run) - 1)):
@@ -181,10 +186,12 @@ for each in first_run:
                 cell.value = linksFound[k]
                 k += 1
 
-print('visited: {}'.format(visited))
-print('Length of visited: ' + str(len(visited)))
 print('broken links: {}'.format(brokenLinks))
 print('Length of broken links: ' + str(len(brokenLinks)))
-print('urls: {}'.format(urls))
+print('visited: {}'.format(visited))
+print('Length of visited: ' + str(len(visited)))
+print('Working urls: {}'.format(urls))
+print('Length of urls: ' + str(len(urls)))
 print('titles: {}'.format(titles))
+print('Length of titles: ' + str(len(titles)))
 wb.save(filename)
