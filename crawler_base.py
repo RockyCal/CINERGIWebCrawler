@@ -2,7 +2,7 @@ from bs4 import BeautifulSoup
 import requests
 from openpyxl import Workbook, cell
 from openpyxl.compat import range
-from openpyxl.cell import get_column_letter, coordinate_from_string
+from openpyxl.cell import get_column_letter
 
 # Http constant
 HTTP = 'http://'
@@ -19,7 +19,7 @@ def crawl_links(soup):
     for tag in soup.find_all('a', href=True):
         if HTTP in tag['href'] and tag['href'] not in visited:
             visited.append(tag['href'])
-            # check functioning
+            # check functioning, will add to brokenLinks if link is bad
             check_link(tag['href'])
             # add to list of urls found
             if tag['href'] not in brokenLinks:
@@ -29,7 +29,6 @@ def crawl_links(soup):
             # mark as visited
             # visited.append(tag['href'])
     # build_titles(html_tags)
-
     return urls_found
 
 
@@ -83,17 +82,20 @@ Returns: List of titles
 
 
 def build_titles(soup):
-    titles = []
+    titles_found = []
     for tag in soup.find_all('a', href=True):
         if HTTP in tag['href']:
-            titles.append(tag.text)
+            if tag['href'] not in brokenLinks:
+                titles_found.append(tag.text)
+                # add to list of total titles
+                titles.append(tag.text)
     # ######################
     # Use this code if passing in tags
     # Building list of working links
     #for tag in element_tags:
     #    if tag['href'] not in brokenLinks:
     #        titles.append(tag.text)
-    return titles
+    return titles_found
 
 
 # #####################
@@ -129,17 +131,16 @@ else:
     exit()
 
 first_run = urls + crawl_links(soup)
-first_titles = build_titles(soup)
+first_titles = titles + build_titles(soup)
 second_run = []
 second_titles = []
-#print(first_run)
 
 print('Creating xlsx file')
 # Create excel file
 wb = Workbook()
 filename = 'Crawl.xlsx'
 ws = wb.active
-ws.title = "First run"
+ws.title = 'First run'
 
 max_first = len(first_run)
 for col_idx in range(1, 2):
@@ -147,7 +148,6 @@ for col_idx in range(1, 2):
     for row in range(1, max_first):
         ws.cell('%s%s' % (col, row)).value = first_titles[row - 1]
 
-# May need work
 i = 0
 for row in ws.range('B1:B%s' % (len(first_run) - 1)):
     for cell in row:
@@ -155,8 +155,34 @@ for row in ws.range('B1:B%s' % (len(first_run) - 1)):
         i += 1
 
 ws1 = wb.create_sheet()
-ws1.title = "Second run"
+ws1.title = 'Second run'
 
+first_run.pop(0)  # take off first in first_run (the start url)
+for each in first_run:
+    hText = (requests.get(each)).text
+    crawlSoup = BeautifulSoup(hText)
+    linksFound = crawl_links(crawlSoup)  # links found on a page
+    titlesMade = build_titles(crawlSoup)
+    # Place the source link above the list of links found
+    source_row = ws1.get_highest_row() + 2
+    ws1.cell('%s%s'%('B', source_row)).value = each
+    if len(linksFound) > 0:
+        print(linksFound)
+        start_row = ws1.get_highest_row() + 1
+        print(start_row)
+        last_row = (start_row + len(linksFound)) - 1
+        print('# links found: {}'.format(len(linksFound)))
+        t = 0
+        for row in ws1.range('%s%s:%s%s' % ('A', start_row, 'A', last_row)):
+            for cell in row:
+                cell.value = titlesMade[t]
+                t += 1
+        k = 0
+        for row in ws1.range('%s%s:%s%s' % ('B', start_row, 'B', last_row)):
+            for cell in row:
+                cell.value = linksFound[k]
+                k += 1
+"""
 curr = 0
 #print(len(first_titles))
 rowId = 2
@@ -207,7 +233,7 @@ for each in first_run:
                 col = get_column_letter(col_idy)
                 ws1.cell('%s%s' % (col, rowIdLinks)).value = linksFound[ind]
                 ind += 1
-
+"""
 print(second_run)
 #print(brokenLinks)
 #print(second_run)
