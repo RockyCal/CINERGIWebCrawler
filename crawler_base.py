@@ -1,7 +1,7 @@
 from bs4 import BeautifulSoup
 import requests
 from openpyxl import Workbook, cell
-from openpyxl.cell import coordinate_from_string
+# from openpyxl.cell import coordinate_from_string
 
 # Http constant
 HTTP = 'http://'
@@ -148,14 +148,17 @@ filename = 'Crawl.xlsx'
 ws = wb.active
 ws.title = 'First run'
 
-max_first = len(first_run)
-for row in ws.range('A1:A%s' % max_first):
+ws.cell('A1').value = 'Title'
+ws.cell('B1').value = 'URL'
+max_first = len(first_titles)
+p = 0
+for row in ws.range('A2:A%s' % max_first):
     for cell in row:
-        coord = coordinate_from_string(cell.coordinate)
-        cell.value = first_titles[coord[1] - 1]
+        cell.value = first_titles[p]
+        p += 1
 
 i = 0
-for row in ws.range('B1:B%s' % (len(first_run) - 1)):
+for row in ws.range('B2:B%s' % (len(first_run) - 1)):
     for cell in row:
         cell.value = first_run[i]
         i += 1
@@ -164,6 +167,7 @@ ws1 = wb.create_sheet()
 ws1.title = 'Second run'
 
 first_run.pop(0)  # take off first in first_run (the start url)
+                  # We don't want GreenSeas to be in the second layer
 for each in first_run:
     hText = (requests.get(each)).text
     crawlSoup = BeautifulSoup(hText)
@@ -171,7 +175,8 @@ for each in first_run:
     titlesMade = build_titles(crawlSoup)
     # Place the source link above the list of links found
     source_row = ws1.get_highest_row() + 2
-    ws1.cell('%s%s'%('B', source_row)).value = each
+    ws1.cell('%s%s' % ('B', source_row)).value = each
+    ws1.cell('%s%s' % ('C', source_row)).value = 'source link'
     if len(linksFound) > 0:
         start_row = ws1.get_highest_row() + 1
         last_row = (start_row + len(linksFound)) - 1
@@ -185,6 +190,10 @@ for each in first_run:
             for cell in row:
                 cell.value = linksFound[k]
                 k += 1
+
+# Apply headers (after data so as not to affect formula for skipping rows)
+ws1.cell('A1').value = 'Title'
+ws1.cell('B1').value = 'URL'
 
 print('broken links: {}'.format(brokenLinks))
 print('Length of broken links: ' + str(len(brokenLinks)))
