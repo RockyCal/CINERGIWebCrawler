@@ -83,15 +83,24 @@ Purpose: Extract the title of the pages these links lead to
 Returns: List of titles
 """
 def build_title(url):
-    var = requests.get(url)
-    html = var.text
-    soup = BeautifulSoup(html)
-
-    title = soup.find('title')
-    if title != None:
-        return title.text
+    status = check_link(url)
+    if status == 1:
+        var = requests.get(url)
+        html = var.text
+        soup = BeautifulSoup(html)
+        title = None
+        if url not in brokenLinks:
+            if soup.title != None:
+                if soup.title.string != None:
+                    title = soup.title.string
+            #findAll('title', limit = 1
+            print("Title: " + str(title))
+            if title != None:
+                return title
+            else:
+                return " "
     else:
-        return " "
+            return " "
 
 def build_labels(soup):
     titles_found = []
@@ -121,12 +130,15 @@ brokenLinks = []
 titles = []
 
 # start url
-start_url = 'http://www.greenseas.eu/content/standards-and-related-web-information'
-start_title = 'Standards and Info'
-start_org = 'GreenSeas'
+#start_url = 'http://www.greenseas.eu/content/standards-and-related-web-information'
+#start_label = 'GreenSeas Home'
+#start_title = 'Standards and Information'
+#start_org = 'GreenSeas'
 
-#start_url = 'http://cinergi.weebly.com/'
-#start_title = 'CINERGI Test Bed'
+start_url = 'http://cinergi.weebly.com/'
+start_title = 'CINERGI Test Bed'
+start_label = 'CINERGI Home'
+start_org = 'CINERGI'
 
 status = check_link(start_url)  # Check functioning of start url
 
@@ -136,6 +148,9 @@ tags = []
 urls.append(start_url)
 visited.append(start_url)
 titles.append(start_title)
+
+first_labels = []
+first_labels.append(start_label)
 
 if status:
     r = requests.get(start_url)
@@ -148,10 +163,10 @@ else:
 # Create lists for first run, to be written out to first sheet
 first_run = [start_url]  # add the base url
 first_titles = []
-first_labels = []
+#first_labels = []
 print("First Run: " + str(first_run))
 first_orgs = [start_org]  # add the base title
-first_titles = [start_title]
+first_titles = []
 # Use extend function to add all urls and titles found in first run
 first_run.extend(crawl_links(soup))
 first_labels.extend(build_labels(soup))
@@ -180,15 +195,16 @@ ws['C1'].style = header_style
 ws.cell('D1').value = 'Organization'
 ws['D1'].style = header_style
 
-max_first = len(first_orgs)
+max_first = len(first_titles) + 1
 p = 0
-for row in ws.range('A2:A%s' % max_first):
+for row in ws.range('A2:A%s' % max_first): #4
     for cell in row:
         cell.value = first_titles[p]
         p += 1
 
+max_labels = len(first_labels)
 p = 0
-for row in ws.range('A2:A%s' % max_first):
+for row in ws.range('B2:B%s' % max_labels):
     for cell in row:
         cell.value = first_labels[p]
         p += 1
@@ -200,8 +216,9 @@ for row in ws.range('C2:C%s' % (len(first_run) + 1)):
         cell.value = first_run[i]
         i += 1
 
+max_orgs = len(first_orgs)
 n = 0
-for row in ws.range('D2:D%s' % max_first):
+for row in ws.range('D2:D%s' % max_orgs):
     for cell in row:
         cell.value = first_orgs[n]
         n += 1
