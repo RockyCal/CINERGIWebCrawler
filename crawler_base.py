@@ -280,13 +280,16 @@ ws1 = wb.create_sheet()
 ws1.title = 'Second run'
 
 first_run.pop(0)  # take off first in first_run (the start url)
+first_orgs.pop(0)
                   # We don't want GreenSeas to be in the second layer
+index = 0
 for each in first_run:
     hText = (requests.get(each)).text
     crawlSoup = BeautifulSoup(hText)
     linksFound = crawl_links(crawlSoup)  # links found on a page
     labelsMade = build_labels(crawlSoup)
     titlesMade = []
+    org = first_orgs[index]
     orgsMade = []
     domains = []
 
@@ -294,14 +297,15 @@ for each in first_run:
         titlesMade.append(build_title(each))
         domains.append(find_domains(each))
 
-    for each in labelsMade:
-        orgsMade.append(each)
+    #for each in labelsMade:
+        #orgsMade.append(each)
 
     # Place the source link above the list of links found
-    source_row = ws1.get_highest_row() + 2
-    ws1.cell('%s%s' % ('B', source_row)).value = each
-    ws1.cell('%s%s' % ('C', source_row)).value = 'source link'
-    ws1['%s%s'%('C', source_row)].style = header_style
+    # source_row = ws1.get_highest_row() + 2
+    # ws1.cell('%s%s' % ('B', source_row)).value = each
+    # ws1.cell('%s%s' % ('C', source_row)).value = 'source link'
+    # ws1['%s%s'%('C', source_row)].style = header_style
+
     if len(linksFound) > 0:
         start_row = ws1.get_highest_row() + 1
         last_row = (start_row + len(linksFound)) - 1
@@ -324,8 +328,8 @@ for each in first_run:
         l = 0
         for row in ws1.range('%s%s:%s%s' % ('D', start_row, 'D', last_row)):
             for cell in row:
-                cell.value = first_orgs[l]
-        l += 1
+                cell.value = first_orgs[index]
+    index += 1
 
         u = 0
         for row in ws1.range('%s%s:%s%s' % ('E', start_row, 'E', last_row)):
