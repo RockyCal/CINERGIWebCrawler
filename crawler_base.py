@@ -1,5 +1,6 @@
 from bs4 import BeautifulSoup
 import requests
+import re
 from openpyxl import Workbook, cell
 from openpyxl.styles import Style, Font
 # from openpyxl.cell import coordinate_from_string
@@ -75,7 +76,28 @@ def check_link(url):
             brokenLinks.append(url)
     return works
 
+def visible(element):
+    if element.parent.name in ['style', 'script', '[document]', 'head', 'title', 'a']:
+        return False
+    elif re.match('<!--.*-->', str(element)):
+        return False
+    return True
 
+
+def find_domains(url):
+    if url not in brokenLinks:
+        getreq = requests.get(url)
+        reqtext = getreq.text
+        souper = BeautifulSoup(reqtext)
+        for k in domainsKnown:
+            for v in domainsKnown.get(k):
+                texts = souper.find_all(text=re.compile(v))
+                visible_texts = filter(visible, texts)
+                for vis in visible_texts:
+                    if vis.string:
+                        print(vis.string)
+                    else:
+                        print(vis)
 """
 Name: build_labels()
 Params: url - page to get titles from
@@ -83,15 +105,24 @@ Purpose: Extract the title of the pages these links lead to
 Returns: List of titles
 """
 def build_title(url):
-    var = requests.get(url)
-    html = var.text
-    soup = BeautifulSoup(html)
-
-    title = soup.find('title')
-    if title != None:
-        return title.text
+    status = check_link(url)
+    if status == 1:
+        var = requests.get(url)
+        html = var.text
+        soup = BeautifulSoup(html)
+        title = None
+        if url not in brokenLinks:
+            if soup.title != None:
+                if soup.title.string != None:
+                    title = soup.title.string
+            #findAll('title', limit = 1
+            print("Title: " + str(title))
+            if title != None:
+                return title
+            else:
+                return " "
     else:
-        return " "
+            return " "
 
 def build_labels(soup):
     titles_found = []
@@ -119,14 +150,26 @@ urls = []
 brokenLinks = []
 # Total titles - the text attribute of tag
 titles = []
+#Domains
+domainsKnown = {'Agriculture/Farming': ["agriculture", "farming"], 'Atmosphere': ["atmosphere"], 'Biology':
+    ["biodiversity", "organism", "life science", "biota"],
+    'Climate': ["climate"], 'Ecology': ["ecological", "ecosystem", "habitat", "environment"], 'Geochemistry': ["geochem"],
+    'Geology': ["geology", "geological"], 'GIS': ["geographic information systems"],
+    'Marine Ecology': ["marine ecology", "oceanography"],
+    'Marine Biology': ["marine biology"], 'Marine Geology': ["marine geology"],
+    'Maps/Imagery': ["imaging", "maps"],  'Fisheries': ["estuaries", "fishing"], 'Oceanography': ['ocean', 'sea'],
+    'Spatial': ["spatial"], 'Topography': ["elevation", "mountains"]}
 
 # start url
-start_url = 'http://www.greenseas.eu/content/standards-and-related-web-information'
-start_title = 'Standards and Info'
-start_org = 'GreenSeas'
+#start_url = 'http://www.greenseas.eu/content/standards-and-related-web-information'
+#start_label = 'GreenSeas Home'
+#start_title = 'Standards and Information'
+#start_org = 'GreenSeas'
 
-#start_url = 'http://cinergi.weebly.com/'
-#start_title = 'CINERGI Test Bed'
+start_url = 'http://cinergi.weebly.com/'
+start_title = 'CINERGI Test Bed'
+start_label = 'CINERGI Home'
+#start_org = 'CINERGI'
 
 status = check_link(start_url)  # Check functioning of start url
 
@@ -136,6 +179,9 @@ tags = []
 urls.append(start_url)
 visited.append(start_url)
 titles.append(start_title)
+
+first_labels = []
+first_labels.append(start_label)
 
 if status:
     r = requests.get(start_url)
@@ -148,13 +194,17 @@ else:
 # Create lists for first run, to be written out to first sheet
 first_run = [start_url]  # add the base url
 first_titles = []
-first_labels = []
+#first_labels = []
 print("First Run: " + str(first_run))
-first_orgs = [start_org]  # add the base title
-first_titles = [start_title]
+first_orgs = []
+first_titles = []
 # Use extend function to add all urls and titles found in first run
 first_run.extend(crawl_links(soup))
 first_labels.extend(build_labels(soup))
+first_domains = []
+find_domains('http://www.ioos.noaa.gov')
+"""
+first_orgs.extend(first_labels)
 
 # not being used as of 7/3/2014 but may be used later
 # second_run = []
@@ -179,16 +229,20 @@ ws.cell('C1').value = 'URL'
 ws['C1'].style = header_style
 ws.cell('D1').value = 'Organization'
 ws['D1'].style = header_style
-
+ws['E1'].style = header_style
+ws.cell('E1').value = 'Domain(s)'
 max_first = len(first_orgs)
+
+max_first = len(first_titles) + 1
 p = 0
-for row in ws.range('A2:A%s' % max_first):
+for row in ws.range('A2:A%s' % max_first): #4
     for cell in row:
         cell.value = first_titles[p]
         p += 1
 
+max_labels = len(first_labels)
 p = 0
-for row in ws.range('A2:A%s' % max_first):
+for row in ws.range('B2:B%s' % max_labels):
     for cell in row:
         cell.value = first_labels[p]
         p += 1
@@ -200,8 +254,9 @@ for row in ws.range('C2:C%s' % (len(first_run) + 1)):
         cell.value = first_run[i]
         i += 1
 
+max_orgs = len(first_orgs)
 n = 0
-for row in ws.range('D2:D%s' % max_first):
+for row in ws.range('D2:D%s' % max_orgs):
     for cell in row:
         cell.value = first_orgs[n]
         n += 1
@@ -215,6 +270,14 @@ for each in first_run:
     crawlSoup = BeautifulSoup(hText)
     linksFound = crawl_links(crawlSoup)  # links found on a page
     labelsMade = build_labels(crawlSoup)
+    titlesMade = []
+    orgsMade = []
+    for each in linksFound:
+        titlesMade.append(build_title(each))
+
+    for each in labelsMade:
+        orgsMade.append(each)
+
     # Place the source link above the list of links found
     source_row = ws1.get_highest_row() + 2
     ws1.cell('%s%s' % ('B', source_row)).value = each
@@ -226,19 +289,34 @@ for each in first_run:
         t = 0
         for row in ws1.range('%s%s:%s%s' % ('A', start_row, 'A', last_row)):
             for cell in row:
-                cell.value = labelsMade[t]
+                cell.value = titlesMade[t]
                 t += 1
         k = 0
         for row in ws1.range('%s%s:%s%s' % ('B', start_row, 'B', last_row)):
             for cell in row:
-                cell.value = linksFound[k]
+                cell.value = labelsMade[k]
                 k += 1
+        j = 0
+        for row in ws1.range('%s%s:%s%s' % ('C', start_row, 'C', last_row)):
+            for cell in row:
+                cell.value = linksFound[j]
+                j += 1
+
+        l = 0
+        for row in ws1.range('%s%s:%s%s' % ('D', start_row, 'D', last_row)):
+            for cell in row:
+                cell.value = orgsMade[l]
+                l += 1
 
 # Apply headers (after data so as not to affect formula for skipping rows)
 ws1.cell('A1').value = 'Title'
-ws1.cell('B1').value = 'URL'
+ws1.cell('B1').value = 'Label'
+ws1.cell('C1').value = 'URL'
+ws1.cell('D1').value = 'Organization'
 ws1['A1'].style = header_style
 ws1['B1'].style = header_style
+ws1['C1'].style = header_style
+ws1['D1'].style = header_style
 
 print('broken links: {}'.format(brokenLinks))
 print('Length of broken links: ' + str(len(brokenLinks)))
@@ -249,3 +327,4 @@ print('Length of urls: ' + str(len(urls)))
 print('titles: {}'.format(titles))
 print('Length of titles: ' + str(len(titles)))
 wb.save(filename)
+"""
