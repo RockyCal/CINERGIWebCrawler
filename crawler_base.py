@@ -112,8 +112,10 @@ brokenLinks = []
 titles = []
 
 # start url
-start_url = 'http://www.greenseas.eu/content/standards-and-related-web-information'
-start_title = 'GreenSeas Standards and Info'
+#start_url = 'http://www.greenseas.eu/content/standards-and-related-web-information'
+#start_title = 'GreenSeas Standards and Info'
+start_url = 'http://cinergi.weebly.com/'
+start_title = 'CINERGI Test Bed'
 
 status = check_link(start_url)  # Check functioning of start url
 
@@ -134,6 +136,7 @@ else:
 
 # Create lists for first run, to be written out to first sheet
 first_run = [start_url]  # add the base url
+print("First Run: " + str(first_run))
 first_titles = [start_title]  # add the base title
 # Use extend function to add all urls and titles found in first run
 first_run.extend(crawl_links(soup))
@@ -163,8 +166,9 @@ for row in ws.range('A2:A%s' % max_first):
         cell.value = first_titles[p]
         p += 1
 
+print("First Run: " + str(first_run))
 i = 0
-for row in ws.range('B2:B%s' % (len(first_run) - 1)):
+for row in ws.range('B2:B%s' % (len(first_run) + 1)):
     for cell in row:
         cell.value = first_run[i]
         i += 1
