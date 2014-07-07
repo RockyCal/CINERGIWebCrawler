@@ -233,6 +233,14 @@ for each in first_run:
     crawlSoup = BeautifulSoup(hText)
     linksFound = crawl_links(crawlSoup)  # links found on a page
     labelsMade = build_labels(crawlSoup)
+    titlesMade = []
+    orgsMade = []
+    for each in linksFound:
+        titlesMade.append(build_title(each))
+
+    for each in labelsMade:
+        orgsMade.append(each)
+
     # Place the source link above the list of links found
     source_row = ws1.get_highest_row() + 2
     ws1.cell('%s%s' % ('B', source_row)).value = each
@@ -244,19 +252,34 @@ for each in first_run:
         t = 0
         for row in ws1.range('%s%s:%s%s' % ('A', start_row, 'A', last_row)):
             for cell in row:
-                cell.value = labelsMade[t]
+                cell.value = titlesMade[t]
                 t += 1
         k = 0
         for row in ws1.range('%s%s:%s%s' % ('B', start_row, 'B', last_row)):
             for cell in row:
-                cell.value = linksFound[k]
+                cell.value = labelsMade[k]
                 k += 1
+        j = 0
+        for row in ws1.range('%s%s:%s%s' % ('C', start_row, 'C', last_row)):
+            for cell in row:
+                cell.value = linksFound[j]
+                j += 1
+
+        l = 0
+        for row in ws1.range('%s%s:%s%s' % ('D', start_row, 'D', last_row)):
+            for cell in row:
+                cell.value = orgsMade[l]
+                l += 1
 
 # Apply headers (after data so as not to affect formula for skipping rows)
 ws1.cell('A1').value = 'Title'
-ws1.cell('B1').value = 'URL'
+ws1.cell('B1').value = 'Label'
+ws1.cell('C1').value = 'URL'
+ws1.cell('D1').value = 'Organization'
 ws1['A1'].style = header_style
 ws1['B1'].style = header_style
+ws1['C1'].style = header_style
+ws1['D1'].style = header_style
 
 print('broken links: {}'.format(brokenLinks))
 print('Length of broken links: ' + str(len(brokenLinks)))
