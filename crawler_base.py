@@ -158,13 +158,13 @@ domainsKnown = {'Agriculture/Farming': ["agriculture", "farming"], 'Atmosphere':
     'Maps/Imagery': ["imaging", "maps"],  'Fisheries': ["estuaries", "fishing"], 'Oceanography': ['ocean', 'sea'],
     'Spatial': ["spatial"], 'Topography': ["elevation", "mountains"]}
 
-#start_url = 'http://www.greenseas.eu/content/standards-and-related-web-information'
-#start_label = 'GreenSeas Home'
-#start_title = 'Standards and Information'
+start_url = 'http://www.greenseas.eu/content/standards-and-related-web-information'
+start_label = 'GreenSeas Home'
+start_title = 'Standards and Information'
 
-start_url = 'http://cinergi.weebly.com/'
-start_title = 'CINERGI Test Bed'
-start_label = 'CINERGI Home'
+#start_url = 'http://cinergi.weebly.com/'
+#start_title = 'CINERGI Test Bed'
+#start_label = 'CINERGI Home'
 
 
 status = check_link(start_url)  # Check functioning of start url
@@ -199,7 +199,7 @@ first_run.extend(crawl_links(soup))
 first_labels.extend(build_labels(soup))
 first_domains = []
 find_domains('http://www.ioos.noaa.gov')
-"""
+
 first_orgs.extend(first_labels)
 
 # not being used as of 7/3/2014 but may be used later
@@ -323,4 +323,4 @@ print('Length of urls: ' + str(len(urls)))
 print('titles: {}'.format(titles))
 print('Length of titles: ' + str(len(titles)))
 wb.save(filename)
-"""
+
