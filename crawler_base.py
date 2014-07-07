@@ -1,5 +1,6 @@
 from bs4 import BeautifulSoup
 import requests
+import re
 from openpyxl import Workbook, cell
 from openpyxl.styles import Style, Font
 # from openpyxl.cell import coordinate_from_string
@@ -75,6 +76,25 @@ def check_link(url):
             brokenLinks.append(url)
     return works
 
+def visible(element):
+    if element.parent.name in ['style', 'script', '[document]', 'head', 'title']:
+        return False
+    elif re.match('<!--.*-->', str(element)):
+        return False
+    return True
+
+
+def find_domains(url):
+    if url not in brokenLinks:
+        getreq = requests.get(url)
+        reqtext = getreq.text
+        souper = BeautifulSoup(reqtext)
+        for k in domainsKnown:
+            for v in domainsKnown.get(k):
+                texts = souper.find_all(text=re.compile(v))
+                visible_texts = filter(visible, texts)
+                for vis in visible_texts:
+                    print(vis)
 
 """
 Name: build_labels()
@@ -128,6 +148,15 @@ urls = []
 brokenLinks = []
 # Total titles - the text attribute of tag
 titles = []
+#Domains
+domainsKnown = {'Agriculture/Farming': ["agriculture", "farming"], 'Atmosphere': ["atmosphere"], 'Biology':
+    ["biodiversity", "organism", "life science", "biota"],
+    'Climate': ["climate"], 'Ecology': ["ecological", "ecosystem", "habitat", "environment"], 'Geochemistry': ["geochem"],
+    'Geology': ["geology", "geological"], 'GIS': ["geographic information systems"],
+    'Marine Ecology': ["marine ecology", "oceanography"],
+    'Marine Biology': ["marine biology"], 'Marine Geology': ["marine geology"],
+    'Maps/Imagery': ["imaging", "maps"],  'Fisheries': ["estuaries", "fishing"], 'Oceanography': ['ocean', 'sea'],
+    'Spatial': ["spatial"], 'Topography': ["elevation", "mountains"]}
 
 #start_url = 'http://www.greenseas.eu/content/standards-and-related-web-information'
 #start_label = 'GreenSeas Home'
@@ -168,6 +197,9 @@ first_titles = []
 # Use extend function to add all urls and titles found in first run
 first_run.extend(crawl_links(soup))
 first_labels.extend(build_labels(soup))
+first_domains = []
+find_domains('http://www.ioos.noaa.gov')
+"""
 first_orgs.extend(first_labels)
 
 # not being used as of 7/3/2014 but may be used later
@@ -193,6 +225,9 @@ ws.cell('C1').value = 'URL'
 ws['C1'].style = header_style
 ws.cell('D1').value = 'Organization'
 ws['D1'].style = header_style
+ws['E1'].style = header_style
+ws.cell('E1').value = 'Domain(s)'
+max_first = len(first_orgs)
 
 max_first = len(first_titles) + 1
 p = 0
@@ -288,3 +323,4 @@ print('Length of urls: ' + str(len(urls)))
 print('titles: {}'.format(titles))
 print('Length of titles: ' + str(len(titles)))
 wb.save(filename)
+"""
