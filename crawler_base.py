@@ -82,7 +82,16 @@ Params: url - page to get titles from
 Purpose: Extract the title of the pages these links lead to
 Returns: List of titles
 """
+def build_title(url):
+    var = requests.get(url)
+    html = var.text
+    soup = BeautifulSoup(html)
 
+    title = soup.find('title')
+    if title != None:
+        return title.text
+    else:
+        return " "
 
 def build_labels(soup):
     titles_found = []
@@ -146,9 +155,13 @@ first_titles = [start_title]
 # Use extend function to add all urls and titles found in first run
 first_run.extend(crawl_links(soup))
 first_labels.extend(build_labels(soup))
+
 # not being used as of 7/3/2014 but may be used later
 # second_run = []
 # second_titles = []
+for each in first_run:
+    title = build_title(each)
+    first_titles.append(title)
 
 print('Creating xlsx file')
 # Create excel file
@@ -166,6 +179,7 @@ ws.cell('C1').value = 'URL'
 ws['C1'].style = header_style
 ws.cell('D1').value = 'Organization'
 ws['D1'].style = header_style
+
 max_first = len(first_orgs)
 p = 0
 for row in ws.range('A2:A%s' % max_first):
@@ -200,7 +214,7 @@ for each in first_run:
     hText = (requests.get(each)).text
     crawlSoup = BeautifulSoup(hText)
     linksFound = crawl_links(crawlSoup)  # links found on a page
-    titlesMade = build_labels(crawlSoup)
+    labelsMade = build_labels(crawlSoup)
     # Place the source link above the list of links found
     source_row = ws1.get_highest_row() + 2
     ws1.cell('%s%s' % ('B', source_row)).value = each
@@ -212,7 +226,7 @@ for each in first_run:
         t = 0
         for row in ws1.range('%s%s:%s%s' % ('A', start_row, 'A', last_row)):
             for cell in row:
-                cell.value = titlesMade[t]
+                cell.value = labelsMade[t]
                 t += 1
         k = 0
         for row in ws1.range('%s%s:%s%s' % ('B', start_row, 'B', last_row)):
