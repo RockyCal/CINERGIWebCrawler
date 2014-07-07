@@ -77,7 +77,7 @@ def check_link(url):
     return works
 
 def visible(element):
-    if element.parent.name in ['style', 'script', '[document]', 'head', 'title']:
+    if element.parent.name in ['style', 'script', '[document]', 'head', 'title', 'a']:
         return False
     elif re.match('<!--.*-->', str(element)):
         return False
@@ -94,8 +94,10 @@ def find_domains(url):
                 texts = souper.find_all(text=re.compile(v))
                 visible_texts = filter(visible, texts)
                 for vis in visible_texts:
-                    print(vis)
-
+                    if vis.string:
+                        print(vis.string)
+                    else:
+                        print(vis)
 """
 Name: build_labels()
 Params: url - page to get titles from
