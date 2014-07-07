@@ -1,6 +1,7 @@
 from bs4 import BeautifulSoup
 import requests
 from openpyxl import Workbook, cell
+from openpyxl.styles import Style, Font
 # from openpyxl.cell import coordinate_from_string
 
 # Http constant
@@ -156,10 +157,15 @@ filename = 'Crawl.xlsx'
 ws = wb.active
 ws.title = 'First run'
 
+header_style = Style(font=Font(bold=True))
 ws.cell('A1').value = 'Title' #we need to find out how to do
+ws['A1'].style = header_style
 ws.cell('B1').value = 'Label' #tag.text
+ws['B1'].style = header_style
 ws.cell('C1').value = 'URL'
+ws['C1'].style = header_style
 ws.cell('D1').value = 'Organization'
+ws['D1'].style = header_style
 max_first = len(first_orgs)
 p = 0
 for row in ws.range('A2:A%s' % max_first):
@@ -199,6 +205,7 @@ for each in first_run:
     source_row = ws1.get_highest_row() + 2
     ws1.cell('%s%s' % ('B', source_row)).value = each
     ws1.cell('%s%s' % ('C', source_row)).value = 'source link'
+    ws1['%s%s'%('C', source_row)].style = header_style
     if len(linksFound) > 0:
         start_row = ws1.get_highest_row() + 1
         last_row = (start_row + len(linksFound)) - 1
@@ -216,6 +223,8 @@ for each in first_run:
 # Apply headers (after data so as not to affect formula for skipping rows)
 ws1.cell('A1').value = 'Title'
 ws1.cell('B1').value = 'URL'
+ws1['A1'].style = header_style
+ws1['B1'].style = header_style
 
 print('broken links: {}'.format(brokenLinks))
 print('Length of broken links: ' + str(len(brokenLinks)))
