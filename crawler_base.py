@@ -108,6 +108,7 @@ Params: url - page to get titles from
 Purpose: Extract the title of the pages these links lead to
 Returns: List of titles
 """
+
 def build_title(url):
     status = check_link(url)
     if status == 1:
