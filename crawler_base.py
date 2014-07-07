@@ -308,8 +308,8 @@ for each in first_run:
         l = 0
         for row in ws1.range('%s%s:%s%s' % ('D', start_row, 'D', last_row)):
             for cell in row:
-                cell.value = orgsMade[l]
-                l += 1
+                cell.value = first_orgs[l]
+        l += 1
 
 # Apply headers (after data so as not to affect formula for skipping rows)
 ws1.cell('A1').value = 'Title'
