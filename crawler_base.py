@@ -129,16 +129,14 @@ brokenLinks = []
 # Total titles - the text attribute of tag
 titles = []
 
-# start url
 #start_url = 'http://www.greenseas.eu/content/standards-and-related-web-information'
 #start_label = 'GreenSeas Home'
 #start_title = 'Standards and Information'
-#start_org = 'GreenSeas'
 
 start_url = 'http://cinergi.weebly.com/'
 start_title = 'CINERGI Test Bed'
 start_label = 'CINERGI Home'
-#start_org = 'CINERGI'
+
 
 status = check_link(start_url)  # Check functioning of start url
 
