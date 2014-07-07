@@ -31,7 +31,7 @@ def crawl_links(soup):
             # html_tags.append(tag)
             # mark as visited
             # visited.append(tag['href'])
-    # build_titles(html_tags)
+    # build_labels(html_tags)
     return urls_found
 
 
@@ -77,14 +77,14 @@ def check_link(url):
 
 
 """
-Name: build_titles()
+Name: build_labels()
 Params: url - page to get titles from
 Purpose: Extract the title of the pages these links lead to
 Returns: List of titles
 """
 
 
-def build_titles(soup):
+def build_labels(soup):
     titles_found = []
     for tag in soup.find_all('a', href=True):
         if HTTP in tag['href']:
@@ -145,7 +145,7 @@ first_orgs = [start_org]  # add the base title
 first_titles = [start_title]
 # Use extend function to add all urls and titles found in first run
 first_run.extend(crawl_links(soup))
-first_labels.extend(build_titles(soup))
+first_labels.extend(build_labels(soup))
 # not being used as of 7/3/2014 but may be used later
 # second_run = []
 # second_titles = []
@@ -200,7 +200,7 @@ for each in first_run:
     hText = (requests.get(each)).text
     crawlSoup = BeautifulSoup(hText)
     linksFound = crawl_links(crawlSoup)  # links found on a page
-    titlesMade = build_titles(crawlSoup)
+    titlesMade = build_labels(crawlSoup)
     # Place the source link above the list of links found
     source_row = ws1.get_highest_row() + 2
     ws1.cell('%s%s' % ('B', source_row)).value = each
