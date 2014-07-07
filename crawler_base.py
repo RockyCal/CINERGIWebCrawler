@@ -111,10 +111,12 @@ brokenLinks = []
 titles = []
 
 # start url
-#start_url = 'http://www.greenseas.eu/content/standards-and-related-web-information'
-#start_title = 'GreenSeas Standards and Info'
-start_url = 'http://cinergi.weebly.com/'
-start_title = 'CINERGI Test Bed'
+start_url = 'http://www.greenseas.eu/content/standards-and-related-web-information'
+start_title = 'Standards and Info'
+start_org = 'GreenSeas'
+
+#start_url = 'http://cinergi.weebly.com/'
+#start_title = 'CINERGI Test Bed'
 
 status = check_link(start_url)  # Check functioning of start url
 
@@ -135,11 +137,14 @@ else:
 
 # Create lists for first run, to be written out to first sheet
 first_run = [start_url]  # add the base url
+first_titles = []
+first_labels = []
 print("First Run: " + str(first_run))
-first_titles = [start_title]  # add the base title
+first_orgs = [start_org]  # add the base title
+first_titles = [start_title]
 # Use extend function to add all urls and titles found in first run
 first_run.extend(crawl_links(soup))
-first_titles.extend(build_titles(soup))
+first_labels.extend(build_titles(soup))
 # not being used as of 7/3/2014 but may be used later
 # second_run = []
 # second_titles = []
@@ -151,22 +156,35 @@ filename = 'Crawl.xlsx'
 ws = wb.active
 ws.title = 'First run'
 
-ws.cell('A1').value = 'Title'
-ws.cell('B1').value = 'URL'
-max_first = len(first_titles)
+ws.cell('A1').value = 'Title' #we need to find out how to do
+ws.cell('B1').value = 'Label' #tag.text
+ws.cell('C1').value = 'URL'
+ws.cell('D1').value = 'Organization'
+max_first = len(first_orgs)
 p = 0
 for row in ws.range('A2:A%s' % max_first):
     for cell in row:
         cell.value = first_titles[p]
         p += 1
 
+p = 0
+for row in ws.range('A2:A%s' % max_first):
+    for cell in row:
+        cell.value = first_labels[p]
+        p += 1
+
 print("First Run: " + str(first_run))
 i = 0
-for row in ws.range('B2:B%s' % (len(first_run) + 1)):
+for row in ws.range('C2:C%s' % (len(first_run) + 1)):
     for cell in row:
         cell.value = first_run[i]
         i += 1
 
+n = 0
+for row in ws.range('D2:D%s' % max_first):
+    for cell in row:
+        cell.value = first_orgs[n]
+        n += 1
 ws1 = wb.create_sheet()
 ws1.title = 'Second run'
 
