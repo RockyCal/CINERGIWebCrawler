@@ -28,10 +28,10 @@ def crawl_links(soup):
                 urls_found.append(tag['href'])
                 # add to global list of working urls
                 urls.append(tag['href'])
-            # Create list of tags
-            # html_tags.append(tag)
-            # mark as visited
-            # visited.append(tag['href'])
+                # Create list of tags
+                # html_tags.append(tag)
+                # mark as visited
+                # visited.append(tag['href'])
     # build_labels(html_tags)
     return urls_found
 
@@ -77,7 +77,7 @@ def check_link(url):
     return works
 
 def visible(element):
-    if element.parent.name in ['style', 'script', '[document]', 'head', 'title']:
+    if element.parent.name in ['style', 'script', '[document]', 'head', 'title', 'a']:
         return False
     elif re.match('<!--.*-->', str(element)):
         return False
@@ -85,6 +85,7 @@ def visible(element):
 
 
 def find_domains(url):
+    domains_found = set()
     if url not in brokenLinks:
         getreq = requests.get(url)
         reqtext = getreq.text
@@ -94,7 +95,12 @@ def find_domains(url):
                 texts = souper.find_all(text=re.compile(v))
                 visible_texts = filter(visible, texts)
                 for vis in visible_texts:
-                    print(vis)
+                    domains_found.add(k)
+    return domains_found
+                    #if vis.string:
+                    #    print(vis.string)
+                    #else:
+                    #    print(vis)
 
 """
 Name: build_labels()
@@ -113,14 +119,14 @@ def build_title(url):
             if soup.title != None:
                 if soup.title.string != None:
                     title = soup.title.string
-            #findAll('title', limit = 1
+            # findAll('title', limit = 1
             print("Title: " + str(title))
             if title != None:
                 return title
             else:
                 return " "
     else:
-            return " "
+        return " "
 
 def build_labels(soup):
     titles_found = []
@@ -133,7 +139,7 @@ def build_labels(soup):
     # ######################
     # Use this code if passing in tags
     # Building list of working links
-    #for tag in element_tags:
+    # for tag in element_tags:
     #    if tag['href'] not in brokenLinks:
     #        titles.append(tag.text)
     return titles_found
@@ -148,15 +154,17 @@ urls = []
 brokenLinks = []
 # Total titles - the text attribute of tag
 titles = []
-#Domains
+# Domains
 domainsKnown = {'Agriculture/Farming': ["agriculture", "farming"], 'Atmosphere': ["atmosphere"], 'Biology':
     ["biodiversity", "organism", "life science", "biota"],
-    'Climate': ["climate"], 'Ecology': ["ecological", "ecosystem", "habitat", "environment"], 'Geochemistry': ["geochem"],
-    'Geology': ["geology", "geological"], 'GIS': ["geographic information systems"],
-    'Marine Ecology': ["marine ecology", "oceanography"],
-    'Marine Biology': ["marine biology"], 'Marine Geology': ["marine geology"],
-    'Maps/Imagery': ["imaging", "maps"],  'Fisheries': ["estuaries", "fishing"], 'Oceanography': ['ocean', 'sea'],
-    'Spatial': ["spatial"], 'Topography': ["elevation", "mountains"]}
+                'Climate': ["climate"], 'Ecology': ["ecological", "ecosystem", "habitat", "environment"],
+                'Geochemistry': ["geochem"],
+                'Geology': ["geology", "geological"], 'GIS': ["geographic information systems"],
+                'Marine Ecology': ["marine ecology", "oceanography"],
+                'Marine Biology': ["marine biology"], 'Marine Geology': ["marine geology"],
+                'Maps/Imagery': ["imaging", "maps"], 'Fisheries': ["estuaries", "fishing"],
+                'Oceanography': ['ocean', 'sea'],
+                'Spatial': ["spatial"], 'Topography': ["elevation", "mountains"]}
 
 start_url = 'http://www.greenseas.eu/content/standards-and-related-web-information'
 start_label = 'GreenSeas Home'
@@ -165,7 +173,6 @@ start_title = 'Standards and Information'
 #start_url = 'http://cinergi.weebly.com/'
 #start_title = 'CINERGI Test Bed'
 #start_label = 'CINERGI Home'
-
 
 status = check_link(start_url)  # Check functioning of start url
 
@@ -197,9 +204,8 @@ first_titles = []
 # Use extend function to add all urls and titles found in first run
 first_run.extend(crawl_links(soup))
 first_labels.extend(build_labels(soup))
-first_domains = []
-find_domains('http://www.ioos.noaa.gov')
-
+first_domains = find_domains('http://www.ioos.noaa.gov')
+print(first_domains)
 first_orgs.extend(first_labels)
 
 # not being used as of 7/3/2014 but may be used later
@@ -323,4 +329,3 @@ print('Length of urls: ' + str(len(urls)))
 print('titles: {}'.format(titles))
 print('Length of titles: ' + str(len(titles)))
 wb.save(filename)
-
