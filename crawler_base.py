@@ -138,7 +138,7 @@ titles = []
 start_url = 'http://cinergi.weebly.com/'
 start_title = 'CINERGI Test Bed'
 start_label = 'CINERGI Home'
-start_org = 'CINERGI'
+#start_org = 'CINERGI'
 
 status = check_link(start_url)  # Check functioning of start url
 
@@ -165,11 +165,12 @@ first_run = [start_url]  # add the base url
 first_titles = []
 #first_labels = []
 print("First Run: " + str(first_run))
-first_orgs = [start_org]  # add the base title
+first_orgs = []
 first_titles = []
 # Use extend function to add all urls and titles found in first run
 first_run.extend(crawl_links(soup))
 first_labels.extend(build_labels(soup))
+first_orgs.extend(first_labels)
 
 # not being used as of 7/3/2014 but may be used later
 # second_run = []
