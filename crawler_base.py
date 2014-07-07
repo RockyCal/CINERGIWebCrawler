@@ -85,7 +85,8 @@ def visible(element):
 
 
 def find_domains(url):
-    domains_found = set()
+    domains_found = []
+    set_of_domains = set()
     if url not in brokenLinks:
         getreq = requests.get(url)
         reqtext = getreq.text
@@ -95,8 +96,12 @@ def find_domains(url):
                 texts = souper.find_all(text=re.compile(v))
                 visible_texts = filter(visible, texts)
                 for vis in visible_texts:
-                    domains_found.add(k)
-    return domains_found
+                    set_of_domains.add(k)
+        domains_found = list(set_of_domains)
+    if len(domains_found) > 0:
+        return domains_found
+    else:
+        return "None"
                     #if vis.string:
                     #    print(vis.string)
                     #else:
@@ -205,9 +210,8 @@ first_titles = []
 # Use extend function to add all urls and titles found in first run
 first_run.extend(crawl_links(soup))
 first_labels.extend(build_labels(soup))
-first_domains = find_domains('http://www.ioos.noaa.gov')
-print(first_domains)
 first_orgs.extend(first_labels)
+first_domains = [[]]
 
 # not being used as of 7/3/2014 but may be used later
 # second_run = []
@@ -215,7 +219,9 @@ first_orgs.extend(first_labels)
 for each in first_run:
     title = build_title(each)
     first_titles.append(title)
+    first_domains.append(find_domains(each))
 
+print(first_domains)
 print('Creating xlsx file')
 # Create excel file
 wb = Workbook()
@@ -263,6 +269,13 @@ for row in ws.range('D2:D%s' % max_orgs):
     for cell in row:
         cell.value = first_orgs[n]
         n += 1
+
+max_doms = len(first_domains)
+q = 0
+for row in ws.range('E2:E%s' % max_doms):
+    for cell in row:
+        cell.value = ','.join(first_domains[q])
+        q += 1
 ws1 = wb.create_sheet()
 ws1.title = 'Second run'
 
@@ -275,8 +288,11 @@ for each in first_run:
     labelsMade = build_labels(crawlSoup)
     titlesMade = []
     orgsMade = []
+    domains = []
+
     for each in linksFound:
         titlesMade.append(build_title(each))
+        domains.append(find_domains(each))
 
     for each in labelsMade:
         orgsMade.append(each)
@@ -308,18 +324,26 @@ for each in first_run:
         l = 0
         for row in ws1.range('%s%s:%s%s' % ('D', start_row, 'D', last_row)):
             for cell in row:
-                cell.value = orgsMade[l]
+                cell.value = first_orgs[l]
         l += 1
+
+        u = 0
+        for row in ws1.range('%s%s:%s%s' % ('E', start_row, 'E', last_row)):
+            for cell in row:
+                cell.value = ','.join(domains[u])
+        u += 1
 
 # Apply headers (after data so as not to affect formula for skipping rows)
 ws1.cell('A1').value = 'Title'
 ws1.cell('B1').value = 'Label'
 ws1.cell('C1').value = 'URL'
 ws1.cell('D1').value = 'Organization'
+ws1.cell('E1').value = 'Domain(s)'
 ws1['A1'].style = header_style
 ws1['B1'].style = header_style
 ws1['C1'].style = header_style
 ws1['D1'].style = header_style
+ws1['E1'].style = header_style
 
 print('broken links: {}'.format(brokenLinks))
 print('Length of broken links: ' + str(len(brokenLinks)))
