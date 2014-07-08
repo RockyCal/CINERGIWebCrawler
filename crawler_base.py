@@ -126,7 +126,6 @@ def build_title(url):
                 if soup.title.string != None:
                     title = soup.title.string
             # findAll('title', limit = 1
-            print("Title: " + str(title))
             if title != None:
                 return title
             else:
@@ -202,7 +201,6 @@ else:
 
 # Create lists for first run, to be written out to first sheet
 first_run = [start_url]  # add the base url
-first_titles = []
 #first_labels = []
 print("First Run: " + str(first_run))
 first_orgs = []
@@ -240,7 +238,7 @@ ws.cell('D1').value = 'Organization'
 ws['D1'].style = header_style
 ws['E1'].style = header_style
 ws.cell('E1').value = 'Domain(s)'
-max_first = len(first_orgs)
+# max_first = len(first_orgs)
 
 max_first = len(first_titles) + 1
 p = 0
@@ -274,7 +272,7 @@ max_doms = len(first_domains)
 q = 0
 for row in ws.range('E2:E%s' % max_doms):
     for cell in row:
-        cell.value = ','.join(first_domains[q])
+        cell.value = ', '.join(first_domains[q])
         q += 1
 ws1 = wb.create_sheet()
 ws1.title = 'Second run'
@@ -333,7 +331,10 @@ for each in first_run:
         u = 0
         for row in ws1.range('%s%s:%s%s' % ('E', start_row, 'E', last_row)):
             for cell in row:
-                cell.value = ','.join(domains[u])
+                if domains[u] != "None":
+                    cell.value = ', '.join(domains[u])
+                else:
+                    cell.value = str(domains[u])
         u += 1
     index += 1
 
