@@ -106,7 +106,24 @@ def find_domains(url):
                     #    print(vis.string)
                     #else:
                     #    print(vis)
-
+def find_categories(url):
+    categories_found = []
+    set_of_categories = set()
+    if url not in brokenLinks:
+        getreq = requests.get(url)
+        reqtext = getreq.text
+        souper = BeautifulSoup(reqtext)
+        for k in categoriesKnown:
+            texts = souper.find_all(text=re.compile(k))
+            visible_texts = filter(visible, texts)
+            for vis in visible_texts:
+                set_of_categories.add(k)
+        categories_found = list(set_of_categories)
+    if len(categories_found) > 0:
+        #print("Categories found: " + categories_found)
+        return categories_found
+    else:
+        return "None"
 """
 Name: build_labels()
 Params: url - page to get titles from
@@ -171,6 +188,8 @@ domainsKnown = {'Agriculture/Farming': ["agriculture", "farming"], 'Atmosphere':
                 'Oceanography': ['ocean', 'sea'],
                 'Spatial': ["spatial"], 'Topography': ["elevation", "mountains"]}
 
+categoriesKnown = {'Vocabulary', 'Catalog', 'Software', 'Information Model/Standard', 'Data Center', 'Community'}
+
 start_url = 'http://www.greenseas.eu/content/standards-and-related-web-information'
 start_label = 'GreenSeas Home'
 start_title = 'Standards and Information'
@@ -210,6 +229,7 @@ first_run.extend(crawl_links(soup))
 first_labels.extend(build_labels(soup))
 first_orgs.extend(first_labels)
 first_domains = [[]]
+first_categories = []
 
 # not being used as of 7/3/2014 but may be used later
 # second_run = []
@@ -218,6 +238,7 @@ for each in first_run:
     title = build_title(each)
     first_titles.append(title)
     first_domains.append(find_domains(each))
+    first_categories.append(find_categories(each))
 
 print(first_domains)
 print('Creating xlsx file')
@@ -238,7 +259,8 @@ ws.cell('D1').value = 'Organization'
 ws['D1'].style = header_style
 ws['E1'].style = header_style
 ws.cell('E1').value = 'Domain(s)'
-# max_first = len(first_orgs)
+ws.cell('F1').value = 'Category'
+ws['F1'].style = header_style
 
 max_first = len(first_titles) + 1
 p = 0
@@ -274,6 +296,14 @@ for row in ws.range('E2:E%s' % max_doms):
     for cell in row:
         cell.value = ', '.join(first_domains[q])
         q += 1
+
+max_cats = len(first_categories)
+b = 0
+for row in ws.range('F2:F%s' % max_cats):
+    for cell in row:
+        cell.value = ', '.join(first_categories[b])
+        b += 1
+
 ws1 = wb.create_sheet()
 ws1.title = 'Second run'
 
@@ -290,11 +320,12 @@ for each in first_run:
     org = first_orgs[index]
     orgsMade = []
     domains = []
+    categories = []
 
     for each in linksFound:
         titlesMade.append(build_title(each))
         domains.append(find_domains(each))
-
+        categories.append(find_categories(each))
     #for each in labelsMade:
         #orgsMade.append(each)
 
@@ -335,7 +366,16 @@ for each in first_run:
                     cell.value = ', '.join(domains[u])
                 else:
                     cell.value = str(domains[u])
+
+        b = 0
+        for row in ws1.range('%s%s:%s%s' % ('F', start_row, 'F', last_row)):
+            for cell in row:
+                if categories[b] != "None":
+                    cell.value = ', '.join(categories[b])
+                else:
+                    cell.value = str(categories[b])
         u += 1
+        b += 1
     index += 1
 
 # Apply headers (after data so as not to affect formula for skipping rows)
@@ -344,11 +384,13 @@ ws1.cell('B1').value = 'Label'
 ws1.cell('C1').value = 'URL'
 ws1.cell('D1').value = 'Organization'
 ws1.cell('E1').value = 'Domain(s)'
+ws1.cell('F1').value = 'Category'
 ws1['A1'].style = header_style
 ws1['B1'].style = header_style
 ws1['C1'].style = header_style
 ws1['D1'].style = header_style
 ws1['E1'].style = header_style
+ws1['F1'].style = header_style
 
 print('broken links: {}'.format(brokenLinks))
 print('Length of broken links: ' + str(len(brokenLinks)))
