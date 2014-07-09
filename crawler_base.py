@@ -252,6 +252,8 @@ for each in first_run:
     first_resource_types.append(find_resource_types(each))
     first_content_types.append(check_type(each))
 
+urllib.urlopen('ftp://ftp.nbmg.unr.edu/pub/Geothermal/')
+
 print(first_domains)
 print('Creating xlsx file')
 # Create excel file
@@ -309,7 +311,10 @@ q = 0
 first_domains.pop(0)
 for row in ws.range('E2:E%s' % max_doms):
     for cell in row:
-        cell.value = ', '.join(first_domains[q])
+        if first_domains[q] != 'None':
+            cell.value = ', '.join(first_domains[q])
+        else:
+            cell.value = first_domains[q]
         q += 1
 
 max_cats = len(first_resource_types)
