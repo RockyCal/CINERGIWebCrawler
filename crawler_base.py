@@ -106,7 +106,32 @@ def find_domains(url):
                     #    print(vis.string)
                     #else:
                     #    print(vis)
+def find_resource_types(url):
+    resos_found = []
+    set_of_resources = set()
+    if url not in brokenLinks:
+        getreq2 = requests.get(url)
+        reqtext2 = getreq2.text
+        souper2 = BeautifulSoup(reqtext2)
+        for k in resourceTypesKnown:
+            for v in resourceTypesKnown.get(k):
+                texts = souper2.find_all(text=re.compile(v))
+                visible_texts = filter(visible, texts)
+                for vis in visible_texts:
+                    set_of_resources.add(k)
+        resos_found = list(set_of_resources)
+    if len(resos_found) > 0:
+        #print(str(resos_found))
+        return resos_found
+    else:
+        return "None"
 
+def check_type(url):
+    urlFront = url[:url.index('p')+1]
+    if(urlFront == "http"):
+        return "HTTP"
+    elif urlFront == "ftp":
+        return "FTP"
 """
 Name: build_labels()
 Params: url - page to get titles from
@@ -171,13 +196,17 @@ domainsKnown = {'Agriculture/Farming': ["agriculture", "farming"], 'Atmosphere':
                 'Oceanography': ['ocean', 'sea'],
                 'Spatial': ["spatial"], 'Topography': ["elevation", "mountains"]}
 
-start_url = 'http://www.greenseas.eu/content/standards-and-related-web-information'
-start_label = 'GreenSeas Home'
-start_title = 'Standards and Information'
+resourceTypesKnown = {'Vocabulary': ["vocab", "vocabulary", "list of terms"], 'Catalog': ["catalog"], 'Software':
+    ["software", "code", "software development"], 'Information Model/Standard': ["information model", "standard"],
+                   'Data Center': ["data center", "dataset", "data set", "data base"], 'Community': ["community"]}
 
-#start_url = 'http://cinergi.weebly.com/'
-#start_title = 'CINERGI Test Bed'
-#start_label = 'CINERGI Home'
+#start_url = 'http://www.greenseas.eu/content/standards-and-related-web-information'
+#start_label = 'GreenSeas Home'
+#start_title = 'Standards and Information'
+
+start_url = 'http://cinergi.weebly.com/'
+start_title = 'CINERGI Test Bed'
+start_label = 'CINERGI Home'
 
 status = check_link(start_url)  # Check functioning of start url
 
@@ -210,6 +239,8 @@ first_run.extend(crawl_links(soup))
 first_labels.extend(build_labels(soup))
 first_orgs.extend(first_labels)
 first_domains = [[]]
+first_resource_types = []
+first_content_types = []
 
 # not being used as of 7/3/2014 but may be used later
 # second_run = []
@@ -218,6 +249,10 @@ for each in first_run:
     title = build_title(each)
     first_titles.append(title)
     first_domains.append(find_domains(each))
+    first_resource_types.append(find_resource_types(each))
+    first_content_types.append(check_type(each))
+
+urllib.urlopen('ftp://ftp.nbmg.unr.edu/pub/Geothermal/')
 
 print(first_domains)
 print('Creating xlsx file')
@@ -238,7 +273,10 @@ ws.cell('D1').value = 'Organization'
 ws['D1'].style = header_style
 ws['E1'].style = header_style
 ws.cell('E1').value = 'Domain(s)'
-# max_first = len(first_orgs)
+ws.cell('F1').value = 'Resource Type'
+ws['F1'].style = header_style
+ws.cell('G1').value = "Content Type/Format"
+ws['G1'].style = header_style
 
 max_first = len(first_titles) + 1
 p = 0
@@ -270,10 +308,29 @@ for row in ws.range('D2:D%s' % max_orgs):
 
 max_doms = len(first_domains)
 q = 0
+first_domains.pop(0)
 for row in ws.range('E2:E%s' % max_doms):
     for cell in row:
-        cell.value = ', '.join(first_domains[q])
+        if first_domains[q] != 'None':
+            cell.value = ', '.join(first_domains[q])
+        else:
+            cell.value = first_domains[q]
         q += 1
+
+max_cats = len(first_resource_types)
+b = 0
+for row in ws.range('F2:F%s' % max_cats):
+    for cell in row:
+        cell.value = ', '.join(first_resource_types[b])
+        b += 1
+
+max_cons = len(first_content_types)
+s = 0
+for row in ws.range('G2:G%s' % max_cons):
+    for cell in row:
+        cell.value = first_content_types[s]
+        s += 1
+
 ws1 = wb.create_sheet()
 ws1.title = 'Second run'
 
@@ -290,11 +347,14 @@ for each in first_run:
     org = first_orgs[index]
     orgsMade = []
     domains = []
+    reTypes = []
+    conTypes = []
 
     for each in linksFound:
         titlesMade.append(build_title(each))
         domains.append(find_domains(each))
-
+        reTypes.append(find_resource_types(each))
+        conTypes.append(check_type(each))
     #for each in labelsMade:
         #orgsMade.append(each)
 
@@ -335,7 +395,25 @@ for each in first_run:
                     cell.value = ', '.join(domains[u])
                 else:
                     cell.value = str(domains[u])
+
+        b = 0
+        for row in ws1.range('%s%s:%s%s' % ('F', start_row, 'F', last_row)):
+            for cell in row:
+                if reTypes[b] != "None":
+                    cell.value = ', '.join(reTypes[b])
+                else:
+                    cell.value = str(reTypes[b])
+
+        s = 0
+        for row in ws1.range('%s%s:%s%s' % ('G', start_row, 'G', last_row)):
+            for cell in row:
+                if conTypes[s] != "None":
+                    cell.value = conTypes[s]
+                else:
+                    cell.value = str(conTypes[s])
+        s += 1
         u += 1
+        b += 1
     index += 1
 
 # Apply headers (after data so as not to affect formula for skipping rows)
@@ -344,11 +422,15 @@ ws1.cell('B1').value = 'Label'
 ws1.cell('C1').value = 'URL'
 ws1.cell('D1').value = 'Organization'
 ws1.cell('E1').value = 'Domain(s)'
+ws1.cell('F1').value = 'Resource Type'
+ws1.cell('G1').value = 'Content Type/Format'
 ws1['A1'].style = header_style
 ws1['B1'].style = header_style
 ws1['C1'].style = header_style
 ws1['D1'].style = header_style
 ws1['E1'].style = header_style
+ws1['F1'].style = header_style
+ws1['G1'].style = header_style
 
 print('broken links: {}'.format(brokenLinks))
 print('Length of broken links: ' + str(len(brokenLinks)))
