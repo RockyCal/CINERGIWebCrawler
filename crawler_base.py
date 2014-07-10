@@ -44,6 +44,7 @@ Returns: 1 if link works w/o error
          Exits if link is broken
 """
 
+
 def check_link(url):
     works = 1
     try:
@@ -76,6 +77,7 @@ def check_link(url):
             brokenLinks.append(url)
     return works
 
+
 def visible(element):
     if element.parent.name in ['style', 'script', '[document]', 'head', 'title', 'a']:
         return False
@@ -91,21 +93,23 @@ def find_domains(url):
         getreq = requests.get(url)
         reqtext = getreq.text
         souper = BeautifulSoup(reqtext)
-        for k in domainsKnown:
-            for v in domainsKnown.get(k):
+        for key in domainsKnown:
+            for v in domainsKnown.get(key):
                 texts = souper.find_all(text=re.compile(v))
                 visible_texts = filter(visible, texts)
                 for vis in visible_texts:
-                    set_of_domains.add(k)
+                    set_of_domains.add(key)
         domains_found = list(set_of_domains)
     if len(domains_found) > 0:
         return domains_found
     else:
         return "None"
-                    #if vis.string:
-                    #    print(vis.string)
-                    #else:
-                    #    print(vis)
+        # if vis.string:
+        #    print(vis.string)
+        #else:
+        #    print(vis)
+
+
 def find_resource_types(url):
     resos_found = []
     set_of_resources = set()
@@ -121,23 +125,27 @@ def find_resource_types(url):
                     set_of_resources.add(k)
         resos_found = list(set_of_resources)
     if len(resos_found) > 0:
-        #print(str(resos_found))
+        # print(str(resos_found))
         return resos_found
     else:
         return "None"
 
+
 def check_type(url):
-    urlFront = url[:url.index('p')+1]
-    if(urlFront == "http"):
+    urlFront = url[:url.index('p') + 1]
+    if urlFront == "http":
         return "HTTP"
     elif urlFront == "ftp":
         return "FTP"
+
+
 """
 Name: build_labels()
 Params: url - page to get titles from
 Purpose: Extract the title of the pages these links lead to
 Returns: List of titles
 """
+
 
 def build_title(url):
     status = check_link(url)
@@ -147,8 +155,8 @@ def build_title(url):
         soup = BeautifulSoup(html)
         title = None
         if url not in brokenLinks:
-            if soup.title != None:
-                if soup.title.string != None:
+            if soup.title is not None:
+                if soup.title.string is not None:
                     title = soup.title.string
             # findAll('title', limit = 1
             if title != None:
@@ -157,6 +165,7 @@ def build_title(url):
                 return " "
     else:
         return " "
+
 
 def build_labels(soup):
     titles_found = []
@@ -170,7 +179,7 @@ def build_labels(soup):
     # Use this code if passing in tags
     # Building list of working links
     # for tag in element_tags:
-    #    if tag['href'] not in brokenLinks:
+    # if tag['href'] not in brokenLinks:
     #        titles.append(tag.text)
     return titles_found
 
@@ -198,9 +207,9 @@ domainsKnown = {'Agriculture/Farming': ["agriculture", "farming"], 'Atmosphere':
 
 resourceTypesKnown = {'Vocabulary': ["vocab", "vocabulary", "list of terms"], 'Catalog': ["catalog"], 'Software':
     ["software", "code", "software development"], 'Information Model/Standard': ["information model", "standard"],
-                   'Data Center': ["data center", "dataset", "data set", "data base"], 'Community': ["community"]}
+                      'Data Center': ["data center", "dataset", "data set", "data base"], 'Community': ["community"]}
 
-#start_url = 'http://www.greenseas.eu/content/standards-and-related-web-information'
+# start_url = 'http://www.greenseas.eu/content/standards-and-related-web-information'
 #start_label = 'GreenSeas Home'
 #start_title = 'Standards and Information'
 
@@ -252,8 +261,6 @@ for each in first_run:
     first_resource_types.append(find_resource_types(each))
     first_content_types.append(check_type(each))
 
-urllib.urlopen('ftp://ftp.nbmg.unr.edu/pub/Geothermal/')
-
 print(first_domains)
 print('Creating xlsx file')
 # Create excel file
@@ -263,9 +270,9 @@ ws = wb.active
 ws.title = 'First run'
 
 header_style = Style(font=Font(bold=True))
-ws.cell('A1').value = 'Title' #we need to find out how to do
+ws.cell('A1').value = 'Title'  #we need to find out how to do
 ws['A1'].style = header_style
-ws.cell('B1').value = 'Label' #tag.text
+ws.cell('B1').value = 'Label'  #tag.text
 ws['B1'].style = header_style
 ws.cell('C1').value = 'URL'
 ws['C1'].style = header_style
@@ -280,7 +287,7 @@ ws['G1'].style = header_style
 
 max_first = len(first_titles) + 1
 p = 0
-for row in ws.range('A2:A%s' % max_first): #4
+for row in ws.range('A2:A%s' % max_first):  #4
     for cell in row:
         cell.value = first_titles[p]
         p += 1
@@ -336,7 +343,7 @@ ws1.title = 'Second run'
 
 first_run.pop(0)  # take off first in first_run (the start url)
 first_orgs.pop(0)
-                  # We don't want GreenSeas to be in the second layer
+# We don't want GreenSeas to be in the second layer
 index = 0
 for each in first_run:
     hText = (requests.get(each)).text
@@ -355,7 +362,7 @@ for each in first_run:
         domains.append(find_domains(each))
         reTypes.append(find_resource_types(each))
         conTypes.append(check_type(each))
-    #for each in labelsMade:
+        #for each in labelsMade:
         #orgsMade.append(each)
 
     # Place the source link above the list of links found
