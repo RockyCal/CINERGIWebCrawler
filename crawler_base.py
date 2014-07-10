@@ -223,7 +223,7 @@ print(first_domains)
 print('Creating xlsx file')
 # Create excel file
 wb = Workbook()
-filename = 'Crawl.xlsx'
+filename = 'NicksCrawl.xlsx'
 ws = wb.active
 ws.title = 'First run'
 
