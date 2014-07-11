@@ -4,6 +4,7 @@ import re
 from openpyxl import Workbook, cell
 from openpyxl.styles import Style, Font
 import tldextract
+from openpyxl.cell import coordinate_from_string
 
 # Http constant
 HTTP = 'http://'
@@ -80,7 +81,7 @@ def visible(element):
 def find_domains(url):
     domains_found = []
     set_of_domains = set()
-    print(url)
+    # print(url)
     if url not in brokenLinks:
         getreq = requests.get(url)
         reqtext = getreq.text
@@ -130,7 +131,7 @@ def find_suffix(url):
     ext = tldextract.extract(url)
     #print(ext)
     extSuff = ext.suffix
-    print(extSuff)
+    # print(extSuff)
     #for key in suffixesKnown:
      #       for v in suffixesKnown.get(key):
       #          if v in extSuff:
@@ -279,7 +280,7 @@ else:
 # Create lists for first run, to be written out to first sheet
 first_run = [start_url]  # add the base url
 #first_labels = []
-print("First Run: " + str(first_run))
+# print("First Run: " + str(first_run))
 first_orgs = []
 first_titles = []
 # Use extend function to add all urls and titles found in first run
@@ -292,26 +293,93 @@ first_content_types = []
 first_tlds = []
 first_country_codes = []
 
-# not being used as of 7/3/2014 but may be used later
-# second_run = []
-# second_titles = []
-for each in first_run:
-    title = build_title(each)
-    first_titles.append(title)
-    first_domains.append(find_domains(each))
-    first_resource_types.append(find_resource_types(each))
-    first_content_types.append(check_type(each))
-    first_tlds.append(find_suffix(each))
-    print("TLD: " + str(first_tlds))
-    first_country_codes.append(find_country_code(each))
-
-print(first_domains)
 print('Creating xlsx file')
 # Create excel file
 wb = Workbook()
 filename = 'Crawl.xlsx'
 ws = wb.active
 ws.title = 'First run'
+ws1 = wb.create_sheet()
+ws1.title = 'Second run'
+
+# not being used as of 7/3/2014 but may be used later
+# second_run = []
+# second_titles = []
+start_row = ws.get_highest_row() # 2
+rownum = 2
+index = 0
+for each in first_run:
+    title = build_title(each)
+    ws['A%s'%(rownum)].value = title
+    ws['C%s'%(rownum)].value = each
+    #first_titles.append(title)
+    if find_domains(each) is not 'None':
+        ws['E%s'%(rownum)].value = ','.join(find_domains(each))
+    else:
+        ws['E%s'%(rownum)].value = 'None'
+    if find_resource_types(each) is not 'None':
+        ws['F%s'%(rownum)].value = ','.join(find_resource_types(each))
+    else:
+        ws['F%s'%(rownum)].value = 'None'
+    # first_resource_types.append(find_resource_types(each))
+    ws['G%s'%(rownum)].value = check_type(each)
+    #first_content_types.append(check_type(each))
+    ws['H%s'%(rownum)].value = find_suffix(each)
+    # first_tlds.append(find_suffix(each))
+    ws['I%s'%(rownum)].value = find_country_code(each)
+    # first_country_codes.append(find_country_code(each))
+
+    hText = (requests.get(each)).text
+    crawlSoup = BeautifulSoup(hText)
+    linksFound = crawl_links(crawlSoup)  # links found on a page
+    labelsMade = build_labels(crawlSoup)
+    titlesMade = []
+    org = first_orgs[index]
+    orgsMade = []
+    domains = []
+    reTypes = []
+    conTypes = []
+    suffs = []
+    cods = []
+
+    row = 2
+    for each in linksFound:
+        title = build_title(each)
+        ws1['A%s'%(row)].value = title
+        ws1['C%s'%(row)].value = each
+        #first_titles.append(title)
+        if find_domains(each) is not 'None':
+            ws1['E%s'%(row)].value = ', '.join(find_domains(each))
+        else:
+            ws1['E%s'%(row)].value = 'None'
+        if find_resource_types(each) is not 'None':
+            ws1['F%s'%(row)].value = ', '.join(find_resource_types(each))
+        else:
+            ws1['F%s'%(row)].value = 'None'
+        # first_resource_types.append(find_resource_types(each))
+        ws1['G%s'%(row)].value = check_type(each)
+        #first_content_types.append(check_type(each))
+        ws1['H%s'%(row)].value = find_suffix(each)
+        # first_tlds.append(find_suffix(each))
+        ws1['I%s'%(row)].value = find_country_code(each)
+        # first_country_codes.append(find_country_code(each))
+        row += 1
+
+    if len(linksFound) > 0:
+        start_row = ws1.get_highest_row() + 1
+        last_row = (start_row + len(linksFound)) - 1
+
+        k = 0
+        for row in ws1.range('%s%s:%s%s' % ('B', start_row, 'B', last_row)):
+            for cell in row:
+                cell.value = labelsMade[k]
+                k += 1
+
+        for row in ws1.range('%s%s:%s%s' % ('D', start_row, 'D', last_row)):
+            for cell in row:
+                cell.value = first_orgs[index]
+    index += 1
+    rownum += 1
 
 header_style = Style(font=Font(bold=True))
 ws.cell('A1').value = 'Title'  # we need to find out how to do
@@ -333,12 +401,6 @@ ws['H1'].style = header_style
 ws['I1'].value = "Country"
 ws['I1'].style = header_style
 
-max_first = len(first_titles) + 1
-p = 0
-for row in ws.range('A2:A%s' % max_first):  # 4
-    for cell in row:
-        cell.value = first_titles[p]
-        p += 1
 
 max_labels = len(first_labels)
 p = 0
@@ -347,168 +409,12 @@ for row in ws.range('B2:B%s' % max_labels):
         cell.value = first_labels[p]
         p += 1
 
-print("First Run: " + str(first_run))
-i = 0
-for row in ws.range('C2:C%s' % (len(first_run) + 1)):
-    for cell in row:
-        cell.value = first_run[i]
-        i += 1
-
 max_orgs = len(first_orgs)
 n = 0
 for row in ws.range('D2:D%s' % max_orgs):
     for cell in row:
         cell.value = first_orgs[n]
         n += 1
-
-max_doms = len(first_domains)
-q = 0
-first_domains.pop(0)
-for row in ws.range('E2:E%s' % max_doms):
-    for cell in row:
-        if first_domains[q] != 'None':
-            cell.value = ', '.join(first_domains[q])
-        else:
-            cell.value = first_domains[q]
-        q += 1
-
-max_cats = len(first_resource_types)
-b = 0
-for row in ws.range('F2:F%s' % max_cats):
-    for cell in row:
-        if first_resource_types[b] is not 'None':
-            cell.value = ', '.join(first_resource_types[b])
-        else:
-            cell.value = str(first_resource_types[b])
-        b += 1
-
-max_cons = len(first_content_types)
-s = 0
-for row in ws.range('G2:G%s' % max_cons):
-    for cell in row:
-        cell.value = first_content_types[s]
-        s += 1
-
-max_tlds = len(first_tlds)
-v = 0
-for row in ws.range('H2:H%s' % max_tlds):
-    for cell in row:
-        cell.value = first_tlds[v]
-        v += 1
-
-max_cods = len(first_country_codes)
-h = 0
-for row in ws.range('I2:I%s' % max_cods):
-    for cell in row:
-        cell.value = first_country_codes[h]
-        h += 1
-
-ws1 = wb.create_sheet()
-ws1.title = 'Second run'
-
-first_run.pop(0)  # take off first in first_run (the start url)
-first_orgs.pop(0)
-# We don't want GreenSeas to be in the second layer
-index = 0
-for each in first_run:
-    hText = (requests.get(each)).text
-    crawlSoup = BeautifulSoup(hText)
-    linksFound = crawl_links(crawlSoup)  # links found on a page
-    labelsMade = build_labels(crawlSoup)
-    titlesMade = []
-    org = first_orgs[index]
-    orgsMade = []
-    domains = []
-    reTypes = []
-    conTypes = []
-    suffs = []
-    cods = []
-
-    for each in linksFound:
-        titlesMade.append(build_title(each))
-        domains.append(find_domains(each))
-        reTypes.append(find_resource_types(each))
-        conTypes.append(check_type(each))
-        suffs.append(find_suffix(each))
-        cods.append(find_country_code(each))
-        #for each in labelsMade:
-        #orgsMade.append(each)
-
-    # Place the source link above the list of links found
-    # source_row = ws1.get_highest_row() + 2
-    # ws1.cell('%s%s' % ('B', source_row)).value = each
-    # ws1.cell('%s%s' % ('C', source_row)).value = 'source link'
-    # ws1['%s%s'%('C', source_row)].style = header_style
-
-    if len(linksFound) > 0:
-        start_row = ws1.get_highest_row() + 1
-        last_row = (start_row + len(linksFound)) - 1
-        t = 0
-        for row in ws1.range('%s%s:%s%s' % ('A', start_row, 'A', last_row)):
-            for cell in row:
-                cell.value = titlesMade[t]
-                t += 1
-        k = 0
-        for row in ws1.range('%s%s:%s%s' % ('B', start_row, 'B', last_row)):
-            for cell in row:
-                cell.value = labelsMade[k]
-                k += 1
-        j = 0
-        for row in ws1.range('%s%s:%s%s' % ('C', start_row, 'C', last_row)):
-            for cell in row:
-                cell.value = linksFound[j]
-                j += 1
-
-        l = 0
-        for row in ws1.range('%s%s:%s%s' % ('D', start_row, 'D', last_row)):
-            for cell in row:
-                cell.value = first_orgs[index]
-
-        u = 0
-        for row in ws1.range('%s%s:%s%s' % ('E', start_row, 'E', last_row)):
-            for cell in row:
-                if domains[u] != "None":
-                    cell.value = ', '.join(domains[u])
-                else:
-                    cell.value = str(domains[u])
-
-        b = 0
-        for row in ws1.range('%s%s:%s%s' % ('F', start_row, 'F', last_row)):
-            for cell in row:
-                if reTypes[b] != "None":
-                    cell.value = ', '.join(reTypes[b])
-                else:
-                    cell.value = str(reTypes[b])
-
-        s = 0
-        for row in ws1.range('%s%s:%s%s' % ('G', start_row, 'G', last_row)):
-            for cell in row:
-                if conTypes[s] != "None":
-                    cell.value = conTypes[s]
-                else:
-                    cell.value = str(conTypes[s])
-        d = 0
-        for row in ws1.range('%s%s:%s%s' % ('H', start_row, 'H', last_row)):
-            for cell in row:
-                if suffs[d] != "None":
-                    cell.value = suffs[d]
-                else:
-                    cell.value = str(suffs[d])
-            d += 1
-
-        h = 0
-        for row in ws1.range('%s%s:%s%s' % ('I', start_row, 'I', last_row)):
-            for cell in row:
-                if cods[h] != "None":
-                    cell.value = cods[h]
-                else:
-                    cell.value = str(cods[h])
-            h += 1
-
-        s += 1
-        u += 1
-        b += 1
-    index += 1
 
 # Apply headers (after data so as not to affect formula for skipping rows)
 ws1.cell('A1').value = 'Title'
