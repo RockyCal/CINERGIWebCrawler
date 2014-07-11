@@ -7,15 +7,9 @@ from openpyxl.styles import Style, Font
 # Http constant
 HTTP = 'http://'
 
-# Make url a global variable if want to go on
-
 def crawl_links(soup):
     # Html tags to investigate
     urls_found = []
-    # html_tags = []
-    # Add links to url stack
-    # Check functioning
-    # Add tags
     for tag in soup.find_all('a', href=True):
         if HTTP in tag['href'] and tag['href'] not in visited:
             visited.append(tag['href'])
@@ -27,10 +21,6 @@ def crawl_links(soup):
                 urls_found.append(tag['href'])
                 # add to global list of working urls
                 urls.append(tag['href'])
-                # Create list of tags
-                # html_tags.append(tag)
-                # mark as visited
-                # visited.append(tag['href'])
     # build_labels(html_tags)
     return urls_found
 
@@ -211,13 +201,13 @@ resourceTypesKnown = {'Vocabulary': ["vocab", "vocabulary", "list of terms"], 'C
     ["software", "code", "software development"], 'Information Model/Standard': ["information model", "standard"],
                       'Data Center': ["data center", "dataset", "data set", "data base"], 'Community': ["community"]}
 
-# start_url = 'http://www.greenseas.eu/content/standards-and-related-web-information'
-# start_label = 'GreenSeas Home'
-#start_title = 'Standards and Information'
+start_url = 'http://www.greenseas.eu/content/standards-and-related-web-information'
+start_label = 'GreenSeas Home'
+start_title = 'Standards and Information'
 
-start_url = 'http://cinergi.weebly.com/'
-start_title = 'CINERGI Test Bed'
-start_label = 'CINERGI Home'
+#start_url = 'http://cinergi.weebly.com/'
+#start_title = 'CINERGI Test Bed'
+#start_label = 'CINERGI Home'
 
 status = check_link(start_url)  # Check functioning of start url
 
@@ -272,9 +262,9 @@ ws = wb.active
 ws.title = 'First run'
 
 header_style = Style(font=Font(bold=True))
-ws.cell('A1').value = 'Title'  #we need to find out how to do
+ws.cell('A1').value = 'Title'  # we need to find out how to do
 ws['A1'].style = header_style
-ws.cell('B1').value = 'Label'  #tag.text
+ws.cell('B1').value = 'Label'  # tag.text
 ws['B1'].style = header_style
 ws.cell('C1').value = 'URL'
 ws['C1'].style = header_style
@@ -289,7 +279,7 @@ ws['G1'].style = header_style
 
 max_first = len(first_titles) + 1
 p = 0
-for row in ws.range('A2:A%s' % max_first):  #4
+for row in ws.range('A2:A%s' % max_first):  # 4
     for cell in row:
         cell.value = first_titles[p]
         p += 1
