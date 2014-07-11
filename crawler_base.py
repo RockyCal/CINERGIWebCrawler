@@ -3,6 +3,7 @@ import requests
 import re
 from openpyxl import Workbook, cell
 from openpyxl.styles import Style, Font
+import tldextract
 
 # Http constant
 HTTP = 'http://'
@@ -24,6 +25,7 @@ def crawl_links(soup):
     # build_labels(html_tags)
     return urls_found
 
+    #returns co.uk for forums.bbc.co.uk
 
 """
 Name: check_link()
@@ -123,6 +125,33 @@ def find_resource_types(url):
     else:
         return "None"
 
+def find_suffix(url):
+    ext = tldextract.extract(url)
+    #print(ext)
+    extSuff = ext.suffix
+    #for key in suffixesKnown:
+     #       for v in suffixesKnown.get(key):
+      #          if v in extSuff:
+       #             return key
+    if ".com" in extSuff:
+        return "Company"
+    elif ".edu" in extSuff:
+        return "Education"
+    elif ".org" in extSuff:
+        return "Non-profit Org"
+    elif ".gov" in extSuff:
+        return "Government"
+    elif ".net" in extSuff:
+        return "Internet service provider/Other network"
+
+def find_country_code(url):
+    ext = tldextract.extract(url)
+    #print(ext)
+    extSuff = ext.suffix
+    for key in countryCodesKnown:
+            for v in countryCodesKnown.get(key):
+                if v in extSuff:
+                    return key
 
 def check_type(url):
     url_front = url[:url.index('p') + 1]
@@ -214,13 +243,22 @@ resourceTypesKnown = {'Activity': ["Conference"],
                       'Software': ["software", "code", "programming"],
                       'Forum': ["forum"], 'Organization': ["organization"]}
 
-start_url = 'http://www.greenseas.eu/content/standards-and-related-web-information'
-start_label = 'GreenSeas Home'
-start_title = 'Standards and Information'
+suffixesKnown = {'Company': ".com",
+                 'Non-profit Org': ".org",
+                 'Educational site': ".edu",
+                 'Government': ".gov",
+                 'Internet service provider/Other network': ".net"}
 
-#start_url = 'http://cinergi.weebly.com/'
-#start_title = 'CINERGI Test Bed'
-#start_label = 'CINERGI Home'
+countryCodesKnown = {'UK': "uk",
+                     'European Union': "eu"}
+
+#start_url = 'http://www.greenseas.eu/content/standards-and-related-web-information'
+#start_label = 'GreenSeas Home'
+#start_title = 'Standards and Information'
+
+start_url = 'http://cinergi.weebly.com/'
+start_title = 'CINERGI Test Bed'
+start_label = 'CINERGI Home'
 
 status = check_link(start_url)  # Check functioning of start url
 
@@ -255,6 +293,8 @@ first_orgs.extend(first_labels)
 first_domains = [[]]
 first_resource_types = []
 first_content_types = []
+first_tlds = []
+first_country_codes = []
 
 # not being used as of 7/3/2014 but may be used later
 # second_run = []
@@ -265,6 +305,8 @@ for each in first_run:
     first_domains.append(find_domains(each))
     first_resource_types.append(find_resource_types(each))
     first_content_types.append(check_type(each))
+    first_tlds.append(find_suffix(each))
+    first_country_codes.append(find_country_code(each))
 
 print(first_domains)
 print('Creating xlsx file')
@@ -289,6 +331,10 @@ ws.cell('F1').value = 'Resource Type'
 ws['F1'].style = header_style
 ws.cell('G1').value = "Content Type/Format"
 ws['G1'].style = header_style
+ws['H1'].value = "TLD"
+ws['H1'].style = header_style
+ws['I1'].value = "Country"
+ws['I1'].style = header_style
 
 max_first = len(first_titles) + 1
 p = 0
@@ -346,6 +392,20 @@ for row in ws.range('G2:G%s' % max_cons):
         cell.value = first_content_types[s]
         s += 1
 
+max_tlds = len(first_tlds)
+v = 0
+for row in ws.range('H2:H%s' % max_tlds):
+    for cell in row:
+        cell.value = first_tlds[v]
+        v += 1
+
+max_cods = len(first_country_codes)
+h = 0
+for row in ws.range('I2:I%s' % max_cods):
+    for cell in row:
+        cell.value = first_country_codes[h]
+        h += 1
+
 ws1 = wb.create_sheet()
 ws1.title = 'Second run'
 
@@ -364,12 +424,16 @@ for each in first_run:
     domains = []
     reTypes = []
     conTypes = []
+    suffs = []
+    cods = []
 
     for each in linksFound:
         titlesMade.append(build_title(each))
         domains.append(find_domains(each))
         reTypes.append(find_resource_types(each))
         conTypes.append(check_type(each))
+        suffs.append(find_suffix(each))
+        cods.append(find_country_code(each))
         #for each in labelsMade:
         #orgsMade.append(each)
 
@@ -426,6 +490,24 @@ for each in first_run:
                     cell.value = conTypes[s]
                 else:
                     cell.value = str(conTypes[s])
+        d = 0
+        for row in ws1.range('%s%s:%s%s' % ('H', start_row, 'H', last_row)):
+            for cell in row:
+                if suffs[d] != "None":
+                    cell.value = suffs[d]
+                else:
+                    cell.value = str(suffs[d])
+            d += 1
+
+        h = 0
+        for row in ws1.range('%s%s:%s%s' % ('I', start_row, 'I', last_row)):
+            for cell in row:
+                if cods[h] != "None":
+                    cell.value = cods[h]
+                else:
+                    cell.value = str(cods[h])
+            h += 1
+
         s += 1
         u += 1
         b += 1
@@ -439,6 +521,8 @@ ws1.cell('D1').value = 'Organization'
 ws1.cell('E1').value = 'Domain(s)'
 ws1.cell('F1').value = 'Resource Type'
 ws1.cell('G1').value = 'Content Type/Format'
+ws1.cell('H1').value = "TLD"
+ws1.cell('I1').value = "Country"
 ws1['A1'].style = header_style
 ws1['B1'].style = header_style
 ws1['C1'].style = header_style
@@ -446,6 +530,8 @@ ws1['D1'].style = header_style
 ws1['E1'].style = header_style
 ws1['F1'].style = header_style
 ws1['G1'].style = header_style
+ws1['H1'].style = header_style
+ws1['I1'].style = header_style
 
 print('broken links: {}'.format(brokenLinks))
 print('Length of broken links: ' + str(len(brokenLinks)))
