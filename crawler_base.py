@@ -355,29 +355,30 @@ for each in first_run:
         g = 0
         for row in ws1.range('%s%s:%s%s' % ('D', start_row, 'D', last_row)):
             for cell in row:
-                cell.value = first_orgs[index]
+                cell.value = labelsMade[g]
                 g += 1
 
-    row = 2
-    for each in linksFound:
-        title = build_title(each)
+    # change to get highest row
+    row = ws1.get_highest_row() + 1
+    for each2 in linksFound:
+        title = build_title(each2)
         ws1['A%s'%(row)].value = title
-        ws1['C%s'%(row)].value = each
+        ws1['C%s'%(row)].value = each2
         #first_titles.append(title)
-        if find_domains(each) is not 'None':
-            ws1['E%s'%(row)].value = ', '.join(find_domains(each))
+        if find_domains(each2) is not 'None':
+            ws1['E%s'%(row)].value = ', '.join(find_domains(each2))
         else:
             ws1['E%s'%(row)].value = 'None'
-        if find_resource_types(each) is not 'None':
-            ws1['F%s'%(row)].value = ', '.join(find_resource_types(each))
+        if find_resource_types(each2) is not 'None':
+            ws1['F%s'%(row)].value = ', '.join(find_resource_types(each2))
         else:
             ws1['F%s'%(row)].value = 'None'
         # first_resource_types.append(find_resource_types(each))
-        ws1['G%s'%(row)].value = check_type(each)
+        ws1['G%s'%(row)].value = check_type(each2)
         #first_content_types.append(check_type(each))
-        ws1['H%s'%(row)].value = find_suffix(each)
+        ws1['H%s'%(row)].value = find_suffix(each2)
         # first_tlds.append(find_suffix(each))
-        ws1['I%s'%(row)].value = find_country_code(each)
+        ws1['I%s'%(row)].value = find_country_code(each2)
         # first_country_codes.append(find_country_code(each))
         row += 1
 
