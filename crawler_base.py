@@ -248,13 +248,13 @@ resourceTypesKnown = {'Activity': ["Conference"],
                       'Software': ["software", "code", "programming"],
                       'Forum': ["forum"], 'Organization': ["organization"]}
 
-#start_url = 'http://www.greenseas.eu/content/standards-and-related-web-information'
-#start_label = 'GreenSeas Home'
-#start_title = 'Standards and Information'
+start_url = 'http://www.greenseas.eu/content/standards-and-related-web-information'
+start_label = 'GreenSeas Home'
+start_title = 'Standards and Information'
 
-start_url = 'http://cinergi.weebly.com/'
-start_title = 'CINERGI Test Bed'
-start_label = 'CINERGI Home'
+#start_url = 'http://cinergi.weebly.com/'
+#start_title = 'CINERGI Test Bed'
+#start_label = 'CINERGI Home'
 
 status = check_link(start_url)  # Check functioning of start url
 
