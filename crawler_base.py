@@ -342,6 +342,22 @@ for each in first_run:
     suffs = []
     cods = []
 
+    if len(linksFound) > 0:
+        start_row = ws1.get_highest_row() + 1
+        last_row = (start_row + len(linksFound)) - 1
+
+        k = 0
+        for row in ws1.range('%s%s:%s%s' % ('B', start_row, 'B', last_row)):
+            for cell in row:
+                cell.value = labelsMade[k]
+                k += 1
+
+        g = 0
+        for row in ws1.range('%s%s:%s%s' % ('D', start_row, 'D', last_row)):
+            for cell in row:
+                cell.value = first_orgs[index]
+                g += 1
+
     row = 2
     for each in linksFound:
         title = build_title(each)
@@ -365,20 +381,7 @@ for each in first_run:
         # first_country_codes.append(find_country_code(each))
         row += 1
 
-    if len(linksFound) > 0:
-        start_row = ws1.get_highest_row() + 1
-        last_row = (start_row + len(linksFound)) - 1
-
-        k = 0
-        for row in ws1.range('%s%s:%s%s' % ('B', start_row, 'B', last_row)):
-            for cell in row:
-                cell.value = labelsMade[k]
-                k += 1
-
-        for row in ws1.range('%s%s:%s%s' % ('D', start_row, 'D', last_row)):
-            for cell in row:
-                cell.value = first_orgs[index]
-    index += 1
+    #index += 1
     rownum += 1
 
 header_style = Style(font=Font(bold=True))
