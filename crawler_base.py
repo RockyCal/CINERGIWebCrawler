@@ -186,8 +186,8 @@ brokenLinks = []
 # Total titles - the text attribute of tag
 titles = []
 # Domains
-domainsKnown = {'Agriculture/Farming': ["agriculture", "farming"], 'Atmosphere': ["atmosphere"], 'Biology':
-    ["biodiversity", "organism", "life science", "biota"],
+domainsKnown = {'Agriculture/Farming': ["agriculture", "farming"], 'Atmosphere': ["atmosphere"],
+                'Biology': ["biodiversity", "organism", "life science", "biota"],
                 'Climate': ["climate"], 'Ecology': ["ecological", "ecosystem", "habitat", "environment"],
                 'Geochemistry': ["geochem"],
                 'Geology': ["geology", "geological"], 'GIS': ["geographic information systems"],
@@ -197,9 +197,22 @@ domainsKnown = {'Agriculture/Farming': ["agriculture", "farming"], 'Atmosphere':
                 'Oceanography': ['ocean', 'sea'],
                 'Spatial': ["spatial"], 'Topography': ["elevation", "mountains"]}
 
-resourceTypesKnown = {'Vocabulary': ["vocab", "vocabulary", "list of terms"], 'Catalog': ["catalog"], 'Software':
-    ["software", "code", "software development"], 'Information Model/Standard': ["information model", "standard"],
-                      'Data Center': ["data center", "dataset", "data set", "data base"], 'Community': ["community"]}
+resourceTypesKnown = {'Activity': ["Conference"],
+                      'Consensus Effort': ["Consortium", "Association", "Union"],
+                      'Data Service': ["Network", "Services", "Tools", "Platform", "Infrastructure"],
+                      'Catalog': ["search engine", "catalog"], 'Community': ["community"],
+                      'Web Application': ["web application"],
+                      'Portal': ["Visualization data", "Registry", "Infrastructure"],
+                      'Specification': ["specification"],
+                      'Image Collection': ["observation", "images", "gallery", "photography", "picture"],
+                      'Web page': ["web page"],
+                      'Interchange format': ["extension"],
+                      'Vocabulary': ['vocabulary', 'vocab'],
+                      'Service': ["spatial analysis", "spatial mapping"],
+                      'Digital Repository': ["digital repository", "repository"],
+                      'Functional Specification': ["functional specification", "queries of data"],
+                      'Software': ["software", "code", "programming"],
+                      'Forum': ["forum"], 'Organization': ["organization"]}
 
 start_url = 'http://www.greenseas.eu/content/standards-and-related-web-information'
 start_label = 'GreenSeas Home'
