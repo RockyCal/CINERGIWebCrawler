@@ -3,7 +3,6 @@ import requests
 import re
 from openpyxl import Workbook, cell
 from openpyxl.styles import Style, Font
-# from openpyxl.cell import coordinate_from_string
 
 # Http constant
 HTTP = 'http://'
@@ -93,21 +92,25 @@ def find_domains(url):
         getreq = requests.get(url)
         reqtext = getreq.text
         souper = BeautifulSoup(reqtext)
+        # Search for all keywords, the values of the Domains dict
         for key in domainsKnown:
             for v in domainsKnown.get(key):
+                # For all keywords found, filter so that only
+                # the keywords in the page's visible text are found
                 texts = souper.find_all(text=re.compile(v))
                 visible_texts = filter(visible, texts)
+                # For every keyword (value) found, add the Domain from our
+                # dictionary (key) to the list fo domains associated with
+                # the resource
                 for vis in visible_texts:
+                    # Added as a set to avoid duplicates
                     set_of_domains.add(key)
+        # Turn the set of domains back into a list
         domains_found = list(set_of_domains)
     if len(domains_found) > 0:
         return domains_found
     else:
         return "None"
-        # if vis.string:
-        #    print(vis.string)
-        #else:
-        #    print(vis)
 
 
 def find_resource_types(url):
@@ -117,12 +120,12 @@ def find_resource_types(url):
         getreq2 = requests.get(url)
         reqtext2 = getreq2.text
         souper2 = BeautifulSoup(reqtext2)
-        for k in resourceTypesKnown:
-            for v in resourceTypesKnown.get(k):
+        for key in resourceTypesKnown:
+            for v in resourceTypesKnown.get(key):
                 texts = souper2.find_all(text=re.compile(v))
                 visible_texts = filter(visible, texts)
                 for vis in visible_texts:
-                    set_of_resources.add(k)
+                    set_of_resources.add(key)
         resos_found = list(set_of_resources)
     if len(resos_found) > 0:
         # print(str(resos_found))
@@ -132,10 +135,10 @@ def find_resource_types(url):
 
 
 def check_type(url):
-    urlFront = url[:url.index('p') + 1]
-    if urlFront == "http":
+    url_front = url[:url.index('p') + 1]
+    if url_front == "http":
         return "HTTP"
-    elif urlFront == "ftp":
+    elif url_front == "ftp":
         return "FTP"
 
 
@@ -148,19 +151,18 @@ Returns: List of titles
 
 
 def build_title(url):
-    status = check_link(url)
-    if status == 1:
+    working = check_link(url)
+    if working == 1:
         var = requests.get(url)
         html = var.text
-        soup = BeautifulSoup(html)
-        title = None
+        title_soup = BeautifulSoup(html)
+        page_title = None
         if url not in brokenLinks:
-            if soup.title is not None:
-                if soup.title.string is not None:
-                    title = soup.title.string
-            # findAll('title', limit = 1
-            if title != None:
-                return title
+            if title_soup.title is not None:
+                if title_soup.title.string is not None:
+                    page_title = title_soup.title.string
+            if page_title is not None:
+                return page_title
             else:
                 return " "
     else:
@@ -180,7 +182,7 @@ def build_labels(soup):
     # Building list of working links
     # for tag in element_tags:
     # if tag['href'] not in brokenLinks:
-    #        titles.append(tag.text)
+    # titles.append(tag.text)
     return titles_found
 
 
@@ -210,7 +212,7 @@ resourceTypesKnown = {'Vocabulary': ["vocab", "vocabulary", "list of terms"], 'C
                       'Data Center': ["data center", "dataset", "data set", "data base"], 'Community': ["community"]}
 
 # start_url = 'http://www.greenseas.eu/content/standards-and-related-web-information'
-#start_label = 'GreenSeas Home'
+# start_label = 'GreenSeas Home'
 #start_title = 'Standards and Information'
 
 start_url = 'http://cinergi.weebly.com/'
@@ -265,7 +267,7 @@ print(first_domains)
 print('Creating xlsx file')
 # Create excel file
 wb = Workbook()
-filename = 'NicksCrawl.xlsx'
+filename = 'Crawl.xlsx'
 ws = wb.active
 ws.title = 'First run'
 
@@ -328,7 +330,10 @@ max_cats = len(first_resource_types)
 b = 0
 for row in ws.range('F2:F%s' % max_cats):
     for cell in row:
-        cell.value = ', '.join(first_resource_types[b])
+        if first_resource_types[b] is not 'None':
+            cell.value = ', '.join(first_resource_types[b])
+        else:
+            cell.value = str(first_resource_types[b])
         b += 1
 
 max_cons = len(first_content_types)
