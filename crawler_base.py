@@ -80,6 +80,7 @@ def visible(element):
 def find_domains(url):
     domains_found = []
     set_of_domains = set()
+    print(url)
     if url not in brokenLinks:
         getreq = requests.get(url)
         reqtext = getreq.text
@@ -129,30 +130,33 @@ def find_suffix(url):
     ext = tldextract.extract(url)
     #print(ext)
     extSuff = ext.suffix
+    print(extSuff)
     #for key in suffixesKnown:
      #       for v in suffixesKnown.get(key):
       #          if v in extSuff:
        #             return key
-    print(extSuff)
-    if ".com" in extSuff:
+    if "com" in extSuff:
         return "Company"
-    elif ".edu" in extSuff:
+    elif "edu" in extSuff:
         return "Education"
-    elif ".org" in extSuff:
+    elif "org" in extSuff:
         return "Non-profit Org"
-    elif ".gov" in extSuff:
+    elif "gov" in extSuff:
         return "Government"
-    elif ".net" in extSuff:
+    elif "net" in extSuff:
         return "Internet service provider/Other network"
 
 def find_country_code(url):
     ext = tldextract.extract(url)
     #print(ext)
     extSuff = ext.suffix
-    for key in countryCodesKnown:
-            for v in countryCodesKnown.get(key):
-                if v in extSuff:
-                    return key
+
+    if "uk" in extSuff:
+        return "UK"
+    elif "eu" in extSuff:
+        return "European Union"
+    elif "de" in extSuff:
+        return "Germany"
 
 def check_type(url):
     url_front = url[:url.index('p') + 1]
@@ -244,15 +248,6 @@ resourceTypesKnown = {'Activity': ["Conference"],
                       'Software': ["software", "code", "programming"],
                       'Forum': ["forum"], 'Organization': ["organization"]}
 
-suffixesKnown = {'Company': ".com",
-                 'Non-profit Org': ".org",
-                 'Educational site': ".edu",
-                 'Government': ".gov",
-                 'Internet service provider/Other network': ".net"}
-
-countryCodesKnown = {'UK': "uk",
-                     'European Union': "eu"}
-
 #start_url = 'http://www.greenseas.eu/content/standards-and-related-web-information'
 #start_label = 'GreenSeas Home'
 #start_title = 'Standards and Information'
@@ -307,6 +302,7 @@ for each in first_run:
     first_resource_types.append(find_resource_types(each))
     first_content_types.append(check_type(each))
     first_tlds.append(find_suffix(each))
+    print("TLD: " + str(first_tlds))
     first_country_codes.append(find_country_code(each))
 
 print(first_domains)
