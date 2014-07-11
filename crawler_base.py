@@ -133,6 +133,7 @@ def find_suffix(url):
      #       for v in suffixesKnown.get(key):
       #          if v in extSuff:
        #             return key
+    print(extSuff)
     if ".com" in extSuff:
         return "Company"
     elif ".edu" in extSuff:
