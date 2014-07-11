@@ -8,6 +8,8 @@ import tldextract
 # Http constant
 HTTP = 'http://'
 
+# <editor-fold desc="Functions">
+
 def crawl_links(soup):
     # Html tags to investigate
     urls_found = []
@@ -25,8 +27,6 @@ def crawl_links(soup):
     # build_labels(html_tags)
     return urls_found
 
-    #returns co.uk for forums.bbc.co.uk
-
 """
 Name: check_link()
 Params: url - link to check
@@ -34,7 +34,6 @@ Purpose: Make sure links work and go somewhere
 Returns: 1 if link works w/o error
          Exits if link is broken
 """
-
 
 def check_link(url):
     works = 1
@@ -68,14 +67,12 @@ def check_link(url):
             brokenLinks.append(url)
     return works
 
-
 def visible(element):
     if element.parent.name in ['style', 'script', '[document]', 'head', 'title', 'a']:
         return False
     elif re.match('<!--.*-->', str(element)):
         return False
     return True
-
 
 def find_domains(url):
     domains_found = []
@@ -104,7 +101,6 @@ def find_domains(url):
         return domains_found
     else:
         return "None"
-
 
 def find_resource_types(url):
     resos_found = []
@@ -165,7 +161,6 @@ def check_type(url):
     elif url_front == "ftp":
         return "FTP"
 
-
 """
 Name: build_labels()
 Params: url - page to get titles from
@@ -192,7 +187,6 @@ def build_title(url):
     else:
         return " "
 
-
 def build_labels(soup):
     titles_found = []
     for tag in soup.find_all('a', href=True):
@@ -208,7 +202,7 @@ def build_labels(soup):
     # if tag['href'] not in brokenLinks:
     # titles.append(tag.text)
     return titles_found
-
+# </editor-fold>
 
 # #####################
 # Total visited links
@@ -431,14 +425,6 @@ for each in first_run:
         conTypes.append(check_type(each))
         suffs.append(find_suffix(each))
         cods.append(find_country_code(each))
-        #for each in labelsMade:
-        #orgsMade.append(each)
-
-    # Place the source link above the list of links found
-    # source_row = ws1.get_highest_row() + 2
-    # ws1.cell('%s%s' % ('B', source_row)).value = each
-    # ws1.cell('%s%s' % ('C', source_row)).value = 'source link'
-    # ws1['%s%s'%('C', source_row)].style = header_style
 
     if len(linksFound) > 0:
         start_row = ws1.get_highest_row() + 1
