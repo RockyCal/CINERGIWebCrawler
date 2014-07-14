@@ -180,8 +180,6 @@ def link_type(url):
 
 
 
-
-
 """
 Name: build_labels()
 Params: url - page to get titles from
