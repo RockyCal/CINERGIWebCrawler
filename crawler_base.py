@@ -90,7 +90,7 @@ def visible(element):
 def find_domains(url):
     domains_found = []
     set_of_domains = set()
-    print(url)
+    #print(url)
     if url not in brokenLinks:
         getreq = requests.get(url)
         reqtext = getreq.text
@@ -147,7 +147,7 @@ def find_organization(url):
         newUrl = "http://" + extDom + "." + extSuff
 
         if check_link(newUrl) != 1:
-            newUrl = "www." + extDom + "." + extSuff
+            newUrl = "http://www." + extDom + "." + extSuff
 
         title = build_title(newUrl)
 
@@ -165,7 +165,7 @@ def find_suffix(url):
     #print(extSuff)
     extDom = ext.domain
     #print(extSuff)
-    print(ext.domain + "." + extSuff)
+    #print(ext.domain + "." + extSuff)
     #for key in suffixesKnown:
      #       for v in suffixesKnown.get(key):
       #          if v in extSuff:
@@ -334,7 +334,7 @@ first_titles = []
 # Use extend function to add all urls and titles found in first run
 first_run.extend(crawl_links(soup))
 first_labels.extend(build_labels(soup))
-print(first_labels)
+#print(first_labels)
 #first_orgs.extend(first_labels)
 first_domains = [[]]
 first_resource_types = []
@@ -355,7 +355,7 @@ for each in first_run:
     #print("TLD: " + str(first_tlds))
     first_country_codes.append(find_country_code(each))
     first_orgs.append(find_organization(each))
-    print(first_orgs)
+    #print(first_orgs)
 
 #print(first_domains)
 print('Creating xlsx file')
@@ -467,7 +467,7 @@ for each in first_run:
     crawlSoup = BeautifulSoup(hText)
     linksFound = crawl_links(crawlSoup)  # links found on a page
     labelsMade = build_labels(crawlSoup)
-    print("Labels {}".format(labelsMade))
+    #print("Labels {}".format(labelsMade))
     titlesMade = []
     #org = first_orgs[index]
     orgsMade = []
@@ -485,7 +485,7 @@ for each in first_run:
         suffs.append(find_suffix(each))
         cods.append(find_country_code(each))
         orgsMade.append(find_organization(each))
-        print(orgsMade)
+        #print(orgsMade)
 
     if len(linksFound) > 0:
         start_row = ws1.get_highest_row() + 1
@@ -577,6 +577,7 @@ ws1['F1'].style = header_style
 ws1['G1'].style = header_style
 ws1['H1'].style = header_style
 ws1['I1'].style = header_style
+
 
 ws2 = wb.create_sheet()
 ws2.title = 'List of Official Organizations'
