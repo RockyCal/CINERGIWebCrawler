@@ -122,11 +122,28 @@ def find_resource_types(url):
     else:
         return "None"
 
+def find_organization(url):
+    ext = tldextract.extract(url)
+    extDom = ext.domain
+    extSuff = ext.suffix
+    newUrl = "http://" + extDom + "." + extSuff
+
+    if check_link(newUrl) != 1:
+        newUrl = "www." + extDom + "." + extSuff
+
+    title = build_title(newUrl)
+    if title is not None:
+        return title
+    else:
+        return " "
+
 def find_suffix(url):
     ext = tldextract.extract(url)
     #print(ext)
     extSuff = ext.suffix
-    print(extSuff)
+    extDom = ext.domain
+    #print(extSuff)
+    print(ext.domain + "." + extSuff)
     #for key in suffixesKnown:
      #       for v in suffixesKnown.get(key):
       #          if v in extSuff:
@@ -279,7 +296,7 @@ first_titles = []
 # Use extend function to add all urls and titles found in first run
 first_run.extend(crawl_links(soup))
 first_labels.extend(build_labels(soup))
-first_orgs.extend(first_labels)
+#first_orgs.extend(first_labels)
 first_domains = [[]]
 first_resource_types = []
 first_content_types = []
@@ -298,6 +315,8 @@ for each in first_run:
     first_tlds.append(find_suffix(each))
     print("TLD: " + str(first_tlds))
     first_country_codes.append(find_country_code(each))
+    first_orgs.append(find_organization(each))
+    print(first_orgs)
 
 print(first_domains)
 print('Creating xlsx file')
@@ -410,7 +429,7 @@ for each in first_run:
     linksFound = crawl_links(crawlSoup)  # links found on a page
     labelsMade = build_labels(crawlSoup)
     titlesMade = []
-    org = first_orgs[index]
+    #org = first_orgs[index]
     orgsMade = []
     domains = []
     reTypes = []
@@ -425,6 +444,8 @@ for each in first_run:
         conTypes.append(check_type(each))
         suffs.append(find_suffix(each))
         cods.append(find_country_code(each))
+        orgsMade.append(find_organization(each))
+        print(orgsMade)
 
     if len(linksFound) > 0:
         start_row = ws1.get_highest_row() + 1
@@ -448,7 +469,8 @@ for each in first_run:
         l = 0
         for row in ws1.range('%s%s:%s%s' % ('D', start_row, 'D', last_row)):
             for cell in row:
-                cell.value = first_orgs[index]
+                cell.value = orgsMade[l]
+                l += 1
 
         u = 0
         for row in ws1.range('%s%s:%s%s' % ('E', start_row, 'E', last_row)):
@@ -516,6 +538,7 @@ ws1['G1'].style = header_style
 ws1['H1'].style = header_style
 ws1['I1'].style = header_style
 
+print('first orgs: {}'.format(orgsMade))
 print('broken links: {}'.format(brokenLinks))
 print('Length of broken links: ' + str(len(brokenLinks)))
 print('visited: {}'.format(visited))
