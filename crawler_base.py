@@ -3,10 +3,12 @@ import requests
 import re
 from openpyxl import Workbook, cell
 from openpyxl.styles import Style, Font
+from urllib.request import urlopen
 import tldextract
 
 # Http constant
 HTTP = 'http://'
+preFTP = 'ftp://'
 
 # <editor-fold desc="Functions">
 
@@ -14,10 +16,21 @@ def crawl_links(soup):
     # Html tags to investigate
     urls_found = []
     for tag in soup.find_all('a', href=True):
-        if HTTP in tag['href'] and tag['href'] not in visited:
+        if HTTP in tag['href']:
+            if tag['href'] not in visited:
+                visited.append(tag['href'])
+                # check functioning, will add to brokenLinks if link is bad
+                check_link(tag['href'])
+                # add to list of urls found
+                if tag['href'] not in brokenLinks:
+                    # add to list of working urls found to be written
+                    urls_found.append(tag['href'])
+                    # add to global list of working urls
+                    urls.append(tag['href'])
+        if preFTP in tag['href']:
+            urlopen(tag['href'])
             visited.append(tag['href'])
             # check functioning, will add to brokenLinks if link is bad
-            check_link(tag['href'])
             # add to list of urls found
             if tag['href'] not in brokenLinks:
                 # add to list of working urls found to be written
@@ -126,7 +139,7 @@ def find_suffix(url):
     ext = tldextract.extract(url)
     #print(ext)
     extSuff = ext.suffix
-    print(extSuff)
+    #print(extSuff)
     #for key in suffixesKnown:
      #       for v in suffixesKnown.get(key):
       #          if v in extSuff:
@@ -156,7 +169,7 @@ def find_country_code(url):
 
 def check_type(url):
     url_front = url[:url.index('p') + 1]
-    if url_front == "http":
+    if url_front == HTTP:
         return "HTTP"
     elif url_front == "ftp":
         return "FTP"
@@ -273,7 +286,7 @@ else:
 # Create lists for first run, to be written out to first sheet
 first_run = [start_url]  # add the base url
 #first_labels = []
-print("First Run: " + str(first_run))
+#("First Run: " + str(first_run))
 first_orgs = []
 first_titles = []
 # Use extend function to add all urls and titles found in first run
@@ -296,10 +309,10 @@ for each in first_run:
     first_resource_types.append(find_resource_types(each))
     first_content_types.append(check_type(each))
     first_tlds.append(find_suffix(each))
-    print("TLD: " + str(first_tlds))
+    #print("TLD: " + str(first_tlds))
     first_country_codes.append(find_country_code(each))
 
-print(first_domains)
+#print(first_domains)
 print('Creating xlsx file')
 # Create excel file
 wb = Workbook()
@@ -341,7 +354,7 @@ for row in ws.range('B2:B%s' % max_labels):
         cell.value = first_labels[p]
         p += 1
 
-print("First Run: " + str(first_run))
+#("First Run: " + str(first_run))
 i = 0
 for row in ws.range('C2:C%s' % (len(first_run) + 1)):
     for cell in row:
