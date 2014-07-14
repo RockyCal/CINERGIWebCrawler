@@ -144,7 +144,6 @@ def visible(element):
     return True
 
 def find_domains(url):
-    print(url)
     domains_found = []
     set_of_domains = set()
     if check_type(url) == "FTP":
@@ -350,13 +349,13 @@ resourceTypesKnown = {'Activity': ["Conference"],
                       'Software': ["software", "code", "programming"],
                       'Forum': ["forum"], 'Organization': ["organization"]}
 
-#start_url = 'http://www.greenseas.eu/content/standards-and-related-web-information'
-#start_label = 'GreenSeas Home'
-#start_title = 'Standards and Information'
+start_url = 'http://www.greenseas.eu/content/standards-and-related-web-information'
+start_label = 'GreenSeas Home'
+start_title = 'Standards and Information'
 
-start_url = 'http://cinergi.weebly.com/'
-start_title = 'CINERGI Test Bed'
-start_label = 'CINERGI Home'
+#start_url = 'http://cinergi.weebly.com/'
+#start_title = 'CINERGI Test Bed'
+#tart_label = 'CINERGI Home'
 
 org_url = 'http://opr.ca.gov/s_listoforganizations.php'
 
