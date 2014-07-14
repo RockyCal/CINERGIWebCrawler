@@ -4,6 +4,7 @@ import re
 from openpyxl import Workbook, cell
 from openpyxl.styles import Style, Font
 from urllib.request import urlopen
+from urllib.error import URLError
 import tldextract
 
 # Http constant
@@ -28,7 +29,7 @@ def crawl_links(soup):
                     # add to global list of working urls
                     urls.append(tag['href'])
         if preFTP in tag['href']:
-            urlopen(tag['href'])
+            #urlopen(tag['href'])
             visited.append(tag['href'])
             # check functioning, will add to brokenLinks if link is bad
             # add to list of urls found
@@ -50,34 +51,45 @@ Returns: 1 if link works w/o error
 
 def check_link(url):
     works = 1
-    try:
-        link = requests.get(url, timeout=10)
-        c = link.status_code
-    except requests.Timeout:
-        works = 0
-        print('{}: Timeout error'.format(url))
-        brokenLinks.append(url)
-    except requests.ConnectionError:
-        works = 0
-        print('{}: Connection error'.format(url))
-        brokenLinks.append(url)
-    except requests.TooManyRedirects:
-        works = 0
-        print('{}: Too Many Redirects'.format(url))
-        brokenLinks.append(url)
-    except requests.HTTPError:
-        works = 0
-        print('{}: HTTP Error'.format(url))
-        brokenLinks.append(url)
-    except:
-        works = 0
-        print('{}: Unexpected Error'.format(url))
-        brokenLinks.append(url)
-    else:
-        if c != 200:
+    if check_type(url) == "HTTP":
+        try:
+            link = requests.get(url, timeout=10)
+            c = link.status_code
+        except requests.ConnectionError:
             works = 0
-            print('{}: Error code {}'.format(url, c))
+            print('{}: Connection error'.format(url))
             brokenLinks.append(url)
+        except requests.Timeout:
+            works = 0
+            print('{}: Timeout error'.format(url))
+            brokenLinks.append(url)
+        except requests.TooManyRedirects:
+            works = 0
+            print('{}: Too Many Redirects'.format(url))
+            brokenLinks.append(url)
+        except requests.HTTPError:
+            works = 0
+            print('{}: HTTP Error'.format(url))
+            brokenLinks.append(url)
+        #except:
+        #    works = 0
+        #    print('{}: Unexpected Error'.format(url))
+        #    brokenLinks.append(url)
+        else:
+            if c != 200:
+                works = 0
+                print('{}: Error code {}'.format(url, c))
+                brokenLinks.append(url)
+    elif check_type(url) == "FTP":
+        try:
+            urlopen(url)
+        except URLError as e:
+            works = 0
+            print(url + ': ' + e.reason)
+            brokenLinks.append(url)
+    else:
+        works = 0
+        print('check link: {}'.format(check_type(url)))
     return works
 
 def visible(element):
@@ -90,8 +102,9 @@ def visible(element):
 def find_domains(url):
     domains_found = []
     set_of_domains = set()
-    #print(url)
-    if url not in brokenLinks:
+    if check_type(url) == "FTP":
+        return "None"
+    if url not in brokenLinks and check_type(url) is "HTTP":
         getreq = requests.get(url)
         reqtext = getreq.text
         souper = BeautifulSoup(reqtext)
@@ -167,9 +180,9 @@ def find_suffix(url):
     #print(extSuff)
     #print(ext.domain + "." + extSuff)
     #for key in suffixesKnown:
-     #       for v in suffixesKnown.get(key):
-      #          if v in extSuff:
-       #             return key
+    #       for v in suffixesKnown.get(key):
+    #          if v in extSuff:
+    #             return key
     if "com" in extSuff:
         return "Company"
     elif "edu" in extSuff:
@@ -194,11 +207,13 @@ def find_country_code(url):
         return "Germany"
 
 def check_type(url):
-    url_front = url[:url.index('p') + 1]
-    if url_front == HTTP:
+    url_front = url[:url.index(':')]
+    if url_front == "http" or url_front == "https":
         return "HTTP"
     elif url_front == "ftp":
         return "FTP"
+    else:
+        return " "
 
 """
 Name: build_labels()
@@ -210,7 +225,7 @@ Returns: List of titles
 
 def build_title(url):
     working = check_link(url)
-    if working == 1:
+    if working == 1 and check_type(url) == "HTTP":
         var = requests.get(url)
         html = var.text
         title_soup = BeautifulSoup(html)
@@ -577,7 +592,6 @@ ws1['F1'].style = header_style
 ws1['G1'].style = header_style
 ws1['H1'].style = header_style
 ws1['I1'].style = header_style
-
 
 ws2 = wb.create_sheet()
 ws2.title = 'List of Official Organizations'
