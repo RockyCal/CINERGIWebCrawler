@@ -178,8 +178,6 @@ def link_type(url):
         if tag in soup:
             return 'download'
 
-
-
 """
 Name: build_labels()
 Params: url - page to get titles from
