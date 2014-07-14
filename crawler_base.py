@@ -27,6 +27,7 @@ def crawl_links(soup):
     # build_labels(html_tags)
     return urls_found
 
+
 """
 Name: check_link()
 Params: url - link to check
@@ -34,6 +35,7 @@ Purpose: Make sure links work and go somewhere
 Returns: 1 if link works w/o error
          Exits if link is broken
 """
+
 
 def check_link(url):
     works = 1
@@ -67,12 +69,14 @@ def check_link(url):
             brokenLinks.append(url)
     return works
 
+
 def visible(element):
     if element.parent.name in ['style', 'script', '[document]', 'head', 'title', 'a']:
         return False
     elif re.match('<!--.*-->', str(element)):
         return False
     return True
+
 
 def find_domains(url):
     domains_found = []
@@ -102,6 +106,7 @@ def find_domains(url):
     else:
         return "None"
 
+
 def find_resource_types(url):
     resos_found = []
     set_of_resources = set()
@@ -122,15 +127,16 @@ def find_resource_types(url):
     else:
         return "None"
 
+
 def find_suffix(url):
     ext = tldextract.extract(url)
-    #print(ext)
+    # print(ext)
     extSuff = ext.suffix
     print(extSuff)
     #for key in suffixesKnown:
-     #       for v in suffixesKnown.get(key):
-      #          if v in extSuff:
-       #             return key
+    #       for v in suffixesKnown.get(key):
+    #          if v in extSuff:
+    #             return key
     if "com" in extSuff:
         return "Company"
     elif "edu" in extSuff:
@@ -142,9 +148,10 @@ def find_suffix(url):
     elif "net" in extSuff:
         return "Internet service provider/Other network"
 
+
 def find_country_code(url):
     ext = tldextract.extract(url)
-    #print(ext)
+    # print(ext)
     extSuff = ext.suffix
 
     if "uk" in extSuff:
@@ -154,12 +161,26 @@ def find_country_code(url):
     elif "de" in extSuff:
         return "Germany"
 
+
 def check_type(url):
     url_front = url[:url.index('p') + 1]
     if url_front == "http":
         return "HTTP"
     elif url_front == "ftp":
         return "FTP"
+
+
+def link_type(url):
+    for tag in soup.find("form"):
+        if tag in soup:
+            return 'search'
+    for tag in soup.find('a' > "href" > 'programs'):
+        if tag in soup:
+            return 'download'
+
+
+
+
 
 """
 Name: build_labels()
@@ -187,6 +208,7 @@ def build_title(url):
     else:
         return " "
 
+
 def build_labels(soup):
     titles_found = []
     for tag in soup.find_all('a', href=True):
@@ -202,6 +224,7 @@ def build_labels(soup):
     # if tag['href'] not in brokenLinks:
     # titles.append(tag.text)
     return titles_found
+
 # </editor-fold>
 
 # #####################
@@ -242,11 +265,12 @@ resourceTypesKnown = {'Activity': ["Conference"],
                       'Software': ["software", "code", "programming"],
                       'Forum': ["forum"], 'Organization': ["organization"]}
 
-#start_url = 'http://www.greenseas.eu/content/standards-and-related-web-information'
+
+# start_url = 'http://www.greenseas.eu/content/standards-and-related-web-information'
 #start_label = 'GreenSeas Home'
 #start_title = 'Standards and Information'
 
-start_url = 'http://cinergi.weebly.com/'
+start_url = 'http://badc.nerc.ac.uk/home/index.html'
 start_title = 'CINERGI Test Bed'
 start_label = 'CINERGI Home'
 
@@ -285,7 +309,7 @@ first_resource_types = []
 first_content_types = []
 first_tlds = []
 first_country_codes = []
-
+first_link_type = []
 # not being used as of 7/3/2014 but may be used later
 # second_run = []
 # second_titles = []
@@ -296,7 +320,8 @@ for each in first_run:
     first_resource_types.append(find_resource_types(each))
     first_content_types.append(check_type(each))
     first_tlds.append(find_suffix(each))
-    print("TLD: " + str(first_tlds))
+    first_link_type.append(link_type(urls))
+    print("link_type: " + str(first_link_type))
     first_country_codes.append(find_country_code(each))
 
 print(first_domains)
