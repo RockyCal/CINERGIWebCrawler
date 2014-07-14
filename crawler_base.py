@@ -23,11 +23,13 @@ def crawl_links(soup):
                 # check functioning, will add to brokenLinks if link is bad
                 check_link(tag['href'])
                 # add to list of urls found
-                if tag['href'] not in brokenLinks:
+                workingURL = check_link(tag['href'])
+                if workingURL is not " ":
                     # add to list of working urls found to be written
-                    urls_found.append(tag['href'])
+                    urls_found.append(workingURL)
                     # add to global list of working urls
-                    urls.append(tag['href'])
+                    urls.append(workingURL)
+                # broken links added to list of broken links in check_link
         if preFTP in tag['href']:
             #urlopen(tag['href'])
             visited.append(tag['href'])
@@ -41,6 +43,38 @@ def crawl_links(soup):
     # build_labels(html_tags)
     return urls_found
 
+def check_again(new_url):
+    try:
+        rq = requests.get(new_url)
+        cq = rq.status_code
+    except requests.ConnectionError:
+        #fixed = 0
+        print('{}: Connection error'.format(new_url))
+        brokenLinks.append(new_url)
+        return " "
+    except requests.Timeout:
+        #fixed = 0
+        print('{}: Timeout error'.format(new_url))
+        brokenLinks.append(new_url)
+        return " "
+    except requests.TooManyRedirects:
+        #fixed = 0
+        print('{}: Too Many Redirects'.format(new_url))
+        brokenLinks.append(new_url)
+        return " "
+    except requests.HTTPError:
+        #fixed = 0
+        print('{}: HTTP Error'.format(new_url))
+        brokenLinks.append(new_url)
+        return " "
+    else:
+        if cq != 200:
+            #fixed = 0
+            print('{}: Error code {}'.format(new_url, cq))
+            brokenLinks.append(new_url)
+            return " "
+    return new_url
+
 """
 Name: check_link()
 Params: url - link to check
@@ -50,25 +84,34 @@ Returns: 1 if link works w/o error
 """
 
 def check_link(url):
-    works = 1
+    # works = 1
+    works = url
     if check_type(url) == "HTTP":
         try:
             link = requests.get(url, timeout=10)
             c = link.status_code
-        except requests.ConnectionError:
-            works = 0
-            print('{}: Connection error'.format(url))
-            brokenLinks.append(url)
+        except requests.ConnectionError as cError:
+            if "www." in url:
+                works = " "
+                print('{}: Connection error'.format(url))
+                brokenLinks.append(url)
+            else:
+                extURL = tldextract.extract(url)
+                urlSub = extURL.subdomain
+                urlDom = extURL.domain
+                urlSuff = extURL.suffix
+                newURL = "http://www." + urlSub + urlDom + "." + urlSuff
+                return check_again(newURL)
         except requests.Timeout:
-            works = 0
+            works = " "
             print('{}: Timeout error'.format(url))
             brokenLinks.append(url)
         except requests.TooManyRedirects:
-            works = 0
+            works = " "
             print('{}: Too Many Redirects'.format(url))
             brokenLinks.append(url)
         except requests.HTTPError:
-            works = 0
+            works = " "
             print('{}: HTTP Error'.format(url))
             brokenLinks.append(url)
         #except:
@@ -77,18 +120,19 @@ def check_link(url):
         #    brokenLinks.append(url)
         else:
             if c != 200:
-                works = 0
+                works = " "
                 print('{}: Error code {}'.format(url, c))
                 brokenLinks.append(url)
     elif check_type(url) == "FTP":
+        works = url
         try:
             urlopen(url)
         except URLError as e:
-            works = 0
+            works = " "
             print(url + ': ' + e.reason)
             brokenLinks.append(url)
     else:
-        works = 0
+        works = " "
         print('check link: {}'.format(check_type(url)))
     return works
 
@@ -100,6 +144,7 @@ def visible(element):
     return True
 
 def find_domains(url):
+    print(url)
     domains_found = []
     set_of_domains = set()
     if check_type(url) == "FTP":
@@ -131,7 +176,7 @@ def find_domains(url):
 def find_resource_types(url):
     resos_found = []
     set_of_resources = set()
-    if url not in brokenLinks:
+    if url not in brokenLinks and check_type(url) is "HTTP":
         getreq2 = requests.get(url)
         reqtext2 = getreq2.text
         souper2 = BeautifulSoup(reqtext2)
@@ -159,7 +204,7 @@ def find_organization(url):
         extSuff = ext.suffix
         newUrl = "http://" + extDom + "." + extSuff
 
-        if check_link(newUrl) != 1:
+        if check_link(newUrl) == " ":
             newUrl = "http://www." + extDom + "." + extSuff
 
         title = build_title(newUrl)
@@ -194,6 +239,7 @@ def find_suffix(url):
     elif "net" in extSuff:
         return "Internet service provider/Other network"
 
+
 def find_country_code(url):
     ext = tldextract.extract(url)
     #print(ext)
@@ -225,8 +271,8 @@ Returns: List of titles
 
 def build_title(url):
     working = check_link(url)
-    if working == 1 and check_type(url) == "HTTP":
-        var = requests.get(url)
+    if working != " " and check_type(url) == "HTTP":
+        var = requests.get(working)
         html = var.text
         title_soup = BeautifulSoup(html)
         page_title = None
@@ -327,14 +373,14 @@ titles.append(start_title)
 first_labels = []
 first_labels.append(start_label)
 
-if status:
+if status != " ":
     r = requests.get(start_url)
     htmlText = r.text
     soup = BeautifulSoup(htmlText)  # Make the soup
 else:
     # exit if start url is broken
     exit()
-if statusOrgs:
+if statusOrgs != " ":
     t = requests.get(org_url)
     orgText = t.text
     soupOrg = BeautifulSoup(orgText)
