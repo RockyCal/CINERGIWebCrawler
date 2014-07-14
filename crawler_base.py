@@ -21,6 +21,7 @@ def crawl_links(soup):
             if tag['href'] not in visited:
                 visited.append(tag['href'])
                 # check functioning, will add to brokenLinks if link is bad
+                check_link(tag['href'])
                 # add to list of urls found
                 workingURL = check_link(tag['href'])
                 if workingURL is not " ":
@@ -217,7 +218,7 @@ def find_organization(url):
 
 def find_suffix(url):
     ext = tldextract.extract(url)
-    # print(ext)
+    #print(ext)
     extSuff = ext.suffix
     #print(extSuff)
     extDom = ext.domain
@@ -241,7 +242,7 @@ def find_suffix(url):
 
 def find_country_code(url):
     ext = tldextract.extract(url)
-    # print(ext)
+    #print(ext)
     extSuff = ext.suffix
 
     if "uk" in extSuff:
@@ -251,7 +252,6 @@ def find_country_code(url):
     elif "de" in extSuff:
         return "Germany"
 
-
 def check_type(url):
     url_front = url[:url.index(':')]
     if url_front == "http" or url_front == "https":
@@ -260,7 +260,6 @@ def check_type(url):
         return "FTP"
     else:
         return " "
-
 
 """
 Name: build_labels()
@@ -287,7 +286,6 @@ def build_title(url):
                 return " "
     else:
         return " "
-
 
 def build_labels(soup):
     titles_found = []
@@ -352,7 +350,7 @@ resourceTypesKnown = {'Activity': ["Conference"],
                       'Software': ["software", "code", "programming"],
                       'Forum': ["forum"], 'Organization': ["organization"]}
 
-# start_url = 'http://www.greenseas.eu/content/standards-and-related-web-information'
+#start_url = 'http://www.greenseas.eu/content/standards-and-related-web-information'
 #start_label = 'GreenSeas Home'
 #start_title = 'Standards and Information'
 
@@ -397,7 +395,7 @@ first_titles = []
 # Use extend function to add all urls and titles found in first run
 first_run.extend(crawl_links(soup))
 first_labels.extend(build_labels(soup))
-print(first_labels)
+#print(first_labels)
 #first_orgs.extend(first_labels)
 first_domains = [[]]
 first_resource_types = []
@@ -418,7 +416,7 @@ for each in first_run:
     #print("TLD: " + str(first_tlds))
     first_country_codes.append(find_country_code(each))
     first_orgs.append(find_organization(each))
-    # print(first_orgs)
+    #print(first_orgs)
 
 #print(first_domains)
 print('Creating xlsx file')
@@ -530,7 +528,7 @@ for each in first_run:
     crawlSoup = BeautifulSoup(hText)
     linksFound = crawl_links(crawlSoup)  # links found on a page
     labelsMade = build_labels(crawlSoup)
-    print("Labels {}".format(labelsMade))
+    #print("Labels {}".format(labelsMade))
     titlesMade = []
     #org = first_orgs[index]
     orgsMade = []
