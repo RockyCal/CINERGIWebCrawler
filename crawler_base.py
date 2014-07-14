@@ -136,19 +136,27 @@ def find_resource_types(url):
         return "None"
 
 def find_organization(url):
-    ext = tldextract.extract(url)
-    extDom = ext.domain
-    extSuff = ext.suffix
-    newUrl = "http://" + extDom + "." + extSuff
+    basicOrg = build_title(url)
 
-    if check_link(newUrl) != 1:
-        newUrl = "www." + extDom + "." + extSuff
-
-    title = build_title(newUrl)
-    if title is not None:
-        return title
+    if(basicOrg in orgsOfficial):
+        return "Verified: " + basicOrg
     else:
-        return " "
+        ext = tldextract.extract(url)
+        extDom = ext.domain
+        extSuff = ext.suffix
+        newUrl = "http://" + extDom + "." + extSuff
+
+        if check_link(newUrl) != 1:
+            newUrl = "www." + extDom + "." + extSuff
+
+        title = build_title(newUrl)
+
+        if title in orgsOfficial:
+            return "Verified: " + title
+        elif title is not None:
+            return title
+        else:
+            return "NA"
 
 def find_suffix(url):
     ext = tldextract.extract(url)
@@ -233,6 +241,14 @@ def build_labels(soup):
     # if tag['href'] not in brokenLinks:
     # titles.append(tag.text)
     return titles_found
+"""
+def containsOrg(org):
+    for each in orgsOfficial:
+        if org in each:
+            return 1
+    else:
+        return 0
+"""
 # </editor-fold>
 
 # #####################
@@ -281,7 +297,10 @@ start_url = 'http://cinergi.weebly.com/'
 start_title = 'CINERGI Test Bed'
 start_label = 'CINERGI Home'
 
+org_url = 'http://opr.ca.gov/s_listoforganizations.php'
+
 status = check_link(start_url)  # Check functioning of start url
+statusOrgs = check_link(org_url)
 
 tags = []
 
@@ -300,7 +319,12 @@ if status:
 else:
     # exit if start url is broken
     exit()
+if statusOrgs:
+    t = requests.get(org_url)
+    orgText = t.text
+    soupOrg = BeautifulSoup(orgText)
 
+orgsOfficial = build_labels(soupOrg)
 # Create lists for first run, to be written out to first sheet
 first_run = [start_url]  # add the base url
 #first_labels = []
@@ -310,6 +334,7 @@ first_titles = []
 # Use extend function to add all urls and titles found in first run
 first_run.extend(crawl_links(soup))
 first_labels.extend(build_labels(soup))
+print(first_labels)
 #first_orgs.extend(first_labels)
 first_domains = [[]]
 first_resource_types = []
@@ -433,8 +458,8 @@ for row in ws.range('I2:I%s' % max_cods):
 ws1 = wb.create_sheet()
 ws1.title = 'Second run'
 
-first_run.pop(0)  # take off first in first_run (the start url)
-first_orgs.pop(0)
+#first_run.pop(0)  # take off first in first_run (the start url)
+#first_orgs.pop(0)
 # We don't want GreenSeas to be in the second layer
 index = 0
 for each in first_run:
@@ -442,8 +467,9 @@ for each in first_run:
     crawlSoup = BeautifulSoup(hText)
     linksFound = crawl_links(crawlSoup)  # links found on a page
     labelsMade = build_labels(crawlSoup)
+    print("Labels {}".format(labelsMade))
     titlesMade = []
-    org = first_orgs[index]
+    #org = first_orgs[index]
     orgsMade = []
     domains = []
     reTypes = []
@@ -551,6 +577,17 @@ ws1['F1'].style = header_style
 ws1['G1'].style = header_style
 ws1['H1'].style = header_style
 ws1['I1'].style = header_style
+
+ws2 = wb.create_sheet()
+ws2.title = 'List of Official Organizations'
+if len(orgsOfficial) > 0:
+    start_row = ws2.get_highest_row() + 1
+    last_row = (start_row + len(orgsOfficial)) - 1
+    t = 0
+    for row in ws2.range('%s%s:%s%s' % ('A', start_row, 'A', last_row)):
+        for cell in row:
+            cell.value = orgsOfficial[t]
+            t += 1
 
 print('first orgs: {}'.format(orgsMade))
 print('broken links: {}'.format(brokenLinks))
