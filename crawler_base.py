@@ -176,7 +176,6 @@ def link_type(url):
         reqtext2 = getreq2.text
         souper2 = BeautifulSoup(reqtext2)
         if souper2.find("form")!= None:
-            if souper2.find("INPUT TYPE") or souper2.find("POST"):
                     return 'search engine'
         elif souper2.find(text= "download")!= None:
                     return 'download'
@@ -275,7 +274,7 @@ resourceTypesKnown = {'Activity': ["Conference"],
 #start_label = 'GreenSeas Home'
 #start_title = 'Standards and Information'
 
-start_url = 'http://www.digitalglobe.com/node/1544#overview'
+start_url = 'http://badc.nerc.ac.uk/home/index.html'
 start_title = 'CINERGI Test Bed'
 start_label = 'CINERGI Home'
 
