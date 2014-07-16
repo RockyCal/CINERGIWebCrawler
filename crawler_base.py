@@ -243,13 +243,16 @@ def find_country_code(url):
     ext = tldextract.extract(url)
     #print(ext)
     extSuff = ext.suffix
-
-    if "uk" in extSuff:
-        return "UK"
-    elif "eu" in extSuff:
-        return "European Union"
-    elif "de" in extSuff:
-        return "Germany"
+    print("Suff:" + " " + extSuff)
+    for each in countriesOfficial:
+        str2 = str(each)
+        str2 = str2.lower()
+        #print(newStr.lower)
+        print(str2)
+        if extSuff in str2[:5]:
+        #if ext:
+            print(extSuff + " = " + str2)
+            return str2.upper()
 
 def check_type(url):
     url_front = url[:url.index(':')]
@@ -266,7 +269,11 @@ Params: url - page to get titles from
 Purpose: Extract the title of the pages these links lead to
 Returns: List of titles
 """
-
+def build_text(soup):
+    titles = []
+    for tag in soup.find_all('li'):
+        titles.append(tag.text)
+    return titles
 
 def build_title(url):
     working = check_link(url)
@@ -301,14 +308,7 @@ def build_labels(soup):
     # if tag['href'] not in brokenLinks:
     # titles.append(tag.text)
     return titles_found
-"""
-def containsOrg(org):
-    for each in orgsOfficial:
-        if org in each:
-            return 1
-    else:
-        return 0
-"""
+
 # </editor-fold>
 
 # #####################
@@ -349,18 +349,20 @@ resourceTypesKnown = {'Activity': ["Conference"],
                       'Software': ["software", "code", "programming"],
                       'Forum': ["forum"], 'Organization': ["organization"]}
 
-start_url = 'http://www.greenseas.eu/content/standards-and-related-web-information'
-start_label = 'GreenSeas Home'
-start_title = 'Standards and Information'
+#start_url = 'http://www.greenseas.eu/content/standards-and-related-web-information'
+#start_label = 'GreenSeas Home'
+#start_title = 'Standards and Information'
 
-#start_url = 'http://cinergi.weebly.com/'
-#start_title = 'CINERGI Test Bed'
-#tart_label = 'CINERGI Home'
+start_url = 'http://cinergi.weebly.com/'
+start_title = 'CINERGI Test Bed'
+start_label = 'CINERGI Home'
 
 org_url = 'http://opr.ca.gov/s_listoforganizations.php'
+country_codes_url = 'http://www.thrall.org/domains.htm'
 
 status = check_link(start_url)  # Check functioning of start url
 statusOrgs = check_link(org_url)
+statusCountryCodes = check_link(country_codes_url)
 
 tags = []
 
@@ -383,9 +385,21 @@ if statusOrgs != " ":
     t = requests.get(org_url)
     orgText = t.text
     soupOrg = BeautifulSoup(orgText)
+if statusCountryCodes != " ":
+    s = requests.get(country_codes_url)
+    counText = s.text
+    soupCoun = BeautifulSoup(counText)
+    #print(soupCoun)
 
 orgsOfficial = build_labels(soupOrg)
+countriesOfficial = build_text(soupCoun)
+countriesOfficial.append("EU - European Union")
+i = 0
+for i in range(0, 4):
+    countriesOfficial.pop(0)
 # Create lists for first run, to be written out to first sheet
+
+# <editor-fold desc="First Run">
 first_run = [start_url]  # add the base url
 #first_labels = []
 #("First Run: " + str(first_run))
@@ -418,6 +432,9 @@ for each in first_run:
     #print(first_orgs)
 
 #print(first_domains)
+# </editor-fold>
+
+# <editor-fold desc="Excel Sheet 1">
 print('Creating xlsx file')
 # Create excel file
 wb = Workbook()
@@ -514,7 +531,9 @@ for row in ws.range('I2:I%s' % max_cods):
     for cell in row:
         cell.value = first_country_codes[h]
         h += 1
+# </editor-fold>
 
+# <editor-fold desc="Second Run">
 ws1 = wb.create_sheet()
 ws1.title = 'Second run'
 
@@ -547,6 +566,9 @@ for each in first_run:
         orgsMade.append(find_organization(each))
         #print(orgsMade)
 
+# </editor-fold>
+
+# <editor-fold desc="Excel Sheet 2">
     if len(linksFound) > 0:
         start_row = ws1.get_highest_row() + 1
         last_row = (start_row + len(linksFound)) - 1
@@ -637,6 +659,7 @@ ws1['F1'].style = header_style
 ws1['G1'].style = header_style
 ws1['H1'].style = header_style
 ws1['I1'].style = header_style
+# </editor-fold>
 
 ws2 = wb.create_sheet()
 ws2.title = 'List of Official Organizations'
@@ -649,7 +672,18 @@ if len(orgsOfficial) > 0:
             cell.value = orgsOfficial[t]
             t += 1
 
-print('first orgs: {}'.format(orgsMade))
+ws3 = wb.create_sheet()
+ws3.title = 'List of Country Codes'
+if len(countriesOfficial) > 0:
+    start_row = ws3.get_highest_row() + 1
+    last_row = (start_row + len(countriesOfficial)) - 1
+    t = 0
+    for row in ws3.range('%s%s:%s%s' % ('A', start_row, 'A', last_row)):
+        for cell in row:
+            cell.value = countriesOfficial[t]
+            t += 1
+
+#print('first orgs: {}'.format(orgsMade))
 print('broken links: {}'.format(brokenLinks))
 print('Length of broken links: ' + str(len(brokenLinks)))
 print('visited: {}'.format(visited))
