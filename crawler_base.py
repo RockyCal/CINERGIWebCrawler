@@ -238,21 +238,27 @@ def find_suffix(url):
     elif "net" in extSuff:
         return "Internet service provider/Other network"
 
-
 def find_country_code(url):
     ext = tldextract.extract(url)
     #print(ext)
     extSuff = ext.suffix
-    print("Suff:" + " " + extSuff)
+    #print("Suff:" + " " + extSuff)
     for each in countriesOfficial:
         str2 = str(each)
         str2 = str2.lower()
         #print(newStr.lower)
-        print(str2)
+        #print(str2)
         if extSuff in str2[:5]:
         #if ext:
-            print(extSuff + " = " + str2)
+            #print(extSuff + " = " + str2)
             return str2.upper()
+
+def find_social_media(url):
+    title = build_title(url)
+    retStatement = ""
+    for each in socialMedia:
+        if each in title:
+            return each
 
 def check_type(url):
     url_front = url[:url.index(':')]
@@ -269,11 +275,18 @@ Params: url - page to get titles from
 Purpose: Extract the title of the pages these links lead to
 Returns: List of titles
 """
+
 def build_text(soup):
     titles = []
     for tag in soup.find_all('li'):
         titles.append(tag.text)
     return titles
+
+def build_social_links(soup):
+    links = []
+    for tag in soup.find_all('th'):
+        links.append(tag.text)
+    return links
 
 def build_title(url):
     working = check_link(url)
@@ -359,10 +372,12 @@ start_label = 'CINERGI Home'
 
 org_url = 'http://opr.ca.gov/s_listoforganizations.php'
 country_codes_url = 'http://www.thrall.org/domains.htm'
+social_media_url = 'http://en.wikipedia.org/wiki/List_of_social_networking_websites#L'
 
 status = check_link(start_url)  # Check functioning of start url
 statusOrgs = check_link(org_url)
 statusCountryCodes = check_link(country_codes_url)
+statusSocUrls = check_link(social_media_url)
 
 tags = []
 
@@ -390,10 +405,16 @@ if statusCountryCodes != " ":
     counText = s.text
     soupCoun = BeautifulSoup(counText)
     #print(soupCoun)
+if statusSocUrls != " ":
+    b = requests.get(social_media_url)
+    socText = b.text
+    soupSoc = BeautifulSoup(socText)
 
 orgsOfficial = build_labels(soupOrg)
 countriesOfficial = build_text(soupCoun)
 countriesOfficial.append("EU - European Union")
+socialMedia = build_social_links(soupSoc)
+
 i = 0
 for i in range(0, 4):
     countriesOfficial.pop(0)
@@ -415,6 +436,7 @@ first_resource_types = []
 first_content_types = []
 first_tlds = []
 first_country_codes = []
+first_socials = []
 
 # not being used as of 7/3/2014 but may be used later
 # second_run = []
@@ -429,6 +451,10 @@ for each in first_run:
     #print("TLD: " + str(first_tlds))
     first_country_codes.append(find_country_code(each))
     first_orgs.append(find_organization(each))
+    if(find_social_media(each)!= None):
+        first_socials.append(find_social_media(each))
+    else:
+        first_socials.append("NA")
     #print(first_orgs)
 
 #print(first_domains)
@@ -461,6 +487,8 @@ ws['H1'].value = "TLD"
 ws['H1'].style = header_style
 ws['I1'].value = "Country"
 ws['I1'].style = header_style
+ws['J1'].value = "Social Media Link"
+ws['J1'].style = header_style
 
 max_first = len(first_titles) + 1
 p = 0
@@ -531,6 +559,13 @@ for row in ws.range('I2:I%s' % max_cods):
     for cell in row:
         cell.value = first_country_codes[h]
         h += 1
+
+max_socs = len(first_socials)
+f = 0
+for row in ws.range('J2:J%s' % max_socs):
+    for cell in row:
+        cell.value = first_socials[f]
+        f += 1
 # </editor-fold>
 
 # <editor-fold desc="Second Run">
@@ -555,6 +590,7 @@ for each in first_run:
     conTypes = []
     suffs = []
     cods = []
+    socs = []
 
     for each in linksFound:
         titlesMade.append(build_title(each))
@@ -564,6 +600,10 @@ for each in first_run:
         suffs.append(find_suffix(each))
         cods.append(find_country_code(each))
         orgsMade.append(find_organization(each))
+        if(find_social_media(each) != None):
+            socs.append(each)
+        else:
+            socs.append("NA")
         #print(orgsMade)
 
 # </editor-fold>
@@ -635,6 +675,15 @@ for each in first_run:
                     cell.value = str(cods[h])
             h += 1
 
+        f = 0
+        for row in ws1.range('%s%s:%s%s' % ('J', start_row, 'J', last_row)):
+            for cell in row:
+                if socs[f] != "None":
+                    cell.value = socs[f]
+                else:
+                    cell.value = str(socs[f])
+            f += 1
+
         s += 1
         u += 1
         b += 1
@@ -650,6 +699,7 @@ ws1.cell('F1').value = 'Resource Type'
 ws1.cell('G1').value = 'Content Type/Format'
 ws1.cell('H1').value = "TLD"
 ws1.cell('I1').value = "Country"
+ws1.cell('J1').value = "Social Media Link"
 ws1['A1'].style = header_style
 ws1['B1'].style = header_style
 ws1['C1'].style = header_style
@@ -659,6 +709,7 @@ ws1['F1'].style = header_style
 ws1['G1'].style = header_style
 ws1['H1'].style = header_style
 ws1['I1'].style = header_style
+ws1['J1'].style = header_style
 # </editor-fold>
 
 ws2 = wb.create_sheet()
@@ -681,6 +732,18 @@ if len(countriesOfficial) > 0:
     for row in ws3.range('%s%s:%s%s' % ('A', start_row, 'A', last_row)):
         for cell in row:
             cell.value = countriesOfficial[t]
+            t += 1
+print(socialMedia)
+
+ws4 = wb.create_sheet()
+ws4.title = 'List of Social Media Networks'
+if len(socialMedia) > 0:
+    start_row = ws4.get_highest_row() + 1
+    last_row = (start_row + len(socialMedia)) - 1
+    t = 0
+    for row in ws4.range('%s%s:%s%s' % ('A', start_row, 'A', last_row)):
+        for cell in row:
+            cell.value = socialMedia[t]
             t += 1
 
 #print('first orgs: {}'.format(orgsMade))
