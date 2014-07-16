@@ -176,17 +176,16 @@ def link_type(url):
         reqtext2 = getreq2.text
         souper2 = BeautifulSoup(reqtext2)
         if souper2.find("form")!= None:
-            for tag in souper2.find("form"):
-                if tag in soup:
+            if souper2.find("INPUT TYPE") or souper2.find("POST"):
                     return 'search engine'
-        if souper2.find("download")!= None:
-            for tag in souper2.find('download'):
-                if tag in soup:
+        elif souper2.find(text= "download")!= None:
                     return 'download'
-        if souper2.find("<p>" > "HREF")!= None:
-             for tag in souper2.find('<p>' > "HREF"):
-                 if tag in soup:
+        elif souper2.find("<p>" > "HREF")!= None:
                     return 'information'
+        elif souper2.find(text= "Data",HREF= True):
+            if souper2.find(text= ["request", "login", "order", "purchase"]):
+                    return 'offlineAccess'
+
 
 """
 Name: build_labels()
@@ -276,7 +275,7 @@ resourceTypesKnown = {'Activity': ["Conference"],
 #start_label = 'GreenSeas Home'
 #start_title = 'Standards and Information'
 
-start_url = 'http://www.wunderground.com'
+start_url = 'http://www.digitalglobe.com/node/1544#overview'
 start_title = 'CINERGI Test Bed'
 start_label = 'CINERGI Home'
 
