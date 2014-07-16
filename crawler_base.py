@@ -171,12 +171,22 @@ def check_type(url):
 
 
 def link_type(url):
-    for tag in soup.find("form"):
-        if tag in soup:
-            return 'search'
-    for tag in soup.find('a' > "href" > 'programs'):
-        if tag in soup:
-            return 'download'
+    if url not in brokenLinks:
+        getreq2 = requests.get(url)
+        reqtext2 = getreq2.text
+        souper2 = BeautifulSoup(reqtext2)
+        if souper2.find("form")!= None:
+            for tag in souper2.find("form"):
+                if tag in soup:
+                    return 'search engine'
+        if souper2.find("download")!= None:
+            for tag in souper2.find('download'):
+                if tag in soup:
+                    return 'download'
+        if souper2.find("<p>" > "HREF")!= None:
+             for tag in souper2.find('<p>' > "HREF"):
+                 if tag in soup:
+                    return 'information'
 
 """
 Name: build_labels()
@@ -266,7 +276,7 @@ resourceTypesKnown = {'Activity': ["Conference"],
 #start_label = 'GreenSeas Home'
 #start_title = 'Standards and Information'
 
-start_url = 'http://badc.nerc.ac.uk/home/index.html'
+start_url = 'http://www.wunderground.com'
 start_title = 'CINERGI Test Bed'
 start_label = 'CINERGI Home'
 
@@ -316,10 +326,10 @@ for each in first_run:
     first_resource_types.append(find_resource_types(each))
     first_content_types.append(check_type(each))
     first_tlds.append(find_suffix(each))
-    first_link_type.append(link_type(urls))
+    first_link_type.append(link_type(each))
     print("link_type: " + str(first_link_type))
     first_country_codes.append(find_country_code(each))
-
+"""
 print(first_domains)
 print('Creating xlsx file')
 # Create excel file
@@ -546,3 +556,4 @@ print('Length of urls: ' + str(len(urls)))
 print('titles: {}'.format(titles))
 print('Length of titles: ' + str(len(titles)))
 wb.save(filename)
+"""
