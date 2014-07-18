@@ -15,6 +15,7 @@ class Resource:
     def __init__(self, title, url):
         self.title = title
         self.link = url
+    type = 'None'
 
 # <editor-fold desc="Functions">
 def check_type(url):
@@ -142,7 +143,7 @@ def crawl_links(url):
                 work_url = check_link(tag['href'])
                 if work_url is not " ":
                     # Get title from web page
-                    title = build_title(soup)
+                    # title = build_title(soup)
                     # add to global list of working urls
                     urls.append(work_url)
                 visited.append(tag['href'])
@@ -396,15 +397,15 @@ links_found = find_links(start_url)
 first_run = [res0]
 
 # first run of resources
-for link in links_found:
-    if check_link(link) is not " ":
-        request = requests.get(link)
+for alink in links_found:
+    if check_link(alink) is not " ":
+        request = requests.get(alink)
         html = request.text
         sewp = BeautifulSoup(html)
         name = build_title(sewp)
-        type = check_type(link)
-        res = Resource(name, link)
-        res.type = type
+        content_type = check_type(alink)
+        res = Resource(name, alink)
+        res.type = content_type
         first_run.append(res)
         #for tag in sewp.find_all('a', href=True):
         #    if HTTP in tag['href'] or preFTP in tag['href']:
@@ -416,7 +417,7 @@ for link in links_found:
         #            name = build_title(pg_soup)
         #            first_run.append(Resource(name, working_url))
     else:
-        brokenLinks.append(link)
+        brokenLinks.append(alink)
 
 for resource in first_run:
     print(resource.title)
@@ -451,9 +452,10 @@ ws['I1'].style = header_style
 
 j = 2
 for resource in first_run:
-    ws['A%s'%(j)].value = resource.title
+    ws['A%s' % (j)].value = resource.title
     # ws['B%s'%(j)].value = resource.title
-    ws['C%s'%(j)].value = resource.link
+    ws['C%s' % (j)].value = resource.link
+    ws['G%s' % (j)].value = resource.type
     j += 1
 
 # </editor-fold>
