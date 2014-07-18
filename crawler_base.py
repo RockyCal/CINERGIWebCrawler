@@ -133,8 +133,8 @@ def find_links(this_url):
 def crawl_links(url):
     # Make soup
     r = requests.get(url)
-    htmlText = r.text
-    soup = BeautifulSoup(htmlText)
+    html_text = r.text
+    soup = BeautifulSoup(html_text)
 
     # Find all the links
     for tag in soup.find_all('a', href=True):
@@ -213,20 +213,20 @@ def find_resource_types(url):
         return "None"
 
 def find_organization(url):
-    basicOrg = build_title(url)
+    basic_org = build_title(url)
 
-    if(basicOrg in orgsOfficial):
-        return "Verified: " + basicOrg
+    if basic_org in orgsOfficial:
+        return "Verified: " + basic_org
     else:
         ext = tldextract.extract(url)
-        extDom = ext.domain
-        extSuff = ext.suffix
-        newUrl = "http://" + extDom + "." + extSuff
+        ext_dom = ext.domain
+        ext_suffix = ext.suffix
+        new_url = "http://" + ext_dom + "." + ext_suffix
 
-        if check_link(newUrl) == " ":
-            newUrl = "http://www." + extDom + "." + extSuff
+        if check_link(new_url) == " ":
+            new_url = "http://www." + ext_dom + "." + ext_suffix
 
-        title = build_title(newUrl)
+        title = build_title(new_url)
 
         if title in orgsOfficial:
             return "Verified: " + title
@@ -238,39 +238,31 @@ def find_organization(url):
 def find_suffix(url):
     ext = tldextract.extract(url)
     #print(ext)
-    extSuff = ext.suffix
-    #print(extSuff)
-    extDom = ext.domain
-    #print(extSuff)
-    #print(ext.domain + "." + extSuff)
-    #for key in suffixesKnown:
-    #       for v in suffixesKnown.get(key):
-    #          if v in extSuff:
-    #             return key
-    if "com" in extSuff:
+    suff = ext.suffix
+    if "com" in suff:
         return "Company"
-    elif "edu" in extSuff:
+    elif "edu" in suff:
         return "Education"
-    elif "org" in extSuff:
+    elif "org" in suff:
         return "Non-profit Org"
-    elif "gov" in extSuff:
+    elif "gov" in suff:
         return "Government"
-    elif "net" in extSuff:
+    elif "net" in suff:
         return "Internet service provider/Other network"
 
 def find_country_code(url):
     ext = tldextract.extract(url)
     #print(ext)
-    extSuff = ext.suffix
-    print("Suff:" + " " + extSuff)
+    suffix = ext.suffix
+    print("Suff:" + " " + suffix)
     for each in countriesOfficial:
         str2 = str(each)
         str2 = str2.lower()
         #print(newStr.lower)
         print(str2)
-        if extSuff in str2[:5]:
+        if suffix in str2[:5]:
         #if ext:
-            print(extSuff + " = " + str2)
+            print(suffix + " = " + str2)
             return str2.upper()
 
 """
@@ -279,11 +271,12 @@ Params: url - page to get titles from
 Purpose: Extract the title of the pages these links lead to
 Returns: List of titles
 """
+# titles -> texts
 def build_text(soup):
-    titles = []
+    texts = []
     for tag in soup.find_all('li'):
-        titles.append(tag.text)
-    return titles
+        texts.append(tag.text)
+    return texts
 
 def build_title(page_soup):
     if page_soup.title is not None:
@@ -392,6 +385,7 @@ for t in range(0, 4):
 
 # Create first resource
 res0 = Resource(start_title, start_url)
+res0.type = check_type(res0.link)
 # First run
 links_found = find_links(start_url)
 first_run = [res0]
@@ -403,6 +397,7 @@ for alink in links_found:
         html = request.text
         sewp = BeautifulSoup(html)
         name = build_title(sewp)
+        titles.append(name)
         content_type = check_type(alink)
         res = Resource(name, alink)
         res.type = content_type
@@ -452,10 +447,10 @@ ws['I1'].style = header_style
 
 j = 2
 for resource in first_run:
-    ws['A%s' % (j)].value = resource.title
-    # ws['B%s'%(j)].value = resource.title
-    ws['C%s' % (j)].value = resource.link
-    ws['G%s' % (j)].value = resource.type
+    ws['A%s' % j].value = resource.title
+    # ws['B%s' % j].value = resource.title
+    ws['C%s' % j].value = resource.link
+    ws['G%s' % j].value = resource.type
     j += 1
 
 # </editor-fold>
