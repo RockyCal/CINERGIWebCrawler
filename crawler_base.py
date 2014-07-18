@@ -496,9 +496,7 @@ if len(countriesOfficial) > 0:
             cell.value = countriesOfficial[t]
             t += 1
 
-#print('first orgs: {}'.format(orgsMade))
 print('broken links: {}'.format(brokenLinks))
-print('Length of broken links: ' + str(len(brokenLinks)))
 print('visited: {}'.format(visited))
 print('Length of visited: ' + str(len(visited)))
 print('Working urls: {}'.format(urls))
