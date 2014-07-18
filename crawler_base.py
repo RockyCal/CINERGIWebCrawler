@@ -395,6 +395,7 @@ res0 = Resource(start_title, start_url)
 links_found = find_links(start_url)
 first_run = [res0]
 
+# first run of resources
 for link in links_found:
     if check_link(link) is not " ":
         request = requests.get(link)
@@ -419,7 +420,6 @@ for link in links_found:
 
 for resource in first_run:
     print(resource.title)
-# </editor-fold>
 
 # <editor-fold desc="Excel Sheet 1">
 print('Creating xlsx file')
@@ -448,6 +448,16 @@ ws['H1'].value = "TLD"
 ws['H1'].style = header_style
 ws['I1'].value = "Country"
 ws['I1'].style = header_style
+
+j = 2
+for resource in first_run:
+    ws['A%s'%(j)].value = resource.title
+    # ws['B%s'%(j)].value = resource.title
+    ws['C%s'%(j)].value = resource.link
+    j += 1
+
+# </editor-fold>
+
 
 # <editor-fold desc="Second Run">
 ws1 = wb.create_sheet()
