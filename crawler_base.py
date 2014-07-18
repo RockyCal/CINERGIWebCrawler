@@ -177,12 +177,12 @@ def link_type(url):
         souper2 = BeautifulSoup(reqtext2)
         if souper2.find("form")!= None:
                     return 'search engine'
-        elif souper2.find(text= "download")!= None:
+        elif souper2.find(text= ["download" or "programs" or 'software'])!= None:
                     return 'download'
         elif souper2.find("<p>" > "HREF")!= None:
                     return 'information'
-        elif souper2.find(text= "Data",HREF= True):
-            if souper2.find(text= ["request", "login", "order", "purchase"]):
+        elif souper2.find(text="Data",HREF= True):
+            if souper2.find(text=["request", "login", "order", "purchase"]):
                     return 'offlineAccess'
 
 
@@ -274,7 +274,7 @@ resourceTypesKnown = {'Activity': ["Conference"],
 #start_label = 'GreenSeas Home'
 #start_title = 'Standards and Information'
 
-start_url = 'http://badc.nerc.ac.uk/home/index.html'
+start_url = 'http://water.usgs.gov/nrp/gwsoftware/modflow.html'
 start_title = 'CINERGI Test Bed'
 start_label = 'CINERGI Home'
 
