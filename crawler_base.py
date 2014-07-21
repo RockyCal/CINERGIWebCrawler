@@ -370,6 +370,10 @@ start_url = 'http://cinergi.weebly.com/'
 start_title = 'CINERGI Test Bed'
 start_label = 'CINERGI Home'
 
+#start_url = 'http://www.antarctica.ac.uk/dms/'
+#start_title = "Antarctica"
+#start_label = 'Antartica Home'
+
 org_url = 'http://opr.ca.gov/s_listoforganizations.php'
 country_codes_url = 'http://www.thrall.org/domains.htm'
 social_media_url = 'http://en.wikipedia.org/wiki/List_of_social_networking_websites#L'
@@ -437,23 +441,26 @@ first_content_types = []
 first_tlds = []
 first_country_codes = []
 first_socials = []
+first_soc_links = []
 
 # not being used as of 7/3/2014 but may be used later
 # second_run = []
 # second_titles = []
 for each in first_run:
-    title = build_title(each)
-    first_titles.append(title)
-    first_domains.append(find_domains(each))
-    first_resource_types.append(find_resource_types(each))
-    first_content_types.append(check_type(each))
-    first_tlds.append(find_suffix(each))
-    #print("TLD: " + str(first_tlds))
-    first_country_codes.append(find_country_code(each))
-    first_orgs.append(find_organization(each))
-    if(find_social_media(each)!= None):
+    if(find_social_media(each) != None):
         first_socials.append(find_social_media(each))
+        first_soc_links.append(each)
+        #first_run.remove(each)
     else:
+        title = build_title(each)
+        first_titles.append(title)
+        first_domains.append(find_domains(each))
+        first_resource_types.append(find_resource_types(each))
+        first_content_types.append(check_type(each))
+        first_tlds.append(find_suffix(each))
+        #print("TLD: " + str(first_tlds))
+        first_country_codes.append(find_country_code(each))
+        first_orgs.append(find_organization(each))
         first_socials.append("NA")
     #print(first_orgs)
 
@@ -487,7 +494,7 @@ ws['H1'].value = "TLD"
 ws['H1'].style = header_style
 ws['I1'].value = "Country"
 ws['I1'].style = header_style
-ws['J1'].value = "Social Media Link"
+ws['J1'].value = "Social Media?"
 ws['J1'].style = header_style
 
 max_first = len(first_titles) + 1
@@ -561,11 +568,12 @@ for row in ws.range('I2:I%s' % max_cods):
         h += 1
 
 max_socs = len(first_socials)
-f = 0
+t = 0
 for row in ws.range('J2:J%s' % max_socs):
     for cell in row:
-        cell.value = first_socials[f]
-        f += 1
+        cell.value = first_socials[t]
+        t += 1
+
 # </editor-fold>
 
 # <editor-fold desc="Second Run">
@@ -583,6 +591,7 @@ for each in first_run:
     labelsMade = build_labels(crawlSoup)
     #print("Labels {}".format(labelsMade))
     titlesMade = []
+    socLinks = []
     #org = first_orgs[index]
     orgsMade = []
     domains = []
@@ -593,17 +602,20 @@ for each in first_run:
     socs = []
 
     for each in linksFound:
-        titlesMade.append(build_title(each))
-        domains.append(find_domains(each))
-        reTypes.append(find_resource_types(each))
-        conTypes.append(check_type(each))
-        suffs.append(find_suffix(each))
-        cods.append(find_country_code(each))
-        orgsMade.append(find_organization(each))
         if(find_social_media(each) != None):
-            socs.append(each)
+            socs.append(find_social_media(each))
+            socLinks.append(each)
+            #linksFound.remove(each)
         else:
+            titlesMade.append(build_title(each))
+            domains.append(find_domains(each))
+            reTypes.append(find_resource_types(each))
+            conTypes.append(check_type(each))
+            suffs.append(find_suffix(each))
+            cods.append(find_country_code(each))
+            orgsMade.append(find_organization(each))
             socs.append("NA")
+            #socs.append("NA")
         #print(orgsMade)
 
 # </editor-fold>
@@ -611,7 +623,7 @@ for each in first_run:
 # <editor-fold desc="Excel Sheet 2">
     if len(linksFound) > 0:
         start_row = ws1.get_highest_row() + 1
-        last_row = (start_row + len(linksFound)) - 1
+        last_row = (start_row + len(titlesMade)) - 1
         t = 0
         for row in ws1.range('%s%s:%s%s' % ('A', start_row, 'A', last_row)):
             for cell in row:
@@ -734,18 +746,36 @@ if len(countriesOfficial) > 0:
             cell.value = countriesOfficial[t]
             t += 1
 print(socialMedia)
-
+"""
 ws4 = wb.create_sheet()
-ws4.title = 'List of Social Media Networks'
-if len(socialMedia) > 0:
+ws4.title = 'List of Social Media'
+if len(first_soc_links) > 0:
     start_row = ws4.get_highest_row() + 1
-    last_row = (start_row + len(socialMedia)) - 1
+    last_row = (start_row + len(first_soc_links)) - 1
     t = 0
     for row in ws4.range('%s%s:%s%s' % ('A', start_row, 'A', last_row)):
         for cell in row:
-            cell.value = socialMedia[t]
+            cell.value = first_socials[t]
             t += 1
-
+    y = 0
+    for row in ws4.range('%s%s:%s%s' % ('B', start_row, 'B', last_row)):
+        for cell in row:
+            cell.value = first_soc_links[y]
+            y += 1
+if len(socLinks) > 0:
+    start_row = ws4.get_highest_row() + 1
+    last_row = (start_row + len(socLinks)) - 1
+    t = 0
+    for row in ws4.range('%s%s:%s%s' % ('A', start_row, 'A', last_row)):
+        for cell in row:
+            cell.value = socs[t]
+            t += 1
+    y = 0
+    for row in ws4.range('%s%s:%s%s' % ('B', start_row, 'B', last_row)):
+        for cell in row:
+            cell.value = socLinks[y]
+            y += 1
+"""
 #print('first orgs: {}'.format(orgsMade))
 print('broken links: {}'.format(brokenLinks))
 print('Length of broken links: ' + str(len(brokenLinks)))
