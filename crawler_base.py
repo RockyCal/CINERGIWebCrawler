@@ -175,9 +175,21 @@ def link_type(url):
         getreq2 = requests.get(url)
         reqtext2 = getreq2.text
         souper2 = BeautifulSoup(reqtext2)
+        LinkString = ""
+        if souper2.find("form")!= None:
+            LinkString += "search engine/"
+        if souper2.find(["download" or "programs" or 'software'])!= None:
+            LinkString += "download"
+        if souper2.find("<p>" > "HREF")!= None:
+            LinkString += "information"
+        if souper2.find(["request", "login", "order", "purchase"])!= None:
+            LinkString += "offlineAccess"
+        return LinkString
+
+"""
         if souper2.find("form")!= None:
                     return 'search engine'
-        elif souper2.find(text= ["download" or "programs" or 'software'])!= None:
+        elif souper2.find(["download" or "programs" or 'software'])!= None:
                     return 'download'
         elif souper2.find("<p>" > "HREF")!= None:
                     return 'information'
@@ -185,7 +197,7 @@ def link_type(url):
             if souper2.find(text=["request", "login", "order", "purchase"]):
                     return 'offlineAccess'
 
-
+"""
 """
 Name: build_labels()
 Params: url - page to get titles from
@@ -274,7 +286,7 @@ resourceTypesKnown = {'Activity': ["Conference"],
 #start_label = 'GreenSeas Home'
 #start_title = 'Standards and Information'
 
-start_url = 'http://water.usgs.gov/nrp/gwsoftware/modflow.html'
+start_url = 'http://img.jgi.doe.gov/'
 start_title = 'CINERGI Test Bed'
 start_label = 'CINERGI Home'
 
