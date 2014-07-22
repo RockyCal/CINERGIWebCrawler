@@ -16,8 +16,9 @@ preFTP = 'ftp://'
 class Resource:
     def __init__(self, url):
         self.link = url
-    title = 'None'
-    type = 'None'
+    title = 'No title'
+    type = 'Type not identified'
+    org = 'Organization not found'
 # </editor-fold>
 
 # <editor-fold desc="Functions">
@@ -220,22 +221,24 @@ def find_organization(url):
     if basic_org in orgsOfficial:
         return "Verified: " + basic_org
     else:
-        ext = tldextract.extract(url)
-        ext_dom = ext.domain
-        ext_suffix = ext.suffix
-        new_url = "http://" + ext_dom + "." + ext_suffix
+        return "Organization not found"
+    #else:
+    #    ext = tldextract.extract(url)
+    #    ext_dom = ext.domain
+    #    ext_suffix = ext.suffix
+    #    new_url = "http://" + ext_dom + "." + ext_suffix
 
-        if check_link(new_url) == " ":
-            new_url = "http://www." + ext_dom + "." + ext_suffix
+    #    if check_link(new_url) == " ":
+    #        new_url = "http://www." + ext_dom + "." + ext_suffix
 
-        title = build_title(new_url)
+    #    title = build_title(new_url)
 
-        if title in orgsOfficial:
-            return "Verified: " + title
-        elif title is not None:
-            return title
-        else:
-            return "NA"
+    #    if title in orgsOfficial:
+    #        return "Verified: " + title
+    #    elif title is not None:
+    #        return title
+    #    else:
+    #        return "NA"
 
 def find_suffix(url):
     ext = tldextract.extract(url)
@@ -280,14 +283,14 @@ def build_text(soup):
         texts.append(tag.text)
     return texts
 
-def build_title(page_soup):
-    if page_soup.title is not None:
-        if page_soup.title.string is not None:
-            page_title = page_soup.title.string
-        if page_title is not None:  # TODO: these two lines
-            return page_title       # may not be necessary
+def build_title(page_url):
+    print(page_url)
+    page_text = BeautifulSoup((requests.get(page_url)).text)
+    for title in page_text.find_all('title'):
+        if title.has_attr('string'):
+            return title.string
         else:
-            return 'No title'
+            return title.text
     else:
         return 'No title'
 
@@ -389,7 +392,7 @@ for t in range(0, 4):
 res0 = Resource(start_url)
 start_html = (requests.get(start_url)).text
 start_soup = BeautifulSoup(start_html)
-res0.title = build_title(start_soup)
+res0.title = build_title(start_url)
 res0.type = check_type(res0.link)
 # First run
 links_found = find_links(start_url)
@@ -399,30 +402,23 @@ first_run = [res0]
 for alink in links_found:
     url_final = check_link(alink)  # named so b/c url may be changed in function
     res = Resource(url_final)
+    res.link = url_final
+    print(res.link)
     if res.link is not " ":
         res.type = check_type(url_final)
-        if res.type is HTTP:
-            html = (requests.get(res.link)).text
-            sewp = BeautifulSoup(html)
-            res.title = build_title(sewp)
+        if res.type is 'HTTP':
+            # commented out for soup-making amendment to build_title
+            #html = (requests.get(res.link)).text
+            #sewp = BeautifulSoup(html)
+            res.title = build_title(res.link)
+            res.org = find_organization(res.link)
             titles.append(res.title)
             first_run.append(res)
-        elif res.type is preFTP:
+        elif res.type is 'FTP':
             res.title = 'FTP site'
-        #for tag in sewp.find_all('a', href=True):
-        #    if HTTP in tag['href'] or preFTP in tag['href']:
-        #        working_url = check_link(tag['href'])
-        #        if working_url is not " ":
-        #            rrr = requests.get(working_url)
-        #            ptext = rrr.text
-        #            pg_soup = BeautifulSoup(ptext)
-        #            name = build_title(pg_soup)
-        #            first_run.append(Resource(name, working_url))
+            first_run.append(res)
     else:
         brokenLinks.append(alink)
-
-for resource in first_run:
-    print(resource.title)
 
 # <editor-fold desc="Excel Sheet 1">
 print('Creating xlsx file')
@@ -457,6 +453,7 @@ for resource in first_run:
     ws['A%s' % j].value = resource.title
     # ws['B%s' % j].value = resource.label  # no label assigned
     ws['C%s' % j].value = resource.link
+    ws['D%s' % j].value = resource.org
     ws['G%s' % j].value = resource.type
     j += 1
 
@@ -510,11 +507,11 @@ if len(countriesOfficial) > 0:
             cell.value = countriesOfficial[t]
             t += 1
 
-print('broken links: {}'.format(brokenLinks))
-print('visited: {}'.format(visited))
-print('Length of visited: ' + str(len(visited)))
-print('Working urls: {}'.format(urls))
-print('Length of urls: ' + str(len(urls)))
-print('titles: {}'.format(titles))
-print('Length of titles: ' + str(len(titles)))
+#print('broken links: {}'.format(brokenLinks))
+#print('visited: {}'.format(visited))
+#print('Length of visited: ' + str(len(visited)))
+#print('Working urls: {}'.format(urls))
+#print('Length of urls: ' + str(len(urls)))
+#print('titles: {}'.format(titles))
+#print('Length of titles: ' + str(len(titles)))
 wb.save(filename)
