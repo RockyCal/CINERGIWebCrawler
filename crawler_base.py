@@ -17,8 +17,11 @@ class Resource:
     def __init__(self, url):
         self.link = url
     title = 'No title'
-    type = 'Type not identified'
+    url_type = 'Type not identified'
     org = 'Organization not found'
+    disciplines = []
+    resource_type = []
+
 # </editor-fold>
 
 # <editor-fold desc="Functions">
@@ -31,37 +34,39 @@ def check_type(url):
     else:
         return "None"
 
+
 def check_again(new_url):
     try:
         rq = requests.get(new_url)
         cq = rq.status_code
     except requests.ConnectionError:
-        #fixed = 0
+        # fixed = 0
         print('{}: Connection error'.format(new_url))
         brokenLinks.append(new_url)
         return " "
     except requests.Timeout:
-        #fixed = 0
+        # fixed = 0
         print('{}: Timeout error'.format(new_url))
         brokenLinks.append(new_url)
         return " "
     except requests.TooManyRedirects:
-        #fixed = 0
+        # fixed = 0
         print('{}: Too Many Redirects'.format(new_url))
         brokenLinks.append(new_url)
         return " "
     except requests.HTTPError:
-        #fixed = 0
+        # fixed = 0
         print('{}: HTTP Error'.format(new_url))
         brokenLinks.append(new_url)
         return " "
     else:
         if cq != 200:
-            #fixed = 0
+            # fixed = 0
             print('{}: Error code {}'.format(new_url, cq))
             brokenLinks.append(new_url)
             return " "
     return new_url
+
 
 """
 Name: check_link.py()
@@ -70,6 +75,7 @@ Purpose: Make sure links work and go somewhere
 Returns: 1 if link works w/o error
          Exits if link is broken
 """
+
 
 def check_link(url):
     works = url
@@ -120,6 +126,7 @@ def check_link(url):
         print('check link: {}'.format(check_type(url)))
     return works
 
+
 def find_links(this_url):
     urls_found = []
     get = requests.get(this_url)
@@ -131,6 +138,7 @@ def find_links(this_url):
             if url_correct is not " ":
                 urls_found.append(url_correct)
     return urls_found
+
 
 # Finds urls and titles
 def crawl_links(url):
@@ -151,13 +159,14 @@ def crawl_links(url):
                     urls.append(work_url)
                 visited.append(tag['href'])
         elif preFTP in tag['href']:
-            #urlopen(tag['href'])
+            # urlopen(tag['href'])
             visited.append(tag['href'])
             # check functioning, will add to brokenLinks if link is bad
             # add to list of urls found
             if tag['href'] not in brokenLinks:
                 # add to global list of working urls
                 urls.append(tag['href'])
+
 
 def visible(element):
     if element.parent.name in ['style', 'script', '[document]', 'head', 'title', 'a']:
@@ -166,18 +175,17 @@ def visible(element):
         return False
     return True
 
-def find_domains(url):
-    domains_found = []
-    set_of_domains = set()
-    if check_type(url) == "FTP":
+
+def find_disciplines(url):
+    disciplines_found = []
+    set_of_disciplines = set()
+    if check_type(url) is "FTP":
         return "None"
-    if url not in brokenLinks and check_type(url) is "HTTP":
-        getreq = requests.get(url)
-        reqtext = getreq.text
-        souper = BeautifulSoup(reqtext)
+    if check_type(url) is "HTTP":
+        souper = BeautifulSoup(requests.get(url).text)
         # Search for all keywords, the values of the Domains dict
-        for key in domainsKnown:
-            for v in domainsKnown.get(key):
+        for key in disciplinesKnown:
+            for v in disciplinesKnown.get(key):
                 # For all keywords found, filter so that only
                 # the keywords in the page's visible text are found
                 texts = souper.find_all(text=re.compile(v))
@@ -187,21 +195,20 @@ def find_domains(url):
                 # the resource
                 for vis in visible_texts:
                     # Added as a set to avoid duplicates
-                    set_of_domains.add(key)
+                    set_of_disciplines.add(key)
         # Turn the set of domains back into a list
-        domains_found = list(set_of_domains)
-    if len(domains_found) > 0:
-        return domains_found
+        disciplines_found = list(set_of_disciplines)
+    if len(disciplines_found) > 0:
+        return disciplines_found
     else:
-        return "None"
+        return ['No disciplines found']
+
 
 def find_resource_types(url):
     resos_found = []
     set_of_resources = set()
-    if url not in brokenLinks and check_type(url) is "HTTP":
-        getreq2 = requests.get(url)
-        reqtext2 = getreq2.text
-        souper2 = BeautifulSoup(reqtext2)
+    if check_type(url) is "HTTP":
+        souper2 = BeautifulSoup(requests.get(url).text)
         for key in resourceTypesKnown:
             for v in resourceTypesKnown.get(key):
                 texts = souper2.find_all(text=re.compile(v))
@@ -212,7 +219,8 @@ def find_resource_types(url):
     if len(resos_found) > 0:
         return resos_found
     else:
-        return "None"
+        return ['None']
+
 
 def find_organization(url):
     basic_org = build_title(url)
@@ -224,9 +232,10 @@ def find_organization(url):
     else:
         return "NA"
 
+
 def find_suffix(url):
     ext = tldextract.extract(url)
-    #print(ext)
+    # print(ext)
     suff = ext.suffix
     if "com" in suff:
         return "Company"
@@ -239,20 +248,20 @@ def find_suffix(url):
     elif "net" in suff:
         return "Internet service provider/Other network"
 
+
 def find_country_code(url):
     ext = tldextract.extract(url)
-    #print(ext)
+    # print(ext)
     suffix = ext.suffix
-    print("Suff:" + " " + suffix)
     for each in countriesOfficial:
         str2 = str(each)
         str2 = str2.lower()
-        #print(newStr.lower)
         print(str2)
         if suffix in str2[:5]:
-        #if ext:
+            #if ext:
             print(suffix + " = " + str2)
             return str2.upper()
+
 
 """
 Name: build_labels()
@@ -267,6 +276,7 @@ def build_text(soup):
         texts.append(tag.text)
     return texts
 
+
 def build_title(page_url):
     page_text = BeautifulSoup((requests.get(page_url)).text)
     for title in page_text.find_all('title'):
@@ -276,6 +286,7 @@ def build_title(page_url):
             return title.text
     else:
         return 'No title'
+
 
 def build_labels(soup):
     titles_found = []
@@ -299,7 +310,7 @@ brokenLinks = []
 # Total titles - the text attribute of tag
 titles = []
 # Domains
-domainsKnown = {'Agriculture/Farming': ["agriculture", "farming"], 'Atmosphere': ["atmosphere"],
+disciplinesKnown = {'Agriculture/Farming': ["agriculture", "farming"], 'Atmosphere': ["atmosphere"],
                 'Biology': ["biodiversity", "organism", "life science", "biota"],
                 'Climate': ["climate"], 'Ecology': ["ecological", "ecosystem", "habitat", "environment"],
                 'Geochemistry': ["geochem"],
@@ -327,13 +338,13 @@ resourceTypesKnown = {'Activity': ["Conference"],
                       'Software': ["software", "code", "programming"],
                       'Forum': ["forum"], 'Organization': ["organization"]}
 
-#start_url = 'http://www.greenseas.eu/content/standards-and-related-web-information'
-#start_label = 'GreenSeas Home'
-#start_title = 'Standards and Information'
+start_url = 'http://www.greenseas.eu/content/standards-and-related-web-information'
+start_label = 'GreenSeas Home'
+start_title = 'Standards and Information'
 
-start_url = 'http://cinergi.weebly.com/'
-start_title = 'CINERGI Test Bed'
-start_label = 'CINERGI Home'
+#start_url = 'http://cinergi.weebly.com/'
+#start_title = 'CINERGI Test Bed'
+#tart_label = 'CINERGI Home'
 
 # List of organizations
 org_url = 'http://opr.ca.gov/s_listoforganizations.php'
@@ -376,7 +387,7 @@ res0 = Resource(start_url)
 start_html = (requests.get(start_url)).text
 start_soup = BeautifulSoup(start_html)
 res0.title = build_title(start_url)
-res0.type = check_type(res0.link)
+res0.url_type = check_type(res0.link)
 # First run
 links_found = find_links(start_url)
 first_run = [res0]
@@ -387,16 +398,19 @@ for alink in links_found:
     res = Resource(url_final)
     res.link = url_final
     if res.link is not " ":
-        res.type = check_type(url_final)
-        if res.type is 'HTTP':
+        res.url_type = check_type(url_final)
+        if res.url_type is 'HTTP':
             # commented out for soup-making amendment to build_title
             #html = (requests.get(res.link)).text
             #sewp = BeautifulSoup(html)
             res.title = build_title(res.link)
             res.org = find_organization(res.link)
+            res.disciplines = find_disciplines(res.link)
+            res.resource_type = find_resource_types(res.link)
             titles.append(res.title)
+            urls.append(res.link)
             first_run.append(res)
-        elif res.type is 'FTP':
+        elif res.url_type is 'FTP':
             res.title = 'FTP site'
             first_run.append(res)
     else:
@@ -436,7 +450,9 @@ for resource in first_run:
     # ws['B%s' % j].value = resource.label  # no label assigned
     ws['C%s' % j].value = resource.link
     ws['D%s' % j].value = resource.org
-    ws['G%s' % j].value = resource.type
+    ws['E%s' % j].value = ', '.join(sorted(resource.disciplines))
+    ws['F%s' % j].value = ','.join(sorted(resource.resource_type))
+    ws['G%s' % j].value = resource.url_type
     j += 1
 
 # </editor-fold>
@@ -489,10 +505,10 @@ if len(countriesOfficial) > 0:
             cell.value = countriesOfficial[t]
             t += 1
 
-#print('broken links: {}'.format(brokenLinks))
+print('broken links: {}'.format(brokenLinks))
 #print('visited: {}'.format(visited))
 #print('Length of visited: ' + str(len(visited)))
-#print('Working urls: {}'.format(urls))
+print('Working urls: {}'.format(urls))
 #print('Length of urls: ' + str(len(urls)))
 #print('titles: {}'.format(titles))
 #print('Length of titles: ' + str(len(titles)))
