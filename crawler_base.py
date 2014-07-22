@@ -210,7 +210,6 @@ def find_resource_types(url):
                     set_of_resources.add(key)
         resos_found = list(set_of_resources)
     if len(resos_found) > 0:
-        # print(str(resos_found))
         return resos_found
     else:
         return "None"
@@ -220,25 +219,10 @@ def find_organization(url):
 
     if basic_org in orgsOfficial:
         return "Verified: " + basic_org
+    elif build_title(url) is not 'No title':
+        return build_title(url)
     else:
-        return "Organization not found"
-    #else:
-    #    ext = tldextract.extract(url)
-    #    ext_dom = ext.domain
-    #    ext_suffix = ext.suffix
-    #    new_url = "http://" + ext_dom + "." + ext_suffix
-
-    #    if check_link(new_url) == " ":
-    #        new_url = "http://www." + ext_dom + "." + ext_suffix
-
-    #    title = build_title(new_url)
-
-    #    if title in orgsOfficial:
-    #        return "Verified: " + title
-    #    elif title is not None:
-    #        return title
-    #    else:
-    #        return "NA"
+        return "NA"
 
 def find_suffix(url):
     ext = tldextract.extract(url)
@@ -284,7 +268,6 @@ def build_text(soup):
     return texts
 
 def build_title(page_url):
-    print(page_url)
     page_text = BeautifulSoup((requests.get(page_url)).text)
     for title in page_text.find_all('title'):
         if title.has_attr('string'):
@@ -403,7 +386,6 @@ for alink in links_found:
     url_final = check_link(alink)  # named so b/c url may be changed in function
     res = Resource(url_final)
     res.link = url_final
-    print(res.link)
     if res.link is not " ":
         res.type = check_type(url_final)
         if res.type is 'HTTP':
