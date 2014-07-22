@@ -7,15 +7,18 @@ from urllib.request import urlopen
 from urllib.error import URLError
 import tldextract
 
-# Protocol constants
+# <editor-fold desc="Protocol constants">
 HTTP = 'http://'
 preFTP = 'ftp://'
+# </editor-fold>
 
+# <editor-fold desc="class Resource">
 class Resource:
-    def __init__(self, title, url):
-        self.title = title
+    def __init__(self, url):
         self.link = url
+    title = 'None'
     type = 'None'
+# </editor-fold>
 
 # <editor-fold desc="Functions">
 def check_type(url):
@@ -68,7 +71,6 @@ Returns: 1 if link works w/o error
 """
 
 def check_link(url):
-    # works = 1
     works = url
     if check_type(url) == "HTTP":
         try:
@@ -282,8 +284,8 @@ def build_title(page_soup):
     if page_soup.title is not None:
         if page_soup.title.string is not None:
             page_title = page_soup.title.string
-        if page_title is not None:
-            return page_title
+        if page_title is not None:  # TODO: these two lines
+            return page_title       # may not be necessary
         else:
             return 'No title'
     else:
@@ -384,24 +386,29 @@ for t in range(0, 4):
     countriesOfficial.pop(0)
 
 # Create first resource
-res0 = Resource(start_title, start_url)
+res0 = Resource(start_url)
+start_html = (requests.get(start_url)).text
+start_soup = BeautifulSoup(start_html)
+res0.title = build_title(start_soup)
 res0.type = check_type(res0.link)
 # First run
 links_found = find_links(start_url)
 first_run = [res0]
 
-# first run of resources
+# Build the resources from the links found
 for alink in links_found:
-    if check_link(alink) is not " ":
-        request = requests.get(alink)
-        html = request.text
-        sewp = BeautifulSoup(html)
-        name = build_title(sewp)
-        titles.append(name)
-        content_type = check_type(alink)
-        res = Resource(name, alink)
-        res.type = content_type
-        first_run.append(res)
+    url_final = check_link(alink)  # named so b/c url may be changed in function
+    res = Resource(url_final)
+    if res.link is not " ":
+        res.type = check_type(url_final)
+        if res.type is HTTP:
+            html = (requests.get(res.link)).text
+            sewp = BeautifulSoup(html)
+            res.title = build_title(sewp)
+            titles.append(res.title)
+            first_run.append(res)
+        elif res.type is preFTP:
+            res.title = 'FTP site'
         #for tag in sewp.find_all('a', href=True):
         #    if HTTP in tag['href'] or preFTP in tag['href']:
         #        working_url = check_link(tag['href'])
@@ -448,7 +455,7 @@ ws['I1'].style = header_style
 j = 2
 for resource in first_run:
     ws['A%s' % j].value = resource.title
-    # ws['B%s' % j].value = resource.title
+    # ws['B%s' % j].value = resource.label  # no label assigned
     ws['C%s' % j].value = resource.link
     ws['G%s' % j].value = resource.type
     j += 1
