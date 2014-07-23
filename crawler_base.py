@@ -260,6 +260,24 @@ def find_social_media(url):
         if each in title:
             return each
 
+def find_term_links(string):
+    retUrl = []
+
+    # Domains
+    for each in string:
+        if("Agriculture/Farming" in string):
+            retUrl.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/agr.jpg, ")
+        if("Biology" in string):
+            retUrl.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/bio.jpg, ")
+
+        # Resource Types
+        if("Catalog" in string):
+            retUrl.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/catalog.jpg, ")
+        if("Community" in string):
+            retUrl.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/community.jpg, ")
+
+    return retUrl
+
 def check_type(url):
     url_front = url[:url.index(':')]
     if url_front == "http" or url_front == "https":
@@ -442,11 +460,15 @@ first_tlds = []
 first_country_codes = []
 first_socials = []
 first_soc_links = []
+first_term_links = {}
 
 # not being used as of 7/3/2014 but may be used later
 # second_run = []
 # second_titles = []
+index = 0
 for each in first_run:
+    term_links = []
+
     if(find_social_media(each) != None):
         first_socials.append(find_social_media(each))
         first_soc_links.append(each)
@@ -454,14 +476,24 @@ for each in first_run:
     else:
         title = build_title(each)
         first_titles.append(title)
-        first_domains.append(find_domains(each))
-        first_resource_types.append(find_resource_types(each))
+
+        domains = find_domains(each)
+        first_domains.append(domains)
+        term_links.append(find_term_links(domains))
+
+        resTypes = find_resource_types(each)
+        first_resource_types.append(resTypes)
+        term_links.append(find_term_links(resTypes))
+
         first_content_types.append(check_type(each))
         first_tlds.append(find_suffix(each))
         #print("TLD: " + str(first_tlds))
         first_country_codes.append(find_country_code(each))
         first_orgs.append(find_organization(each))
         first_socials.append("NA")
+
+        first_term_links[index] = term_links
+        index += 1
     #print(first_orgs)
 
 #print(first_domains)
@@ -496,6 +528,8 @@ ws['I1'].value = "Country"
 ws['I1'].style = header_style
 ws['J1'].value = "Social Media?"
 ws['J1'].style = header_style
+ws['K1'].value = "Term Definitions"
+ws['K1'].style = header_style
 
 max_first = len(first_titles) + 1
 p = 0
@@ -574,6 +608,12 @@ for row in ws.range('J2:J%s' % max_socs):
         cell.value = first_socials[t]
         t += 1
 
+max_terms = len(first_term_links)
+k = 0
+for row in ws.range('K2:K%s' % max_terms):
+    for cell in row:
+        cell.value = str(first_term_links[k])
+        k += 1
 # </editor-fold>
 
 # <editor-fold desc="Second Run">
