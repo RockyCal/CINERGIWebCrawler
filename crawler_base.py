@@ -75,6 +75,7 @@ def check_again(new_url):
             return " "
     return new_url
 
+
 """
 Name: check_link()
 Params: url - link to check
@@ -82,6 +83,7 @@ Purpose: Make sure links work and go somewhere
 Returns: 1 if link works w/o error
          Exits if link is broken
 """
+
 
 def check_link(url):
     # works = 1
@@ -135,6 +137,7 @@ def check_link(url):
         works = " "
         print('check link: {}'.format(check_type(url)))
     return works
+
 
 def visible(element):
     if element.parent.name in ['style', 'script', '[document]', 'head', 'title', 'a']:
@@ -215,9 +218,10 @@ def find_organization(url):
         else:
             return "NA"
 
+
 def find_suffix(url):
     ext = tldextract.extract(url)
-    #print(ext)
+    # print(ext)
     extSuff = ext.suffix
     #print(extSuff)
     extDom = ext.domain
@@ -240,7 +244,7 @@ def find_suffix(url):
 
 def find_country_code(url):
     ext = tldextract.extract(url)
-    #print(ext)
+    # print(ext)
     extSuff = ext.suffix
     #print("Suff:" + " " + extSuff)
     for each in countriesOfficial:
@@ -260,24 +264,6 @@ def find_social_media(url):
         if each in title:
             return each
 
-def find_term_links(string):
-    retUrl = []
-
-    # Domains
-    for each in string:
-        if("Agriculture/Farming" in string):
-            retUrl.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/agr.jpg, ")
-        if("Biology" in string):
-            retUrl.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/bio.jpg, ")
-
-        # Resource Types
-        if("Catalog" in string):
-            retUrl.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/catalog.jpg, ")
-        if("Community" in string):
-            retUrl.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/community.jpg, ")
-
-    return retUrl
-
 def check_type(url):
     url_front = url[:url.index(':')]
     if url_front == "http" or url_front == "https":
@@ -287,6 +273,35 @@ def check_type(url):
     else:
         return " "
 
+
+def link_type(url):
+    if url not in brokenLinks:
+        getreq2 = requests.get(url)
+        reqtext2 = getreq2.text
+        souper2 = BeautifulSoup(reqtext2)
+        LinkString = ""
+        if souper2.find("form")!= None:
+            LinkString += "search engine/"
+        if souper2.find(["download" or "programs" or 'software'])!= None:
+            LinkString += "download"
+        if souper2.find("<p>" > "HREF")!= None:
+            LinkString += "information"
+        if souper2.find(["request", "login", "order", "purchase"])!= None:
+            LinkString += "offlineAccess"
+        return LinkString
+
+"""
+        if souper2.find("form")!= None:
+                    return 'search engine'
+        elif souper2.find(["download" or "programs" or 'software'])!= None:
+                    return 'download'
+        elif souper2.find("<p>" > "HREF")!= None:
+                    return 'information'
+        elif souper2.find(text="Data",HREF= True):
+            if souper2.find(text=["request", "login", "order", "purchase"]):
+                    return 'offlineAccess'
+
+"""
 """
 Name: build_labels()
 Params: url - page to get titles from
@@ -339,7 +354,6 @@ def build_labels(soup):
     # if tag['href'] not in brokenLinks:
     # titles.append(tag.text)
     return titles_found
-
 # </editor-fold>
 
 # #####################
@@ -445,7 +459,7 @@ for i in range(0, 4):
 # <editor-fold desc="First Run">
 first_run = [start_url]  # add the base url
 #first_labels = []
-#("First Run: " + str(first_run))
+print("First Run: " + str(first_run))
 first_orgs = []
 first_titles = []
 # Use extend function to add all urls and titles found in first run
@@ -462,6 +476,7 @@ first_socials = []
 first_soc_links = []
 first_term_links = {}
 
+first_link_type = []
 # not being used as of 7/3/2014 but may be used later
 # second_run = []
 # second_titles = []
@@ -500,6 +515,17 @@ for each in first_run:
 # </editor-fold>
 
 # <editor-fold desc="Excel Sheet 1">
+    title = build_title(each)
+    first_titles.append(title)
+    first_domains.append(find_domains(each))
+    first_resource_types.append(find_resource_types(each))
+    first_content_types.append(check_type(each))
+    first_tlds.append(find_suffix(each))
+    first_link_type.append(link_type(each))
+    print("link_type: " + str(first_link_type))
+    first_country_codes.append(find_country_code(each))
+
+print(first_domains)
 print('Creating xlsx file')
 # Create excel file
 wb = Workbook()
@@ -826,3 +852,4 @@ print('Length of urls: ' + str(len(urls)))
 print('titles: {}'.format(titles))
 print('Length of titles: ' + str(len(titles)))
 wb.save(filename)
+
