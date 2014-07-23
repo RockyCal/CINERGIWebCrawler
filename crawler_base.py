@@ -273,18 +273,6 @@ def link_type(url):
         return LinkString
 
 """
-        if souper2.find("form")!= None:
-                    return 'search engine'
-        elif souper2.find(["download" or "programs" or 'software'])!= None:
-                    return 'download'
-        elif souper2.find("<p>" > "HREF")!= None:
-                    return 'information'
-        elif souper2.find(text="Data",HREF= True):
-            if souper2.find(text=["request", "login", "order", "purchase"]):
-                    return 'offlineAccess'
-
-"""
-"""
 Name: build_labels()
 Params: url - page to get titles from
 Purpose: Extract the title of the pages these links lead to
@@ -305,12 +293,13 @@ def build_title(page_url):
             return title.string
         else:
             return title.text
+
+
 def build_social_links(soup):
     links = []
     for tag in soup.find_all('th'):
         links.append(tag.text)
     return links
-
 
 
 def build_labels(soup):
@@ -485,11 +474,7 @@ countriesOfficial = build_text(soupCoun)
 countriesOfficial.append("EU - European Union")
 socialMedia = build_social_links(soupSoc)
 
-i = 0
-for i in range(0, 4):
-    countriesOfficial.append("EU - European Union")  # What is this?
-
-# TODO: what is this doing?
+# Get rid of first four, random values
 for t in range(0, 4):
     countriesOfficial.pop(0)
 
@@ -499,6 +484,7 @@ start_html = (requests.get(start_url)).text
 start_soup = BeautifulSoup(start_html)
 res0.title = build_title(start_url)
 res0.url_type = check_type(res0.link)
+
 # First run
 links_found = find_links(start_url)
 first_run = [res0]
@@ -521,7 +507,7 @@ for alink in links_found:
             titles.append(res.title)
             urls.append(res.link)
             first_run.append(res)
-        elif res.url_type is 'FTP':
+        elif res.url_type is 'FTP':  # TODO: Figure out how to get ftp data
             res.title = 'FTP site'
             first_run.append(res)
     else:
@@ -531,7 +517,7 @@ for alink in links_found:
 print('Creating xlsx file')
 # Create excel file
 wb = Workbook()
-filename = 'Crawl_with_Class.xlsx'
+filename = 'Crawl.xlsx'
 ws = wb.active
 ws.title = 'First run'
 
