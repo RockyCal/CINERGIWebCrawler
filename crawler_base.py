@@ -422,11 +422,10 @@ countriesOfficial = build_text(soupCoun)
 countriesOfficial.append("EU - European Union")
 socialMedia = build_social_links(soupSoc)
 
-i = 0
-for i in range(0, 4):
-    countriesOfficial.append("EU - European Union")  # What is this?
+# What is this? # The countries list we are using does not have EU
 
 # TODO: what is this doing?
+# the countries list has four at the beginning that aren't countries - which is why they are popped off
 for t in range(0, 4):
     countriesOfficial.pop(0)
 
