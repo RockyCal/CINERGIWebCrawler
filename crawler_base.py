@@ -552,7 +552,7 @@ for resource in first_run:
     ws['C%s' % j].value = resource.link
     ws['D%s' % j].value = resource.org
     ws['E%s' % j].value = ', '.join(sorted(resource.disciplines))
-    ws['F%s' % j].value = ','.join(sorted(resource.resource_type))
+    ws['F%s' % j].value = ', '.join(sorted(resource.resource_type))
     ws['G%s' % j].value = resource.url_type
     j += 1
 
