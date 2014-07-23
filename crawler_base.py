@@ -264,6 +264,24 @@ def find_social_media(url):
         if each in title:
             return each
 
+def find_term_links(string):
+    retUrl = []
+
+    # Domains
+    for each in string:
+        if("Agriculture/Farming" in string):
+            retUrl.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/agr.jpg, ")
+        if("Biology" in string):
+            retUrl.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/bio.jpg, ")
+
+        # Resource Types
+        if("Catalog" in string):
+            retUrl.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/catalog.jpg, ")
+        if("Community" in string):
+            retUrl.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/community.jpg, ")
+
+    return retUrl
+
 def check_type(url):
     url_front = url[:url.index(':')]
     if url_front == "http" or url_front == "https":
