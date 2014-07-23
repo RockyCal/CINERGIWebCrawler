@@ -6,6 +6,7 @@ from openpyxl.styles import Style, Font
 from urllib.request import urlopen
 from urllib.error import URLError
 import tldextract
+import disciplines_known
 
 # <editor-fold desc="Protocol constants">
 HTTP = 'http://'
@@ -322,80 +323,6 @@ urls = []
 brokenLinks = []
 # Total titles - the text attribute of tag
 titles = []
-# Domains
-disciplinesKnown = {'Agriculture': ["agriculture", "farming", 'Agronomics', 'Agroforestry', 'Agrophysics',
-                'Aquaculture','Horticulture'],
-                'Atmosphere': ["atmosphere", 'Air', 'Pressure','Hydrometeorology', 'Climatology', 'Meteorology',
-                'Atmospheric Chemistry', 'Paleoclimatology'],
-                'Biodiversity': ['Biological Diversity', 'Diversity of Species', 'Agriculture', 'Human Health',
-                'Ecological Services'],
-                'Biology': ['Biodiversity','Marine Biology', 'Biota', 'Biosphere'],
-                'Cadastral': ['Land-Use', 'Environmental Impacts', 'Development', 'Infrastructure','Landscape Ecology'],
-                'Chemistry': ['Biochemistry', 'Geochemistry'],
-                'Climatology': ['Weather', 'Humidity', 'Temperature', 'Meteorology', 'Climate Change', 'Global Warming',
-                'Tornado climatology', 'Tropical cyclone rainfall climatology', 'Urban climatology',
-                'Paeloclimatology'],
-                'Coastal Science':['Marine Habitat', 'Shoreline Management', 'Water Chemistry'],
-                'Data Systems': ['Data Models', 'Data Processing'],
-                'Earth Science':['Geoscience', 'Geology', 'Physical Geography', 'Geophysics', 'Geodesy', 'Soil Science',
-                'Ecology', 'Hydrology', 'Glaciology', 'Atmospheric Sciences'],
-                'Ecology':['Conservation', 'Bionomics', 'the Ecosystem as a whole'],
-                'Environmental Science': ['Conservation', 'Environmental Issues', 'Natural Resource Management',
-                'Atmospheric Science', 'Ecology', 'Environmental Chemistry', 'Geoscience'],
-                'Estuarine Science':['Marine Habitat', 'Estuary Management', 'Water Chemistry'],
-                'Extreme Events':['Hazards', 'Tornadoes', 'Hurricanes', 'Tsunamis', 'Climatology'],
-                'Forestry':['Environmental Science', 'Land-use science', 'Agroforestry', 'Boreal Forestry',
-                'Dendrology', 'Ecological Forestry', 'Energy Forestry', 'Ecology', 'Forest Economics', 'Mensuration',
-                'Pathology','Social Forestry', 'Sustainable Forestry', 'Silviculture', 'Tropical', 'Urban',
-                'World Forestry'],
-                'Geochemistry':['Petrology', 'Meteoritics', 'Fluid-Rock Interaction', 'Isotope Geochemistry',
-                'Cosmochemistry','Biogeochemistry', 'Organic Geochemistry', 'Aqueous Geochemistry',
-                'Environmental Geochemistry', 'Soil Chemistry', 'Water Chemistry'],
-                'Geochronology':['Chronostratigraphy', 'Cosmogenic Nuclide', 'Geochronology'],
-                'Geodesy': ['Geophysics', 'Geodynamics', 'Geomatics', 'Cartography', 'Physical Geodesy',
-                'Satellite Geodesy', 'Gravimetry'],
-                'Geography':['Physical Geography', 'Human Geography'],
-                'Geology':['Marine Geology', 'Geography', 'Structural Geology', 'Petrology', 'Plate Tectonics'],
-                'Geophysics':['Mineral Physics', 'Gravity', 'Magnetism', 'Geochronology', 'Geodynamics', 'Geomagnetism',
-                'Gravimetry', 'Seismology', 'Plate Tectonics', 'Volcanology', 'Geomorphology'],
-                'GIS':['Geoinformatics', 'Spatial', 'Geography', 'Engineering'],
-                'Glaciology':['Cryosphere', 'Polar/Ice', 'Alpine Glaciology', 'Continental Glaciology'],
-                'Human Dimensions':['Human Geography', 'Human Health and Disease', 'Environmental Impacts',
-                'Infrastructure'],
-                'Hydrobiology':['Marine Biology', 'Biodiversity', 'Aquatic Ecology','Limnology', 'Water Quality',
-                'Water Chemistry'],
-                'Hydrology':['All Water Sciences' 'Water', 'Chemical Hydrology', 'Ecohydrology', 'Hydrogeology',
-                'Hydroinformatics', 'Hydrometeorology', 'Isotope Hydrology', 'Surface Hydrology', 'Limnology',
-                'Drainage Basin', 'Oceanography'],
-                'Infrastructure':['Cadastral', 'Development', 'Environmental Impacts'],
-                'LIDAR':['Light Detection And Ranging'],
-                'Limnology':['Hydrobiology', 'Marine Biology', 'Aquatic Ecology', 'Landscape Limnology',
-                'Water Quality', 'Water Chemistry'],
-                'Maps/Imaging':['Vectors', 'Rasters', 'Grids', 'Tomography', 'GIS', 'Satellite Images'],
-                'Marine Biology':['Oceanography', 'Marine Ecology', 'Marine Biological Species'],
-                'Marine Geology':['Geological Oceanography', 'Marine Geophysics', 'Paleoceanography'],
-                'Mineralogy':['Petrology', 'Geochemistry', 'Crystallography', 'Gemology'],
-                'Mining':['Drilling', 'Coring', 'Digging', 'Surface/Underground Mining', 'Asteroid Mining',
-                'Extractive Metallurgy', 'Mineral Processing', 'Geometallurgy'],
-                'Oceanography':['Marine Biology', 'Marine Geolog', 'Bathymetry', 'Paleoceanography',
-                'Chemical Oceanography', 'Physical Oceanography'],
-                'Paleobiology':['Paleontology','Paleobotany', 'Micropaleontology'],
-                'Paleontology':['Fossil Collecting', 'Radiometric Dating', 'Natural History', 'Evolution'],
-                'Petrology':['Geology', 'Geochemistry', 'Structural Geology', 'Lithology', 'Igneous Petrology',
-                'Metamorphic Petrology', 'Sedimentary Petrology'],
-                'Planetary Science':['Space Science', 'Atmospheric Science', 'Sun-Earth Interactions', 'Astronomy',
-                'Planetary Geology', 'Geomorphology', 'Cosmochemistry', 'Space Physics'],
-                'Plate Tectonics':['Geology', 'Structural Geology','Volcanology', 'Geomorphology'],
-                'Polar/Ice':['Cryosphere', 'Arctic', 'Antarctic','Glaciology'],
-                'Satellite':['Maps/Imaging', 'Satellite Data'],
-                'Sedimentology':['Petrology', 'Petrography', 'Mineralogy','Sedimentary Rock', 'Sedimentary Strata',
-                'Sedimentary Structure', 'Stratigraphy'],
-                'Seismology':['Geophysics', 'Paleoseismology', 'Asteroseismology', 'Forensic Seismology',
-                'Helioseismology'],
-                'Soil':['Soil Science', 'Pedosphere','Pedology', 'Edaphology', 'Paleosoil'],
-                'Spatial':['Geographic Data', 'Metadata', 'Data Systems','GIS', 'Satellite', 'LIDAR', 'Geospatial'],
-                'Taxonomy':['Biological Classification','Biological Species', 'Systematics'],
-                'Topography':['Elevation and derived products','Altimetry', 'Bathymetry']}
 
 resourceTypesKnown = {'Activity': ["Conference"],
                       'Consensus Effort': ["Consortium", "Association", "Union"],
@@ -552,7 +479,7 @@ for resource in first_run:
     ws['C%s' % j].value = resource.link
     ws['D%s' % j].value = resource.org
     ws['E%s' % j].value = ', '.join(sorted(resource.disciplines))
-    ws['F%s' % j].value = ','.join(sorted(resource.resource_type))
+    ws['F%s' % j].value = ', '.join(sorted(resource.resource_type))
     ws['G%s' % j].value = resource.url_type
     j += 1
 
