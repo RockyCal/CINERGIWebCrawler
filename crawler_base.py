@@ -82,7 +82,7 @@ def check_link(url):
         try:
             link = requests.get(url, timeout=10)
             c = link.status_code
-        except requests.ConnectionError as cError:
+        except requests.ConnectionError:
             if "www." in url:
                 works = " "
                 print('{}: Connection error'.format(url))
@@ -202,7 +202,6 @@ def find_organization(url):
         return "NA"
 
 
-
 def find_suffix(url):
     ext = tldextract.extract(url)
     # print(ext)
@@ -255,15 +254,6 @@ def find_term_links(string):
             retUrl.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/community.jpg, ")
 
     return retUrl
-
-def check_type(url):
-    url_front = url[:url.index(':')]
-    if url_front == "http" or url_front == "https":
-        return "HTTP"
-    elif url_front == "ftp":
-        return "FTP"
-    else:
-        return " "
 
 
 def link_type(url):
@@ -436,7 +426,7 @@ i = 0
 for i in range(0, 4):
     countriesOfficial.append("EU - European Union")  # What is this?
 
-# what is this doing?
+# TODO: what is this doing?
 for t in range(0, 4):
     countriesOfficial.pop(0)
 
