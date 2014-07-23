@@ -7,69 +7,61 @@ from urllib.request import urlopen
 from urllib.error import URLError
 import tldextract
 
-# Http constant
+# <editor-fold desc="Protocol constants">
 HTTP = 'http://'
 preFTP = 'ftp://'
+# </editor-fold>
+
+# <editor-fold desc="class Resource">
+class Resource:
+    def __init__(self, url):
+        self.link = url
+    title = 'No title'
+    url_type = 'Type not identified'
+    org = 'Organization not found'
+    disciplines = []
+    resource_type = []
+
+# </editor-fold>
 
 # <editor-fold desc="Functions">
+def check_type(url):
+    url_front = url[:url.index(':')]
+    if url_front == "http" or url_front == "https":
+        return "HTTP"
+    elif url_front == "ftp":
+        return "FTP"
+    else:
+        return "None"
 
-def crawl_links(soup):
-    # Html tags to investigate
-    urls_found = []
-    for tag in soup.find_all('a', href=True):
-        if HTTP in tag['href']:
-            if tag['href'] not in visited:
-                visited.append(tag['href'])
-                # check functioning, will add to brokenLinks if link is bad
-                check_link(tag['href'])
-                # add to list of urls found
-                workingURL = check_link(tag['href'])
-                if workingURL is not " ":
-                    # add to list of working urls found to be written
-                    urls_found.append(workingURL)
-                    # add to global list of working urls
-                    urls.append(workingURL)
-                # broken links added to list of broken links in check_link
-        if preFTP in tag['href']:
-            #urlopen(tag['href'])
-            visited.append(tag['href'])
-            # check functioning, will add to brokenLinks if link is bad
-            # add to list of urls found
-            if tag['href'] not in brokenLinks:
-                # add to list of working urls found to be written
-                urls_found.append(tag['href'])
-                # add to global list of working urls
-                urls.append(tag['href'])
-    # build_labels(html_tags)
-    return urls_found
 
 def check_again(new_url):
     try:
         rq = requests.get(new_url)
         cq = rq.status_code
     except requests.ConnectionError:
-        #fixed = 0
+        # fixed = 0
         print('{}: Connection error'.format(new_url))
         brokenLinks.append(new_url)
         return " "
     except requests.Timeout:
-        #fixed = 0
+        # fixed = 0
         print('{}: Timeout error'.format(new_url))
         brokenLinks.append(new_url)
         return " "
     except requests.TooManyRedirects:
-        #fixed = 0
+        # fixed = 0
         print('{}: Too Many Redirects'.format(new_url))
         brokenLinks.append(new_url)
         return " "
     except requests.HTTPError:
-        #fixed = 0
+        # fixed = 0
         print('{}: HTTP Error'.format(new_url))
         brokenLinks.append(new_url)
         return " "
     else:
         if cq != 200:
-            #fixed = 0
+            # fixed = 0
             print('{}: Error code {}'.format(new_url, cq))
             brokenLinks.append(new_url)
             return " "
@@ -84,9 +76,7 @@ Returns: 1 if link works w/o error
          Exits if link is broken
 """
 
-
 def check_link(url):
-    # works = 1
     works = url
     if check_type(url) == "HTTP":
         try:
@@ -98,12 +88,13 @@ def check_link(url):
                 print('{}: Connection error'.format(url))
                 brokenLinks.append(url)
             else:
-                extURL = tldextract.extract(url)
-                urlSub = extURL.subdomain
-                urlDom = extURL.domain
-                urlSuff = extURL.suffix
-                newURL = "http://www." + urlSub + urlDom + "." + urlSuff
-                return check_again(newURL)
+                # If www not in link, add it to link and see if it works
+                ext_url = tldextract.extract(url)
+                url_sub = ext_url.subdomain
+                url_dom = ext_url.domain
+                url_suff = ext_url.suffix
+                new_url = "http://www." + url_sub + url_dom + "." + url_suff
+                return check_again(new_url)
         except requests.Timeout:
             works = " "
             print('{}: Timeout error'.format(url))
@@ -116,10 +107,6 @@ def check_link(url):
             works = " "
             print('{}: HTTP Error'.format(url))
             brokenLinks.append(url)
-        #except:
-        #    works = 0
-        #    print('{}: Unexpected Error'.format(url))
-        #    brokenLinks.append(url)
         else:
             if c != 200:
                 works = " "
@@ -138,7 +125,6 @@ def check_link(url):
         print('check link: {}'.format(check_type(url)))
     return works
 
-
 def visible(element):
     if element.parent.name in ['style', 'script', '[document]', 'head', 'title', 'a']:
         return False
@@ -146,18 +132,29 @@ def visible(element):
         return False
     return True
 
-def find_domains(url):
-    domains_found = []
-    set_of_domains = set()
-    if check_type(url) == "FTP":
+def find_links(this_url):
+    urls_found = []
+    get = requests.get(this_url)
+    h_text = get.text
+    soup = BeautifulSoup(h_text)
+    for link_tag in soup.find_all('a', href=True):
+        if HTTP in link_tag['href'] or preFTP in link_tag['href']:
+            url_correct = check_link(link_tag['href'])
+            if url_correct is not " ":
+                urls_found.append(url_correct)
+    return urls_found
+
+
+def find_disciplines(url):
+    disciplines_found = []
+    set_of_disciplines = set()
+    if check_type(url) is "FTP":
         return "None"
-    if url not in brokenLinks and check_type(url) is "HTTP":
-        getreq = requests.get(url)
-        reqtext = getreq.text
-        souper = BeautifulSoup(reqtext)
+    if check_type(url) is "HTTP":
+        souper = BeautifulSoup(requests.get(url).text)
         # Search for all keywords, the values of the Domains dict
-        for key in domainsKnown:
-            for v in domainsKnown.get(key):
+        for key in disciplinesKnown:
+            for v in disciplinesKnown.get(key):
                 # For all keywords found, filter so that only
                 # the keywords in the page's visible text are found
                 texts = souper.find_all(text=re.compile(v))
@@ -167,21 +164,20 @@ def find_domains(url):
                 # the resource
                 for vis in visible_texts:
                     # Added as a set to avoid duplicates
-                    set_of_domains.add(key)
+                    set_of_disciplines.add(key)
         # Turn the set of domains back into a list
-        domains_found = list(set_of_domains)
-    if len(domains_found) > 0:
-        return domains_found
+        disciplines_found = list(set_of_disciplines)
+    if len(disciplines_found) > 0:
+        return disciplines_found
     else:
-        return "None"
+        return ['No disciplines found']
+
 
 def find_resource_types(url):
     resos_found = []
     set_of_resources = set()
-    if url not in brokenLinks and check_type(url) is "HTTP":
-        getreq2 = requests.get(url)
-        reqtext2 = getreq2.text
-        souper2 = BeautifulSoup(reqtext2)
+    if check_type(url) is "HTTP":
+        souper2 = BeautifulSoup(requests.get(url).text)
         for key in resourceTypesKnown:
             for v in resourceTypesKnown.get(key):
                 texts = souper2.find_all(text=re.compile(v))
@@ -190,71 +186,49 @@ def find_resource_types(url):
                     set_of_resources.add(key)
         resos_found = list(set_of_resources)
     if len(resos_found) > 0:
-        # print(str(resos_found))
         return resos_found
     else:
-        return "None"
+        return ['None']
+
 
 def find_organization(url):
-    basicOrg = build_title(url)
+    basic_org = build_title(url)
 
-    if(basicOrg in orgsOfficial):
-        return "Verified: " + basicOrg
+    if basic_org in orgsOfficial:
+        return "Verified: " + basic_org
+    elif build_title(url) is not 'No title':
+        return build_title(url)
     else:
-        ext = tldextract.extract(url)
-        extDom = ext.domain
-        extSuff = ext.suffix
-        newUrl = "http://" + extDom + "." + extSuff
+        return "NA"
 
-        if check_link(newUrl) == " ":
-            newUrl = "http://www." + extDom + "." + extSuff
-
-        title = build_title(newUrl)
-
-        if title in orgsOfficial:
-            return "Verified: " + title
-        elif title is not None:
-            return title
-        else:
-            return "NA"
 
 
 def find_suffix(url):
     ext = tldextract.extract(url)
     # print(ext)
-    extSuff = ext.suffix
-    #print(extSuff)
-    extDom = ext.domain
-    #print(extSuff)
-    #print(ext.domain + "." + extSuff)
-    #for key in suffixesKnown:
-    #       for v in suffixesKnown.get(key):
-    #          if v in extSuff:
-    #             return key
-    if "com" in extSuff:
+    suff = ext.suffix
+    if "com" in suff:
         return "Company"
-    elif "edu" in extSuff:
+    elif "edu" in suff:
         return "Education"
-    elif "org" in extSuff:
+    elif "org" in suff:
         return "Non-profit Org"
-    elif "gov" in extSuff:
+    elif "gov" in suff:
         return "Government"
-    elif "net" in extSuff:
+    elif "net" in suff:
         return "Internet service provider/Other network"
 
 def find_country_code(url):
     ext = tldextract.extract(url)
     # print(ext)
-    extSuff = ext.suffix
-    #print("Suff:" + " " + extSuff)
+    suffix = ext.suffix
     for each in countriesOfficial:
         str2 = str(each)
         str2 = str2.lower()
-        #print(newStr.lower)
-        #print(str2)
-        if extSuff in str2[:5]:
-        #if ext:
-            #print(extSuff + " = " + str2)
+        print(str2)
+        if suffix in str2[:5]:
+            #if ext:
+            print(suffix + " = " + str2)
             return str2.upper()
 
 def find_social_media(url):
@@ -326,36 +300,28 @@ Params: url - page to get titles from
 Purpose: Extract the title of the pages these links lead to
 Returns: List of titles
 """
-
+# titles -> texts
 def build_text(soup):
-    titles = []
+    texts = []
     for tag in soup.find_all('li'):
-        titles.append(tag.text)
-    return titles
+        texts.append(tag.text)
+    return texts
 
+
+def build_title(page_url):
+    page_text = BeautifulSoup((requests.get(page_url)).text)
+    for title in page_text.find_all('title'):
+        if title.has_attr('string'):
+            return title.string
+        else:
+            return title.text
 def build_social_links(soup):
     links = []
     for tag in soup.find_all('th'):
         links.append(tag.text)
     return links
 
-def build_title(url):
-    working = check_link(url)
-    if working != " " and check_type(url) == "HTTP":
-        var = requests.get(working)
-        html = var.text
-        title_soup = BeautifulSoup(html)
-        page_title = None
-        if url not in brokenLinks:
-            if title_soup.title is not None:
-                if title_soup.title.string is not None:
-                    page_title = title_soup.title.string
-            if page_title is not None:
-                return page_title
-            else:
-                return " "
-    else:
-        return " "
+
 
 def build_labels(soup):
     titles_found = []
@@ -365,12 +331,6 @@ def build_labels(soup):
                 titles_found.append(tag.text)
                 # add to list of total titles
                 titles.append(tag.text)
-    # ######################
-    # Use this code if passing in tags
-    # Building list of working links
-    # for tag in element_tags:
-    # if tag['href'] not in brokenLinks:
-    # titles.append(tag.text)
     return titles_found
 # </editor-fold>
 
@@ -384,7 +344,7 @@ brokenLinks = []
 # Total titles - the text attribute of tag
 titles = []
 # Domains
-domainsKnown = {'Agriculture/Farming': ["agriculture", "farming"], 'Atmosphere': ["atmosphere"],
+disciplinesKnown = {'Agriculture/Farming': ["agriculture", "farming"], 'Atmosphere': ["atmosphere"],
                 'Biology': ["biodiversity", "organism", "life science", "biota"],
                 'Climate': ["climate"], 'Ecology': ["ecological", "ecosystem", "habitat", "environment"],
                 'Geochemistry': ["geochem"],
@@ -392,7 +352,7 @@ domainsKnown = {'Agriculture/Farming': ["agriculture", "farming"], 'Atmosphere':
                 'Marine Ecology': ["marine ecology", "oceanography"],
                 'Marine Biology': ["marine biology"], 'Marine Geology': ["marine geology"],
                 'Maps/Imagery': ["imaging", "maps"], 'Fisheries': ["estuaries", "fishing"],
-                'Oceanography': ['ocean', 'sea'],
+                'Oceanography': ["ocean", "sea"],
                 'Spatial': ["spatial"], 'Topography': ["elevation", "mountains"]}
 
 resourceTypesKnown = {'Activity': ["Conference"],
@@ -412,22 +372,25 @@ resourceTypesKnown = {'Activity': ["Conference"],
                       'Software': ["software", "code", "programming"],
                       'Forum': ["forum"], 'Organization': ["organization"]}
 
-#start_url = 'http://www.greenseas.eu/content/standards-and-related-web-information'
-#start_label = 'GreenSeas Home'
-#start_title = 'Standards and Information'
+start_url = 'http://www.greenseas.eu/content/standards-and-related-web-information'
+start_label = 'GreenSeas Home'
+start_title = 'Standards and Information'
 
-start_url = 'http://cinergi.weebly.com/'
-start_title = 'CINERGI Test Bed'
-start_label = 'CINERGI Home'
+#start_url = 'http://cinergi.weebly.com/'
+#start_title = 'CINERGI Test Bed'
+#tart_label = 'CINERGI Home'
 
 #start_url = 'http://www.antarctica.ac.uk/dms/'
 #start_title = "Antarctica"
 #start_label = 'Antartica Home'
 
+# List of organizations
 org_url = 'http://opr.ca.gov/s_listoforganizations.php'
+# List of country codes
 country_codes_url = 'http://www.thrall.org/domains.htm'
 social_media_url = 'http://en.wikipedia.org/wiki/List_of_social_networking_websites#L'
 
+# Add to urls visited
 status = check_link(start_url)  # Check functioning of start url
 statusOrgs = check_link(org_url)
 statusCountryCodes = check_link(country_codes_url)
@@ -438,23 +401,23 @@ tags = []
 # Add start url link and title to lists
 urls.append(start_url)
 visited.append(start_url)
-titles.append(start_title)
 
-first_labels = []
-first_labels.append(start_label)
-
-if status != " ":
-    r = requests.get(start_url)
-    htmlText = r.text
-    soup = BeautifulSoup(htmlText)  # Make the soup
-else:
+# Check functioning of start url
+if check_link(start_url) is " ":
     # exit if start url is broken
     exit()
-if statusOrgs != " ":
+
+# Add to list of working urls
+urls.append(start_url)
+
+# Check functioning of organizations list
+if check_link(org_url) is not " ":
     t = requests.get(org_url)
     orgText = t.text
     soupOrg = BeautifulSoup(orgText)
-if statusCountryCodes != " ":
+
+# Check functioning of country codes list
+if check_link(country_codes_url) is not " ":
     s = requests.get(country_codes_url)
     counText = s.text
     soupCoun = BeautifulSoup(counText)
@@ -471,83 +434,51 @@ socialMedia = build_social_links(soupSoc)
 
 i = 0
 for i in range(0, 4):
+    countriesOfficial.append("EU - European Union")  # What is this?
+
+# what is this doing?
+for t in range(0, 4):
     countriesOfficial.pop(0)
-# Create lists for first run, to be written out to first sheet
 
-# <editor-fold desc="First Run">
-first_run = [start_url]  # add the base url
-#first_labels = []
-print("First Run: " + str(first_run))
-first_orgs = []
-first_titles = []
-# Use extend function to add all urls and titles found in first run
-first_run.extend(crawl_links(soup))
-first_labels.extend(build_labels(soup))
-#print(first_labels)
-#first_orgs.extend(first_labels)
-first_domains = [[]]
-first_resource_types = []
-first_content_types = []
-first_tlds = []
-first_country_codes = []
-first_socials = []
-first_soc_links = []
-first_term_links = {}
+# Create first resource
+res0 = Resource(start_url)
+start_html = (requests.get(start_url)).text
+start_soup = BeautifulSoup(start_html)
+res0.title = build_title(start_url)
+res0.url_type = check_type(res0.link)
+# First run
+links_found = find_links(start_url)
+first_run = [res0]
 
-first_link_type = []
-# not being used as of 7/3/2014 but may be used later
-# second_run = []
-# second_titles = []
-index = 0
-for each in first_run:
-    term_links = []
-
-    if(find_social_media(each) != None):
-        first_socials.append(find_social_media(each))
-        first_soc_links.append(each)
-        #first_run.remove(each)
+# Build the resources from the links found
+for alink in links_found:
+    url_final = check_link(alink)  # named so b/c url may be changed in function
+    res = Resource(url_final)
+    res.link = url_final
+    if res.link is not " ":
+        res.url_type = check_type(url_final)
+        if res.url_type is 'HTTP':
+            # commented out for soup-making amendment to build_title
+            #html = (requests.get(res.link)).text
+            #sewp = BeautifulSoup(html)
+            res.title = build_title(res.link)
+            res.org = find_organization(res.link)
+            res.disciplines = find_disciplines(res.link)
+            res.resource_type = find_resource_types(res.link)
+            titles.append(res.title)
+            urls.append(res.link)
+            first_run.append(res)
+        elif res.url_type is 'FTP':
+            res.title = 'FTP site'
+            first_run.append(res)
     else:
-        title = build_title(each)
-        first_titles.append(title)
-
-        domains = find_domains(each)
-        first_domains.append(domains)
-        term_links.append(find_term_links(domains))
-
-        resTypes = find_resource_types(each)
-        first_resource_types.append(resTypes)
-        term_links.append(find_term_links(resTypes))
-
-        first_content_types.append(check_type(each))
-        first_tlds.append(find_suffix(each))
-        #print("TLD: " + str(first_tlds))
-        first_country_codes.append(find_country_code(each))
-        first_orgs.append(find_organization(each))
-        first_socials.append("NA")
-
-        first_term_links[index] = term_links
-        index += 1
-    #print(first_orgs)
-
-#print(first_domains)
-# </editor-fold>
+        brokenLinks.append(alink)
 
 # <editor-fold desc="Excel Sheet 1">
-    title = build_title(each)
-    first_titles.append(title)
-    first_domains.append(find_domains(each))
-    first_resource_types.append(find_resource_types(each))
-    first_content_types.append(check_type(each))
-    first_tlds.append(find_suffix(each))
-    first_link_type.append(link_type(each))
-    print("link_type: " + str(first_link_type))
-    first_country_codes.append(find_country_code(each))
-
-print(first_domains)
 print('Creating xlsx file')
 # Create excel file
 wb = Workbook()
-filename = 'Crawl.xlsx'
+filename = 'Crawl_with_Class.xlsx'
 ws = wb.active
 ws.title = 'First run'
 
@@ -575,215 +506,23 @@ ws['J1'].style = header_style
 ws['K1'].value = "Term Definitions"
 ws['K1'].style = header_style
 
-max_first = len(first_titles) + 1
-p = 0
-for row in ws.range('A2:A%s' % max_first):  # 4
-    for cell in row:
-        cell.value = first_titles[p]
-        p += 1
+j = 2
+for resource in first_run:
+    ws['A%s' % j].value = resource.title
+    # ws['B%s' % j].value = resource.label  # no label assigned
+    ws['C%s' % j].value = resource.link
+    ws['D%s' % j].value = resource.org
+    ws['E%s' % j].value = ', '.join(sorted(resource.disciplines))
+    ws['F%s' % j].value = ','.join(sorted(resource.resource_type))
+    ws['G%s' % j].value = resource.url_type
+    j += 1
 
-max_labels = len(first_labels)
-p = 0
-for row in ws.range('B2:B%s' % max_labels):
-    for cell in row:
-        cell.value = first_labels[p]
-        p += 1
-
-#("First Run: " + str(first_run))
-i = 0
-for row in ws.range('C2:C%s' % (len(first_run) + 1)):
-    for cell in row:
-        cell.value = first_run[i]
-        i += 1
-
-max_orgs = len(first_orgs)
-n = 0
-for row in ws.range('D2:D%s' % max_orgs):
-    for cell in row:
-        cell.value = first_orgs[n]
-        n += 1
-
-max_doms = len(first_domains)
-q = 0
-first_domains.pop(0)
-for row in ws.range('E2:E%s' % max_doms):
-    for cell in row:
-        if first_domains[q] != 'None':
-            cell.value = ', '.join(first_domains[q])
-        else:
-            cell.value = first_domains[q]
-        q += 1
-
-max_cats = len(first_resource_types)
-b = 0
-for row in ws.range('F2:F%s' % max_cats):
-    for cell in row:
-        if first_resource_types[b] is not 'None':
-            cell.value = ', '.join(first_resource_types[b])
-        else:
-            cell.value = str(first_resource_types[b])
-        b += 1
-
-max_cons = len(first_content_types)
-s = 0
-for row in ws.range('G2:G%s' % max_cons):
-    for cell in row:
-        cell.value = first_content_types[s]
-        s += 1
-
-max_tlds = len(first_tlds)
-v = 0
-for row in ws.range('H2:H%s' % max_tlds):
-    for cell in row:
-        cell.value = first_tlds[v]
-        v += 1
-
-max_cods = len(first_country_codes)
-h = 0
-for row in ws.range('I2:I%s' % max_cods):
-    for cell in row:
-        cell.value = first_country_codes[h]
-        h += 1
-
-max_socs = len(first_socials)
-t = 0
-for row in ws.range('J2:J%s' % max_socs):
-    for cell in row:
-        cell.value = first_socials[t]
-        t += 1
-
-max_terms = len(first_term_links)
-k = 0
-for row in ws.range('K2:K%s' % max_terms):
-    for cell in row:
-        cell.value = str(first_term_links[k])
-        k += 1
 # </editor-fold>
+
 
 # <editor-fold desc="Second Run">
 ws1 = wb.create_sheet()
 ws1.title = 'Second run'
-
-#first_run.pop(0)  # take off first in first_run (the start url)
-#first_orgs.pop(0)
-# We don't want GreenSeas to be in the second layer
-index = 0
-for each in first_run:
-    hText = (requests.get(each)).text
-    crawlSoup = BeautifulSoup(hText)
-    linksFound = crawl_links(crawlSoup)  # links found on a page
-    labelsMade = build_labels(crawlSoup)
-    #print("Labels {}".format(labelsMade))
-    titlesMade = []
-    socLinks = []
-    #org = first_orgs[index]
-    orgsMade = []
-    domains = []
-    reTypes = []
-    conTypes = []
-    suffs = []
-    cods = []
-    socs = []
-
-    for each in linksFound:
-        if(find_social_media(each) != None):
-            socs.append(find_social_media(each))
-            socLinks.append(each)
-            #linksFound.remove(each)
-        else:
-            titlesMade.append(build_title(each))
-            domains.append(find_domains(each))
-            reTypes.append(find_resource_types(each))
-            conTypes.append(check_type(each))
-            suffs.append(find_suffix(each))
-            cods.append(find_country_code(each))
-            orgsMade.append(find_organization(each))
-            socs.append("NA")
-            #socs.append("NA")
-        #print(orgsMade)
-
-# </editor-fold>
-
-# <editor-fold desc="Excel Sheet 2">
-    if len(linksFound) > 0:
-        start_row = ws1.get_highest_row() + 1
-        last_row = (start_row + len(titlesMade)) - 1
-        t = 0
-        for row in ws1.range('%s%s:%s%s' % ('A', start_row, 'A', last_row)):
-            for cell in row:
-                cell.value = titlesMade[t]
-                t += 1
-        k = 0
-        for row in ws1.range('%s%s:%s%s' % ('B', start_row, 'B', last_row)):
-            for cell in row:
-                cell.value = labelsMade[k]
-                k += 1
-        j = 0
-        for row in ws1.range('%s%s:%s%s' % ('C', start_row, 'C', last_row)):
-            for cell in row:
-                cell.value = linksFound[j]
-                j += 1
-
-        l = 0
-        for row in ws1.range('%s%s:%s%s' % ('D', start_row, 'D', last_row)):
-            for cell in row:
-                cell.value = orgsMade[l]
-                l += 1
-
-        u = 0
-        for row in ws1.range('%s%s:%s%s' % ('E', start_row, 'E', last_row)):
-            for cell in row:
-                if domains[u] != "None":
-                    cell.value = ', '.join(domains[u])
-                else:
-                    cell.value = str(domains[u])
-
-        b = 0
-        for row in ws1.range('%s%s:%s%s' % ('F', start_row, 'F', last_row)):
-            for cell in row:
-                if reTypes[b] != "None":
-                    cell.value = ', '.join(reTypes[b])
-                else:
-                    cell.value = str(reTypes[b])
-
-        s = 0
-        for row in ws1.range('%s%s:%s%s' % ('G', start_row, 'G', last_row)):
-            for cell in row:
-                if conTypes[s] != "None":
-                    cell.value = conTypes[s]
-                else:
-                    cell.value = str(conTypes[s])
-        d = 0
-        for row in ws1.range('%s%s:%s%s' % ('H', start_row, 'H', last_row)):
-            for cell in row:
-                if suffs[d] != "None":
-                    cell.value = suffs[d]
-                else:
-                    cell.value = str(suffs[d])
-            d += 1
-
-        h = 0
-        for row in ws1.range('%s%s:%s%s' % ('I', start_row, 'I', last_row)):
-            for cell in row:
-                if cods[h] != "None":
-                    cell.value = cods[h]
-                else:
-                    cell.value = str(cods[h])
-            h += 1
-
-        f = 0
-        for row in ws1.range('%s%s:%s%s' % ('J', start_row, 'J', last_row)):
-            for cell in row:
-                if socs[f] != "None":
-                    cell.value = socs[f]
-                else:
-                    cell.value = str(socs[f])
-            f += 1
-
-        s += 1
-        u += 1
-        b += 1
-    index += 1
 
 # Apply headers (after data so as not to affect formula for skipping rows)
 ws1.cell('A1').value = 'Title'
@@ -829,45 +568,13 @@ if len(countriesOfficial) > 0:
         for cell in row:
             cell.value = countriesOfficial[t]
             t += 1
-print(socialMedia)
-"""
-ws4 = wb.create_sheet()
-ws4.title = 'List of Social Media'
-if len(first_soc_links) > 0:
-    start_row = ws4.get_highest_row() + 1
-    last_row = (start_row + len(first_soc_links)) - 1
-    t = 0
-    for row in ws4.range('%s%s:%s%s' % ('A', start_row, 'A', last_row)):
-        for cell in row:
-            cell.value = first_socials[t]
-            t += 1
-    y = 0
-    for row in ws4.range('%s%s:%s%s' % ('B', start_row, 'B', last_row)):
-        for cell in row:
-            cell.value = first_soc_links[y]
-            y += 1
-if len(socLinks) > 0:
-    start_row = ws4.get_highest_row() + 1
-    last_row = (start_row + len(socLinks)) - 1
-    t = 0
-    for row in ws4.range('%s%s:%s%s' % ('A', start_row, 'A', last_row)):
-        for cell in row:
-            cell.value = socs[t]
-            t += 1
-    y = 0
-    for row in ws4.range('%s%s:%s%s' % ('B', start_row, 'B', last_row)):
-        for cell in row:
-            cell.value = socLinks[y]
-            y += 1
-"""
+
 #print('first orgs: {}'.format(orgsMade))
 print('broken links: {}'.format(brokenLinks))
-print('Length of broken links: ' + str(len(brokenLinks)))
-print('visited: {}'.format(visited))
-print('Length of visited: ' + str(len(visited)))
+#print('visited: {}'.format(visited))
+#print('Length of visited: ' + str(len(visited)))
 print('Working urls: {}'.format(urls))
-print('Length of urls: ' + str(len(urls)))
-print('titles: {}'.format(titles))
-print('Length of titles: ' + str(len(titles)))
+#print('Length of urls: ' + str(len(urls)))
+#print('titles: {}'.format(titles))
+#print('Length of titles: ' + str(len(titles)))
 wb.save(filename)
-
