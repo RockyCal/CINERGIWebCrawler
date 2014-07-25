@@ -1,4 +1,3 @@
-__author__ = 'Raquel'
 
 # Domains
 disciplinesKnown = {'Agriculture': ["agriculture", "farming", 'Agronomics', 'Agroforestry', 'Agrophysics',
