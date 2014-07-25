@@ -459,6 +459,13 @@ def find_term_links(string):
         if "Community" in string:
             ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/community.jpg, ")
 
+        # TLD and Country Codes
+        if string is not None:
+            ret_url.append("http://cinergiterms.weebly.com/top-level-domain.html")
+
+
+        # Country Codes
+
     return ret_url
 
 def link_type(url):
