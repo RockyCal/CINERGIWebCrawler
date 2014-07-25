@@ -6,15 +6,24 @@ from openpyxl.styles import Style, Font
 from urllib.request import urlopen
 from urllib.error import URLError
 import tldextract
-
+import threading
 from disciplines_known import disciplinesKnown
-print(disciplinesKnown)
 
 # <editor-fold desc="Protocol constants">
 HTTP = 'http://'
 preFTP = 'ftp://'
 indexReal = 0
 # </editor-fold>
+
+class ThreadClass(threading.Thread):
+    def __init__(self, ws, url, counter):
+        threading.Thread.__init__(self)
+        self.counter = counter
+        self.ws = ws
+        self.url = url
+
+    def run(self):
+        get_resource_data(self.ws, self.url)
 
 # <editor-fold desc="class Resource">
 class Resource:
@@ -31,10 +40,7 @@ class Resource:
 
 
 # <editor-fold desc="Functions">
-# TODO: make function for threading
-
-"""
-def get_resource_data(res_url):
+def get_resource_data(ws, res_url):
     res = Resource(res_url)
     res.title = build_title(res.link)
     res.url_type = check_type(res.link)
@@ -48,7 +54,7 @@ def get_resource_data(res_url):
     ws['E%s' % row_num].value = ', '.join(sorted(res.disciplines))
     ws['F%s' % row_num].value = ', '.join(sorted(res.resource_type))
     ws['G%s' % row_num].value = res.url_type
-"""
+
 
 
 def make_headers(ws):
@@ -94,28 +100,12 @@ def crawl(links_found, index):
         if url_final is not " ":
             if url_final not in visited:
                 visited.append(url_final)
-                #add visited check
-                #links_deep.append(alink)
-                # This is where the thread will be created
-                # if res.url_type is 'HTTP':
-                #    urls.append(res.link)
                 #elif res.url_type is 'FTP':  # TODO: Figure out how to get ftp data
                 #    res.title = 'FTP site'
-                res = Resource(url_final)
-                res.title = build_title(res.link)
-                res.url_type = check_type(res.link)
-                res.org = find_organization(res.link)
-                res.disciplines = find_disciplines(res.link)
-                res.resource_type = find_resource_types(res.link)
-                row_num = ws.get_highest_row() + 1
+                thread = ThreadClass(ws, url_final, index)
+                thread.start()
                 for each in find_links(alink):
                     links_deep.append(each)
-                ws['A%s' % row_num].value = res.title
-                ws['C%s' % row_num].value = res.link
-                ws['D%s' % row_num].value = res.org
-                ws['E%s' % row_num].value = ', '.join(sorted(res.disciplines))
-                ws['F%s' % row_num].value = ', '.join(sorted(res.resource_type))
-                ws['G%s' % row_num].value = res.url_type
                 print("For loop iterated once")
         else:
             brokenLinks.append(alink)
