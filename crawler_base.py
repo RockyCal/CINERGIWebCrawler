@@ -7,15 +7,20 @@ from urllib.request import urlopen
 from urllib.error import URLError
 import tldextract
 
+from disciplines_known import disciplinesKnown
+print(disciplinesKnown)
+
 # <editor-fold desc="Protocol constants">
 HTTP = 'http://'
 preFTP = 'ftp://'
+indexReal = 0
 # </editor-fold>
 
 # <editor-fold desc="class Resource">
 class Resource:
     def __init__(self, url):
         self.link = url
+
     title = 'No title'
     url_type = 'Type not identified'
     org = 'Organization not found'
@@ -24,7 +29,113 @@ class Resource:
 
 # </editor-fold>
 
+
 # <editor-fold desc="Functions">
+# TODO: make function for threading
+
+"""
+def get_resource_data(res_url):
+    res = Resource(res_url)
+    res.title = build_title(res.link)
+    res.url_type = check_type(res.link)
+    res.org = find_organization(res.link)
+    res.disciplines = find_disciplines(res.link)
+    res.resource_type = find_resource_types(res.link)
+    row_num = ws.get_highest_row() + 1
+    ws['A%s' % row_num].value = res.title
+    ws['C%s' % row_num].value = res.link
+    ws['D%s' % row_num].value = res.org
+    ws['E%s' % row_num].value = ', '.join(sorted(res.disciplines))
+    ws['F%s' % row_num].value = ', '.join(sorted(res.resource_type))
+    ws['G%s' % row_num].value = res.url_type
+"""
+
+
+def make_headers(ws):
+    header_style = Style(font=Font(bold=True))
+    ws.cell('A1').value = 'Title'  # we need to find out how to do
+    ws['A1'].style = header_style
+    ws.cell('B1').value = 'Label'  # tag.text
+    ws['B1'].style = header_style
+    ws.cell('C1').value = 'URL'
+    ws['C1'].style = header_style
+    ws.cell('D1').value = 'Organization'
+    ws['D1'].style = header_style
+    ws['E1'].style = header_style
+    ws.cell('E1').value = 'Domain(s)'
+    ws.cell('F1').value = 'Resource Type'
+    ws['F1'].style = header_style
+    ws.cell('G1').value = "Content Type/Format"
+    ws['G1'].style = header_style
+    ws['H1'].value = "TLD"
+    ws['H1'].style = header_style
+    ws['I1'].value = "Country"
+    ws['I1'].style = header_style
+    ws['J1'].value = "Social Media?"
+    ws['J1'].style = header_style
+    ws['K1'].value = "Term Definitions"
+    ws['K1'].style = header_style
+
+
+"""
+name: crawl
+recursive function to make new sheet from each set of links
+and scrape them
+"""
+def crawl(links_found, index):
+    # index += 1
+    ws = wb.create_sheet()
+    #ws.title = '{}'.format((wb.get_index(wb.get_active_sheet())))
+    ws = wb.create_sheet(index, str(index))
+    make_headers(ws)
+
+    links_deep = []
+
+    # Build the resources from the links found
+    for alink in links_found:
+        url_final = check_link(alink)  # named so b/c url may be changed in function
+        if url_final is not " ":
+            if url_final not in visited:
+                visited.append(url_final)
+                #add visited check
+                #links_deep.append(alink)
+                # This is where the thread will be created
+                # if res.url_type is 'HTTP':
+                #    urls.append(res.link)
+                #elif res.url_type is 'FTP':  # TODO: Figure out how to get ftp data
+                #    res.title = 'FTP site'
+                res = Resource(url_final)
+                res.title = build_title(res.link)
+                res.url_type = check_type(res.link)
+                res.org = find_organization(res.link)
+                res.disciplines = find_disciplines(res.link)
+                res.resource_type = find_resource_types(res.link)
+                row_num = ws.get_highest_row() + 1
+                for each in find_links(alink):
+                    links_deep.append(each)
+                ws['A%s' % row_num].value = res.title
+                ws['C%s' % row_num].value = res.link
+                ws['D%s' % row_num].value = res.org
+                ws['E%s' % row_num].value = ', '.join(sorted(res.disciplines))
+                ws['F%s' % row_num].value = ', '.join(sorted(res.resource_type))
+                ws['G%s' % row_num].value = res.url_type
+                print("For loop iterated once")
+        else:
+            brokenLinks.append(alink)
+
+    print("Sheet " + str(wb.get_index(wb.get_active_sheet())))
+    print("Sheet Ind " + str(index))
+    if wb.get_index(wb.get_active_sheet()) is 2:
+        print("Active sheet")
+        return
+    if index > 0:
+       print("Index")
+       return
+    else:
+        index += 1
+        crawl(links_deep, index)
+
+
 def check_type(url):
     url_front = url[:url.index(':')]
     if url_front == "http" or url_front == "https":
@@ -76,6 +187,7 @@ Returns: 1 if link works w/o error
          Exits if link is broken
 """
 
+
 def check_link(url):
     works = url
     if check_type(url) == "HTTP":
@@ -125,12 +237,14 @@ def check_link(url):
         print('check link: {}'.format(check_type(url)))
     return works
 
+
 def visible(element):
     if element.parent.name in ['style', 'script', '[document]', 'head', 'title', 'a']:
         return False
     elif re.match('<!--.*-->', str(element)):
         return False
     return True
+
 
 def find_links(this_url):
     urls_found = []
@@ -217,6 +331,7 @@ def find_suffix(url):
     elif "net" in suff:
         return "Internet service provider/Other network"
 
+
 def find_country_code(url):
     ext = tldextract.extract(url)
     # print(ext)
@@ -226,51 +341,143 @@ def find_country_code(url):
         str2 = str2.lower()
         print(str2)
         if suffix in str2[:5]:
-            #if ext:
+            # if ext:
             print(suffix + " = " + str2)
             return str2.upper()
 
+
 def find_social_media(url):
     title = build_title(url)
-    retStatement = ""
+    ret_statement = ""
     for each in socialMedia:
         if each in title:
             return each
 
+
 def find_term_links(string):
-    retUrl = []
+    ret_url = []
 
     # Domains
     for each in string:
-        if("Agriculture/Farming" in string):
-            retUrl.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/agr.jpg, ")
-        if("Biology" in string):
-            retUrl.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/bio.jpg, ")
+        if "Agriculture" in string:
+            ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/agr2.jpg, ")
+        if "Atmosphere" in string:
+            ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/atmos.jpg, ")
+        if "Biodiversity" in string:
+            ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/biod.jpg, ")
+        if "Biology" in string:
+            ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/bio.jpg, ")
+        if "Cadastral" in string:
+            ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/cadas.jpg, ")
+        if "Chemistry" in string:
+            ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/chem.jpg, ")
+        if "Climatology" in string:
+            ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/clima.jpg, ")
+        if "Coastal Science" in string:
+            ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/coastal.jpg, ")
+        if "Data Systems" in string:
+            ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/datasys.jpg, ")
+        if "Earth Science" in string:
+            ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/earths.jpg, ")
+        if "Ecology" in string:
+            ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/eco.jpg, ")
+        if "Environmental Science" in string:
+            ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/environ.jpg, ")
+        if "Estuarine Science" in string:
+            ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/estua.jpg, ")
+        if "Extreme Events" in string:
+            ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/extremeevents.jpg, ")
+        if "Forestry" in string:
+            ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/forestry.jpg, ")
+        if "Geochemistry" in string:
+            ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/geochem.jpg, ")
+        if "Geochronology" in string:
+            ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/geochron.jpg, ")
+        if "Geodesy" in string:
+            ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/geodesy.jpg, ")
+        if "Geography" in string:
+            ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/geograph.jpg, ")
+        if "Geology" in string:
+            ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/geology.jpg, ")
+        if "Geophysics" in string:
+            ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/geophys.jpg, ")
+        if "GIS" in string:
+            ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/gis.jpg, ")
+        if "Glaciology" in string:
+            ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/glacia.jpg, ")
+        if "Human Dimensions" in string:
+            ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/humandim.jpg, ")
+        if "Hydrobiology" in string:
+            ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/hydrobio.jpg, ")
+        if "Hydrology" in string:
+            ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/hydrology.jpg, ")
+        if "Infrastructure" in string:
+            ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/infra.jpg, ")
+        if "LIDAR" in string:
+            ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/lidar.jpg, ")
+        if "Limnology" in string:
+            ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/limno.jpg, ")
+        if "Maps/Imaging" in string:
+            ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/maps.jpg, ")
+        if "Marine Biology" in string:
+            ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/marinebio.jpg, ")
+        if "Marine Geology" in string:
+            ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/marinegeo.jpg, ")
+        if "Meteorology" in string:
+            ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/meteor.jpg, ")
+        if "Mineralogy" in string:
+            ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/minera.jpg, ")
+        if "Mining" in string:
+            ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/mining.jpg, ")
+        if "Oceanography" in string:
+            ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/oceano.jpg, ")
+        if "Paleobiology" in string:
+            ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/paleobio.jpg, ")
+        if "Paleontology" in string:
+            ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/paleo.jpg, ")
+        if "Petrology" in string:
+            ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/petro.jpg, ")
+        if "Planetary Science" in string:
+            ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/planetary.jpg, ")
+        if "Plate Tectonics" in string:
+            ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/platetect.jpg, ")
+        if "Polar/Ice Satellite" in string:
+            ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/polar.jpg, ")
+        if "Sedimentology" in string:
+            ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/sediment.jpg, ")
+        if "Seismology" in string:
+            ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/seism.jpg, ")
+        if "Soil" in string:
+            ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/soil.jpg, ")
+        if "Spatial" in string:
+            ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/spatial.jpg, ")
+        if "Taxonomy" in string:
+            ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/taxon.jpg, ")
+        if "Topography" in string:
+            ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/topog.jpg, ")
 
         # Resource Types
-        if("Catalog" in string):
-            retUrl.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/catalog.jpg, ")
-        if("Community" in string):
-            retUrl.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/community.jpg, ")
+        if "Catalog" in string:
+            ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/catalog.jpg, ")
+        if "Community" in string:
+            ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/community.jpg, ")
 
-    return retUrl
-
+    return ret_url
 
 def link_type(url):
     if url not in brokenLinks:
-        getreq2 = requests.get(url)
-        reqtext2 = getreq2.text
-        souper2 = BeautifulSoup(reqtext2)
-        LinkString = ""
-        if souper2.find("form")!= None:
-            LinkString += "search engine/"
-        if souper2.find(["download" or "programs" or 'software'])!= None:
-            LinkString += "download"
-        if souper2.find("<p>" > "HREF")!= None:
-            LinkString += "information"
-        if souper2.find(["request", "login", "order", "purchase"])!= None:
-            LinkString += "offlineAccess"
-        return LinkString
+        souper2 = BeautifulSoup(requests.get(url).text)
+        link_string = ""
+        if souper2.find("form") is not None:
+            link_string += "search engine/"
+        if souper2.find(["download" or "programs" or 'software']) is not None:
+            link_string += "download"
+        if souper2.find("<p>" > "HREF") is not None:
+            link_string += "information"
+        if souper2.find(["request", "login", "order", "purchase"]) is not None:
+            link_string += "offlineAccess"
+        return link_string
+
 
 """
 Name: build_labels()
@@ -311,6 +518,7 @@ def build_labels(soup):
                 # add to list of total titles
                 titles.append(tag.text)
     return titles_found
+
 # </editor-fold>
 
 # #####################
@@ -322,80 +530,6 @@ urls = []
 brokenLinks = []
 # Total titles - the text attribute of tag
 titles = []
-# Domains
-disciplinesKnown = {'Agriculture': ["agriculture", "farming", 'Agronomics', 'Agroforestry', 'Agrophysics',
-                'Aquaculture','Horticulture'],
-                'Atmosphere': ["atmosphere", 'Air', 'Pressure','Hydrometeorology', 'Climatology', 'Meteorology',
-                'Atmospheric Chemistry', 'Paleoclimatology'],
-                'Biodiversity': ['Biological Diversity', 'Diversity of Species', 'Agriculture', 'Human Health',
-                'Ecological Services'],
-                'Biology': ['Biodiversity','Marine Biology', 'Biota', 'Biosphere'],
-                'Cadastral': ['Land-Use', 'Environmental Impacts', 'Development', 'Infrastructure','Landscape Ecology'],
-                'Chemistry': ['Biochemistry', 'Geochemistry'],
-                'Climatology': ['Weather', 'Humidity', 'Temperature', 'Meteorology', 'Climate Change', 'Global Warming',
-                'Tornado climatology', 'Tropical cyclone rainfall climatology', 'Urban climatology',
-                'Paeloclimatology'],
-                'Coastal Science':['Marine Habitat', 'Shoreline Management', 'Water Chemistry'],
-                'Data Systems': ['Data Models', 'Data Processing'],
-                'Earth Science':['Geoscience', 'Geology', 'Physical Geography', 'Geophysics', 'Geodesy', 'Soil Science',
-                'Ecology', 'Hydrology', 'Glaciology', 'Atmospheric Sciences'],
-                'Ecology':['Conservation', 'Bionomics', 'the Ecosystem as a whole'],
-                'Environmental Science': ['Conservation', 'Environmental Issues', 'Natural Resource Management',
-                'Atmospheric Science', 'Ecology', 'Environmental Chemistry', 'Geoscience'],
-                'Estuarine Science':['Marine Habitat', 'Estuary Management', 'Water Chemistry'],
-                'Extreme Events':['Hazards', 'Tornadoes', 'Hurricanes', 'Tsunamis', 'Climatology'],
-                'Forestry':['Environmental Science', 'Land-use science', 'Agroforestry', 'Boreal Forestry',
-                'Dendrology', 'Ecological Forestry', 'Energy Forestry', 'Ecology', 'Forest Economics', 'Mensuration',
-                'Pathology','Social Forestry', 'Sustainable Forestry', 'Silviculture', 'Tropical', 'Urban',
-                'World Forestry'],
-                'Geochemistry':['Petrology', 'Meteoritics', 'Fluid-Rock Interaction', 'Isotope Geochemistry',
-                'Cosmochemistry','Biogeochemistry', 'Organic Geochemistry', 'Aqueous Geochemistry',
-                'Environmental Geochemistry', 'Soil Chemistry', 'Water Chemistry'],
-                'Geochronology':['Chronostratigraphy', 'Cosmogenic Nuclide', 'Geochronology'],
-                'Geodesy': ['Geophysics', 'Geodynamics', 'Geomatics', 'Cartography', 'Physical Geodesy',
-                'Satellite Geodesy', 'Gravimetry'],
-                'Geography':['Physical Geography', 'Human Geography'],
-                'Geology':['Marine Geology', 'Geography', 'Structural Geology', 'Petrology', 'Plate Tectonics'],
-                'Geophysics':['Mineral Physics', 'Gravity', 'Magnetism', 'Geochronology', 'Geodynamics', 'Geomagnetism',
-                'Gravimetry', 'Seismology', 'Plate Tectonics', 'Volcanology', 'Geomorphology'],
-                'GIS':['Geoinformatics', 'Spatial', 'Geography', 'Engineering'],
-                'Glaciology':['Cryosphere', 'Polar/Ice', 'Alpine Glaciology', 'Continental Glaciology'],
-                'Human Dimensions':['Human Geography', 'Human Health and Disease', 'Environmental Impacts',
-                'Infrastructure'],
-                'Hydrobiology':['Marine Biology', 'Biodiversity', 'Aquatic Ecology','Limnology', 'Water Quality',
-                'Water Chemistry'],
-                'Hydrology':['All Water Sciences' 'Water', 'Chemical Hydrology', 'Ecohydrology', 'Hydrogeology',
-                'Hydroinformatics', 'Hydrometeorology', 'Isotope Hydrology', 'Surface Hydrology', 'Limnology',
-                'Drainage Basin', 'Oceanography'],
-                'Infrastructure':['Cadastral', 'Development', 'Environmental Impacts'],
-                'LIDAR':['Light Detection And Ranging'],
-                'Limnology':['Hydrobiology', 'Marine Biology', 'Aquatic Ecology', 'Landscape Limnology',
-                'Water Quality', 'Water Chemistry'],
-                'Maps/Imaging':['Vectors', 'Rasters', 'Grids', 'Tomography', 'GIS', 'Satellite Images'],
-                'Marine Biology':['Oceanography', 'Marine Ecology', 'Marine Biological Species'],
-                'Marine Geology':['Geological Oceanography', 'Marine Geophysics', 'Paleoceanography'],
-                'Mineralogy':['Petrology', 'Geochemistry', 'Crystallography', 'Gemology'],
-                'Mining':['Drilling', 'Coring', 'Digging', 'Surface/Underground Mining', 'Asteroid Mining',
-                'Extractive Metallurgy', 'Mineral Processing', 'Geometallurgy'],
-                'Oceanography':['Marine Biology', 'Marine Geolog', 'Bathymetry', 'Paleoceanography',
-                'Chemical Oceanography', 'Physical Oceanography'],
-                'Paleobiology':['Paleontology','Paleobotany', 'Micropaleontology'],
-                'Paleontology':['Fossil Collecting', 'Radiometric Dating', 'Natural History', 'Evolution'],
-                'Petrology':['Geology', 'Geochemistry', 'Structural Geology', 'Lithology', 'Igneous Petrology',
-                'Metamorphic Petrology', 'Sedimentary Petrology'],
-                'Planetary Science':['Space Science', 'Atmospheric Science', 'Sun-Earth Interactions', 'Astronomy',
-                'Planetary Geology', 'Geomorphology', 'Cosmochemistry', 'Space Physics'],
-                'Plate Tectonics':['Geology', 'Structural Geology','Volcanology', 'Geomorphology'],
-                'Polar/Ice':['Cryosphere', 'Arctic', 'Antarctic','Glaciology'],
-                'Satellite':['Maps/Imaging', 'Satellite Data'],
-                'Sedimentology':['Petrology', 'Petrography', 'Mineralogy','Sedimentary Rock', 'Sedimentary Strata',
-                'Sedimentary Structure', 'Stratigraphy'],
-                'Seismology':['Geophysics', 'Paleoseismology', 'Asteroseismology', 'Forensic Seismology',
-                'Helioseismology'],
-                'Soil':['Soil Science', 'Pedosphere','Pedology', 'Edaphology', 'Paleosoil'],
-                'Spatial':['Geographic Data', 'Metadata', 'Data Systems','GIS', 'Satellite', 'LIDAR', 'Geospatial'],
-                'Taxonomy':['Biological Classification','Biological Species', 'Systematics'],
-                'Topography':['Elevation and derived products','Altimetry', 'Bathymetry']}
 
 resourceTypesKnown = {'Activity': ["Conference"],
                       'Consensus Effort': ["Consortium", "Association", "Union"],
@@ -414,13 +548,13 @@ resourceTypesKnown = {'Activity': ["Conference"],
                       'Software': ["software", "code", "programming"],
                       'Forum': ["forum"], 'Organization': ["organization"]}
 
-start_url = 'http://www.greenseas.eu/content/standards-and-related-web-information'
-start_label = 'GreenSeas Home'
-start_title = 'Standards and Information'
+#start_url = 'http://www.greenseas.eu/content/standards-and-related-web-information'
+#start_label = 'GreenSeas Home'
+#start_title = 'Standards and Information'
 
-#start_url = 'http://cinergi.weebly.com/'
-#start_title = 'CINERGI Test Bed'
-#tart_label = 'CINERGI Home'
+start_url = 'http://cinergi.weebly.com/'
+start_title = 'CINERGI Test Bed'
+start_label = 'CINERGI Home'
 
 #start_url = 'http://www.antarctica.ac.uk/dms/'
 #start_title = "Antarctica"
@@ -485,106 +619,17 @@ start_soup = BeautifulSoup(start_html)
 res0.title = build_title(start_url)
 res0.url_type = check_type(res0.link)
 
-# First run
-links_found = find_links(start_url)
-first_run = [res0]
-
-# Build the resources from the links found
-for alink in links_found:
-    url_final = check_link(alink)  # named so b/c url may be changed in function
-    res = Resource(url_final)
-    res.link = url_final
-    if res.link is not " ":
-        res.url_type = check_type(url_final)
-        if res.url_type is 'HTTP':
-            # commented out for soup-making amendment to build_title
-            #html = (requests.get(res.link)).text
-            #sewp = BeautifulSoup(html)
-            res.title = build_title(res.link)
-            res.org = find_organization(res.link)
-            res.disciplines = find_disciplines(res.link)
-            res.resource_type = find_resource_types(res.link)
-            titles.append(res.title)
-            urls.append(res.link)
-            first_run.append(res)
-        elif res.url_type is 'FTP':  # TODO: Figure out how to get ftp data
-            res.title = 'FTP site'
-            first_run.append(res)
-    else:
-        brokenLinks.append(alink)
-
 # <editor-fold desc="Excel Sheet 1">
 print('Creating xlsx file')
 # Create excel file
 wb = Workbook()
 filename = 'Crawl.xlsx'
-ws = wb.active
-ws.title = 'First run'
 
-header_style = Style(font=Font(bold=True))
-ws.cell('A1').value = 'Title'  # we need to find out how to do
-ws['A1'].style = header_style
-ws.cell('B1').value = 'Label'  # tag.text
-ws['B1'].style = header_style
-ws.cell('C1').value = 'URL'
-ws['C1'].style = header_style
-ws.cell('D1').value = 'Organization'
-ws['D1'].style = header_style
-ws['E1'].style = header_style
-ws.cell('E1').value = 'Domain(s)'
-ws.cell('F1').value = 'Resource Type'
-ws['F1'].style = header_style
-ws.cell('G1').value = "Content Type/Format"
-ws['G1'].style = header_style
-ws['H1'].value = "TLD"
-ws['H1'].style = header_style
-ws['I1'].value = "Country"
-ws['I1'].style = header_style
-ws['J1'].value = "Social Media?"
-ws['J1'].style = header_style
-ws['K1'].value = "Term Definitions"
-ws['K1'].style = header_style
-
-j = 2
-for resource in first_run:
-    ws['A%s' % j].value = resource.title
-    # ws['B%s' % j].value = resource.label  # no label assigned
-    ws['C%s' % j].value = resource.link
-    ws['D%s' % j].value = resource.org
-    ws['E%s' % j].value = ', '.join(sorted(resource.disciplines))
-    ws['F%s' % j].value = ', '.join(sorted(resource.resource_type))
-    ws['G%s' % j].value = resource.url_type
-    j += 1
+# First run
+crawl(find_links(start_url), 0)
 
 # </editor-fold>
 
-
-# <editor-fold desc="Second Run">
-ws1 = wb.create_sheet()
-ws1.title = 'Second run'
-
-# Apply headers (after data so as not to affect formula for skipping rows)
-ws1.cell('A1').value = 'Title'
-ws1.cell('B1').value = 'Label'
-ws1.cell('C1').value = 'URL'
-ws1.cell('D1').value = 'Organization'
-ws1.cell('E1').value = 'Domain(s)'
-ws1.cell('F1').value = 'Resource Type'
-ws1.cell('G1').value = 'Content Type/Format'
-ws1.cell('H1').value = "TLD"
-ws1.cell('I1').value = "Country"
-ws1.cell('J1').value = "Social Media Link"
-ws1['A1'].style = header_style
-ws1['B1'].style = header_style
-ws1['C1'].style = header_style
-ws1['D1'].style = header_style
-ws1['E1'].style = header_style
-ws1['F1'].style = header_style
-ws1['G1'].style = header_style
-ws1['H1'].style = header_style
-ws1['I1'].style = header_style
-ws1['J1'].style = header_style
-# </editor-fold>
 
 ws2 = wb.create_sheet()
 ws2.title = 'List of Official Organizations'
