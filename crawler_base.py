@@ -80,12 +80,9 @@ recursive function to make new sheet from each set of links
 and scrape them
 """
 def crawl(links_found, index):
-    # index += 1
-    ws = wb.create_sheet()
     #ws.title = '{}'.format((wb.get_index(wb.get_active_sheet())))
     ws = wb.create_sheet(index, str(index))
     make_headers(ws)
-
     links_deep = []
 
     # Build the resources from the links found
