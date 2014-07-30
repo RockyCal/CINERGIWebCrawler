@@ -1,6 +1,5 @@
 from bs4 import BeautifulSoup
 import requests
-from requests import exceptions
 import re
 from openpyxl import Workbook, cell
 from openpyxl.styles import Style, Font
@@ -69,6 +68,7 @@ def get_resource_data(ws, res_url):
     ws['J%s' % row_num].value = res.social_media
     ws['K%s' % row_num].value = str(term_links)
 
+
 def make_headers(ws):
     header_style = Style(font=Font(bold=True))
     ws.cell('A1').value = 'Title'  # we need to find out how to do
@@ -106,26 +106,18 @@ def crawl(links_found, index):
     make_headers(ws)
     links_deep = []
 
-    # Build the resources from the links found
-    for alink in links_found:
-        url_final = check_link(alink)  # named so b/c url may be changed in function
-        if url_final is not " ":
-            if url_final not in visited:
-                visited.append(url_final)
-                #elif res.url_type is 'FTP':  # TODO: Figure out how to get ftp data
-                #    res.title = 'FTP site'
-                get_resource_data(ws, url_final)
-                # thread = ThreadClass(ws, url_final, index)
-                # thread.start()
-                for each in find_links(alink):
-                    links_deep.append(each)
+    # Start thread for turning urls into resources
+    thread = ThreadClass(ws, links_found, index)
+    thread.start()
+    for each in links_found:
+        links_deep.extend(find_links(each))
 
     print("Sheet " + str(wb.get_index(wb.get_active_sheet())))
     print("Sheet Ind " + str(index))
     if wb.get_index(wb.get_active_sheet()) is 2:
         print("Active sheet")
         return
-    if index > 0:
+    if index > 1:
         print("Index")
         return
     else:
@@ -657,12 +649,7 @@ if len(countriesOfficial) > 0:
             cell.value = countriesOfficial[t]
             t += 1
 
-#print('first orgs: {}'.format(orgsMade))
 print('broken links: {}'.format(brokenLinks))
-#print('visited: {}'.format(visited))
-#print('Length of visited: ' + str(len(visited)))
-print('Working urls: {}'.format(urls))
-#print('Length of urls: ' + str(len(urls)))
-#print('titles: {}'.format(titles))
-#print('Length of titles: ' + str(len(titles)))
+print('visited: {}'.format(visited))
+print('Length of visited: ' + str(len(visited)))
 wb.save(filename)
