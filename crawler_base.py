@@ -3,8 +3,9 @@ import requests
 import re
 from openpyxl import Workbook, cell
 from openpyxl.styles import Style, Font
-from urllib.request import urlopen
-from urllib.error import URLError
+from urllib.request import urlopen, Request
+from urllib.error import URLError, HTTPError
+from socket import error as SocketError
 import tldextract
 import threading
 from disciplines_known import disciplinesKnown
@@ -40,21 +41,25 @@ class Resource:
 
 
 # <editor-fold desc="Functions">
-def get_resource_data(ws, res_url):
-    res = Resource(res_url)
-    res.title = build_title(res.link)
-    res.url_type = check_type(res.link)
-    res.org = find_organization(res.link)
-    res.disciplines = find_disciplines(res.link)
-    res.resource_type = find_resource_types(res.link)
-    row_num = ws.get_highest_row() + 1
-    ws['A%s' % row_num].value = res.title
-    ws['C%s' % row_num].value = res.link
-    ws['D%s' % row_num].value = res.org
-    ws['E%s' % row_num].value = ', '.join(sorted(res.disciplines))
-    ws['F%s' % row_num].value = ', '.join(sorted(res.resource_type))
-    ws['G%s' % row_num].value = res.url_type
-
+def get_resource_data(ws, links):
+    for link in links:
+        url_final = check_link(link)  # named so b/c url may be changed in function
+        if url_final is not " ":
+            if url_final not in visited:
+                visited.append(url_final)
+                res = Resource(url_final)
+                res.title = build_title(res.link)
+                res.url_type = check_type(res.link)
+                res.org = find_organization(res.link)
+                res.disciplines = find_disciplines(res.link)
+                res.resource_type = find_resource_types(res.link)
+                row_num = ws.get_highest_row() + 1
+                ws['A%s' % row_num].value = res.title
+                ws['C%s' % row_num].value = res.link
+                ws['D%s' % row_num].value = res.org
+                ws['E%s' % row_num].value = ', '.join(sorted(res.disciplines))
+                ws['F%s' % row_num].value = ', '.join(sorted(res.resource_type))
+                ws['G%s' % row_num].value = res.url_type
 
 
 def make_headers(ws):
@@ -94,30 +99,20 @@ def crawl(links_found, index):
     make_headers(ws)
     links_deep = []
 
-    # Build the resources from the links found
-    for alink in links_found:
-        url_final = check_link(alink)  # named so b/c url may be changed in function
-        if url_final is not " ":
-            if url_final not in visited:
-                visited.append(url_final)
-                #elif res.url_type is 'FTP':  # TODO: Figure out how to get ftp data
-                #    res.title = 'FTP site'
-                thread = ThreadClass(ws, url_final, index)
-                thread.start()
-                for each in find_links(alink):
-                    links_deep.append(each)
-                print("For loop iterated once")
-        else:
-            brokenLinks.append(alink)
+    # Start thread for turning urls into resources
+    thread = ThreadClass(ws, links_found, index)
+    thread.start()
+    for each in links_found:
+        links_deep.extend(find_links(each))
 
     print("Sheet " + str(wb.get_index(wb.get_active_sheet())))
     print("Sheet Ind " + str(index))
     if wb.get_index(wb.get_active_sheet()) is 2:
         print("Active sheet")
         return
-    if index > 0:
-       print("Index")
-       return
+    if index > 1:
+        print("Index")
+        return
     else:
         index += 1
         crawl(links_deep, index)
@@ -134,36 +129,24 @@ def check_type(url):
 
 
 def check_again(new_url):
+    print('Checking {} again...'.format(new_url))
+    link = new_url
+    req = Request(new_url)
     try:
-        rq = requests.get(new_url)
-        cq = rq.status_code
-    except requests.ConnectionError:
-        # fixed = 0
-        print('{}: Connection error'.format(new_url))
+        urlopen(req)
+    except HTTPError as h:
+        print('{}: {}, {}'.format(new_url, h.reason, h.code))
         brokenLinks.append(new_url)
         return " "
-    except requests.Timeout:
-        # fixed = 0
-        print('{}: Timeout error'.format(new_url))
+    except SocketError:
+        print('{}: socket error'.format(new_url))
         brokenLinks.append(new_url)
         return " "
-    except requests.TooManyRedirects:
-        # fixed = 0
-        print('{}: Too Many Redirects'.format(new_url))
+    except URLError as e:
+        print('{}: {}'.format(new_url, e.reason))
         brokenLinks.append(new_url)
         return " "
-    except requests.HTTPError:
-        # fixed = 0
-        print('{}: HTTP Error'.format(new_url))
-        brokenLinks.append(new_url)
-        return " "
-    else:
-        if cq != 200:
-            # fixed = 0
-            print('{}: Error code {}'.format(new_url, cq))
-            brokenLinks.append(new_url)
-            return " "
-    return new_url
+    return link
 
 
 """
@@ -176,54 +159,40 @@ Returns: 1 if link works w/o error
 
 
 def check_link(url):
-    works = url
-    if check_type(url) == "HTTP":
+    link = url
+    req = Request(url)
+    if HTTP in url or preFTP in url:
         try:
-            link = requests.get(url, timeout=10)
-            c = link.status_code
-        except requests.ConnectionError:
-            if "www." in url:
-                works = " "
-                print('{}: Connection error'.format(url))
-                brokenLinks.append(url)
-            else:
-                # If www not in link, add it to link and see if it works
+            response = urlopen(req, timeout=10)
+        except HTTPError as e:
+            print('{}: {}, {}'.format(url, e.reason, e.code))
+            brokenLinks.append(url)
+            return " "
+        except SocketError:
+            if 'www' not in url:
+                print('Adding www to {}'.format(url))
                 ext_url = tldextract.extract(url)
                 url_sub = ext_url.subdomain
                 url_dom = ext_url.domain
                 url_suff = ext_url.suffix
                 new_url = "http://www." + url_sub + url_dom + "." + url_suff
                 return check_again(new_url)
-        except requests.Timeout:
-            works = " "
-            print('{}: Timeout error'.format(url))
-            brokenLinks.append(url)
-        except requests.TooManyRedirects:
-            works = " "
-            print('{}: Too Many Redirects'.format(url))
-            brokenLinks.append(url)
-        except requests.HTTPError:
-            works = " "
-            print('{}: HTTP Error'.format(url))
-            brokenLinks.append(url)
-        else:
-            if c != 200:
-                works = " "
-                print('{}: Error code {}'.format(url, c))
-                brokenLinks.append(url)
-    elif check_type(url) == "FTP":
-        works = url
-        try:
-            urlopen(url)
         except URLError as e:
-            works = " "
-            print(url + ': ' + e.reason)
-            brokenLinks.append(url)
+            if 'www' not in url:
+                print('Adding www to {}'.format(url))
+                ext_url = tldextract.extract(url)
+                url_sub = ext_url.subdomain
+                url_dom = ext_url.domain
+                url_suff = ext_url.suffix
+                new_url = "http://www." + url_sub + url_dom + "." + url_suff
+                return check_again(new_url)
+            else:
+                print('{}: {}'.format(url, e.reason))
+                brokenLinks.append(url)
+                return " "
     else:
-        works = " "
-        print('check link: {}'.format(check_type(url)))
-    return works
-
+        return " "
+    return link
 
 def visible(element):
     if element.parent.name in ['style', 'script', '[document]', 'head', 'title', 'a']:
@@ -235,9 +204,7 @@ def visible(element):
 
 def find_links(this_url):
     urls_found = []
-    get = requests.get(this_url)
-    h_text = get.text
-    soup = BeautifulSoup(h_text)
+    soup = BeautifulSoup(urlopen(this_url).read())
     for link_tag in soup.find_all('a', href=True):
         if HTTP in link_tag['href'] or preFTP in link_tag['href']:
             url_correct = check_link(link_tag['href'])
@@ -252,7 +219,7 @@ def find_disciplines(url):
     if check_type(url) is "FTP":
         return "None"
     if check_type(url) is "HTTP":
-        souper = BeautifulSoup(requests.get(url).text)
+        souper = BeautifulSoup(urlopen(url).read())
         # Search for all keywords, the values of the Domains dict
         for key in disciplinesKnown:
             for v in disciplinesKnown.get(key):
@@ -278,7 +245,7 @@ def find_resource_types(url):
     resos_found = []
     set_of_resources = set()
     if check_type(url) is "HTTP":
-        souper2 = BeautifulSoup(requests.get(url).text)
+        souper2 = BeautifulSoup(urlopen(url).read())
         for key in resourceTypesKnown:
             for v in resourceTypesKnown.get(key):
                 texts = souper2.find_all(text=re.compile(v))
@@ -481,7 +448,7 @@ def build_text(soup):
 
 
 def build_title(page_url):
-    page_text = BeautifulSoup((requests.get(page_url)).text)
+    page_text = BeautifulSoup(urlopen(page_url, timeout=7).read())
     for title in page_text.find_all('title'):
         if title.has_attr('string'):
             return title.string
@@ -640,12 +607,7 @@ if len(countriesOfficial) > 0:
             cell.value = countriesOfficial[t]
             t += 1
 
-#print('first orgs: {}'.format(orgsMade))
 print('broken links: {}'.format(brokenLinks))
-#print('visited: {}'.format(visited))
-#print('Length of visited: ' + str(len(visited)))
-print('Working urls: {}'.format(urls))
-#print('Length of urls: ' + str(len(urls)))
-#print('titles: {}'.format(titles))
-#print('Length of titles: ' + str(len(titles)))
+print('visited: {}'.format(visited))
+print('Length of visited: ' + str(len(visited)))
 wb.save(filename)
