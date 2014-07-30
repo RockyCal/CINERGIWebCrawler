@@ -40,33 +40,38 @@ class Resource:
 # </editor-fold>
 
 # <editor-fold desc="Functions">
-def get_resource_data(ws, res_url):
-    term_links = []
-    res = Resource(res_url)
-    res.title = build_title(res.link)
-    res.url_type = check_type(res.link)
-    term_links.append('URL Type: http://cinergiterms.weebly.com/url-type.html')
-    res.org = find_organization(res.link)
-    res.disciplines = find_disciplines(res.link)
-    term_links.append(find_term_links(res.disciplines))
-    res.resource_type = find_resource_types(res.link)
-    term_links.append(find_term_links(res.resource_type))
-    res.tld = find_suffix(res.link)
-    term_links.append('TLD: http://cinergiterms.weebly.com/top-level-domain.html')
-    res.country_code = find_country_code(res.link)
-    term_links.append('Country Code: http://cinergiterms.weebly.com/country-codes.html')
-    res.social_media = find_social_media(res.link)
-    row_num = ws.get_highest_row() + 1
-    ws['A%s' % row_num].value = res.title
-    ws['C%s' % row_num].value = res.link
-    ws['D%s' % row_num].value = res.org
-    ws['E%s' % row_num].value = ', '.join(sorted(res.disciplines))
-    ws['F%s' % row_num].value = ', '.join(sorted(res.resource_type))
-    ws['G%s' % row_num].value = res.url_type
-    ws['H%s' % row_num].value = res.tld
-    ws['I%s' % row_num].value = res.country_code
-    ws['J%s' % row_num].value = res.social_media
-    ws['K%s' % row_num].value = str(term_links)
+def get_resource_data(ws, links):
+    for link in links:
+         url_final = check_link(link)  # named so b/c url may be changed in function
+         if url_final is not " ":
+             if url_final not in visited:
+                visited.append(url_final)
+                term_links = []
+                res = Resource(url_final)
+                res.title = build_title(res.link)
+                res.url_type = check_type(res.link)
+                term_links.append('URL Type: http://cinergiterms.weebly.com/url-type.html')
+                res.org = find_organization(res.link)
+                res.disciplines = find_disciplines(res.link)
+                term_links.append(find_term_links(res.disciplines))
+                res.resource_type = find_resource_types(res.link)
+                term_links.append(find_term_links(res.resource_type))
+                res.tld = find_suffix(res.link)
+                term_links.append('TLD: http://cinergiterms.weebly.com/top-level-domain.html')
+                res.country_code = find_country_code(res.link)
+                term_links.append('Country Code: http://cinergiterms.weebly.com/country-codes.html')
+                res.social_media = find_social_media(res.link)
+                row_num = ws.get_highest_row() + 1
+                ws['A%s' % row_num].value = res.title
+                ws['C%s' % row_num].value = res.link
+                ws['D%s' % row_num].value = res.org
+                ws['E%s' % row_num].value = ', '.join(sorted(res.disciplines))
+                ws['F%s' % row_num].value = ', '.join(sorted(res.resource_type))
+                ws['G%s' % row_num].value = res.url_type
+                ws['H%s' % row_num].value = res.tld
+                ws['I%s' % row_num].value = res.country_code
+                ws['J%s' % row_num].value = res.social_media
+                ws['K%s' % row_num].value = str(term_links)
 
 
 def make_headers(ws):
@@ -267,15 +272,22 @@ def find_resource_types(url):
 
 
 def find_organization(url):
-    basic_org = build_title(url)
 
+    ext = tldextract.extract(url)
+    extDom = ext.domain
+    extSuff = ext.suffix
+    newUrl = "http://" + extDom + "." + extSuff
+
+    if check_link(newUrl) != 1:
+     newUrl = "www." + extDom + "." + extSuff
+
+    basic_org = build_title(newUrl)
     if basic_org in orgsOfficial:
         return "Verified: " + basic_org
     elif build_title(url) is not 'No title':
         return build_title(url)
     else:
         return "NA"
-
 
 def find_suffix(url):
     ext = tldextract.extract(url)
@@ -291,7 +303,6 @@ def find_suffix(url):
         return "Government"
     elif "net" in suff:
         return "Internet service provider/Other network"
-
 
 def find_country_code(url):
     ext = tldextract.extract(url)
@@ -474,7 +485,17 @@ def link_type(url):
             link_string += "offlineAccess"
         return link_string
 
+def find_home_page(url):
 
+    ext = tldextract.extract(url)
+    extDom = ext.domain
+    extSuff = ext.suffix
+    newUrl = "http://" + extDom + "." + extSuff
+
+    if check_link(newUrl) != 1:
+     newUrl = "www." + extDom + "." + extSuff
+
+    return newUrl
 """
 Name: build_labels()
 Params: url - page to get titles from
