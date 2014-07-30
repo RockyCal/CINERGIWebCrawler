@@ -115,7 +115,7 @@ def crawl(links_found, index):
     if wb.get_index(wb.get_active_sheet()) is 2:
         print("Active sheet")
         return
-    if index > 0:
+    if index > 1:
        print("Index")
        return
     else:
