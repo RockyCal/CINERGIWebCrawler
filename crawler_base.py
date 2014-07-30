@@ -9,6 +9,7 @@ from socket import error as SocketError
 import tldextract
 import threading
 from disciplines_known import disciplinesKnown
+print(disciplinesKnown)
 
 # <editor-fold desc="Protocol constants">
 HTTP = 'http://'
