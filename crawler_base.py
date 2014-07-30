@@ -150,7 +150,6 @@ def check_again(new_url):
         print('{}: {}'.format(new_url, e.reason))
         brokenLinks.append(new_url)
         return " "
-    print('Returning {}'.format(new_url))
     return link
 
 
@@ -453,7 +452,6 @@ def build_text(soup):
 
 
 def build_title(page_url):
-    print('build title: {}'.format(page_url))
     page_text = BeautifulSoup(urlopen(page_url, timeout=7).read())
     for title in page_text.find_all('title'):
         if title.has_attr('string'):
