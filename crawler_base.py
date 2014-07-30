@@ -40,15 +40,23 @@ class Resource:
 
 # </editor-fold>
 
-
 # <editor-fold desc="Functions">
 def get_resource_data(ws, res_url):
+    term_links = []
     res = Resource(res_url)
     res.title = build_title(res.link)
     res.url_type = check_type(res.link)
+    term_links.append('URL Type: http://cinergiterms.weebly.com/url-type.html')
     res.org = find_organization(res.link)
     res.disciplines = find_disciplines(res.link)
+    term_links.append(find_term_links(res.disciplines))
     res.resource_type = find_resource_types(res.link)
+    term_links.append(find_term_links(res.resource_type))
+    res.tld = find_suffix(res.link)
+    term_links.append('TLD: http://cinergiterms.weebly.com/top-level-domain.html')
+    res.country_code = find_country_code(res.link)
+    term_links.append('Country Code: http://cinergiterms.weebly.com/country-codes.html')
+    res.social_media = find_social_media(res.link)
     row_num = ws.get_highest_row() + 1
     ws['A%s' % row_num].value = res.title
     ws['C%s' % row_num].value = res.link
@@ -56,7 +64,10 @@ def get_resource_data(ws, res_url):
     ws['E%s' % row_num].value = ', '.join(sorted(res.disciplines))
     ws['F%s' % row_num].value = ', '.join(sorted(res.resource_type))
     ws['G%s' % row_num].value = res.url_type
-
+    ws['H%s' % row_num].value = res.tld
+    ws['I%s' % row_num].value = res.country_code
+    ws['J%s' % row_num].value = res.social_media
+    ws['K%s' % row_num].value = str(term_links)
 
 def make_headers(ws):
     header_style = Style(font=Font(bold=True))
@@ -307,9 +318,12 @@ def find_country_code(url):
 def find_social_media(url):
     title = build_title(url)
     ret_statement = ""
-    for each in socialMedia:
-        if each in title:
-            return each
+    if title is not None:
+        for each in socialMedia:
+            if each in title:
+                return each
+    else:
+         return ret_statement
 
 
 def find_term_links(string):
@@ -415,10 +429,42 @@ def find_term_links(string):
             ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/topog.jpg, ")
 
         # Resource Types
+        if "Activity" in string:
+            ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/activity.jpg, ")
+        if "Consensus effort" in string:
+            ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/conseffort.jpg, ")
+        if "Data service" in string:
+            ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/dataservice.jpg, ")
         if "Catalog" in string:
             ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/catalog.jpg, ")
         if "Community" in string:
             ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/community.jpg, ")
+        if "Web application" in string:
+            ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/webapp.jpg, ")
+        if "Organizational portal" in string:
+            ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/orgport.jpg, ")
+        if "Specification" in string:
+            ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/specific.jpg, ")
+        if "Image collection" in string:
+            ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/imagecollect.jpg, ")
+        if "Web page" in string:
+            ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/webpage.jpg, ")
+        if "Interchange format" in string:
+            ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/interformat.jpg, ")
+        if "Vocabulary" in string:
+            ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/vocab.jpg, ")
+        if "Service" in string:
+            ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/service.jpg, ")
+        if "Digital repository" in string:
+            ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/digitalrepo.jpg, ")
+        if "Functional specification" in string:
+            ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/functspec.jpg, ")
+        if "Software" in string:
+            ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/software.jpg, ")
+        if "Forum" in string:
+            ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/forum.jpg, ")
+        if "Organization" in string:
+            ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/organization.jpg, ")
 
     return ret_url
 
@@ -494,7 +540,7 @@ resourceTypesKnown = {'Activity': ["Conference"],
                       'Data Service': ["Network", "Services", "Tools", "Platform", "Infrastructure"],
                       'Catalog': ["search engine", "catalog"], 'Community': ["community"],
                       'Web Application': ["web application"],
-                      'Portal': ["Visualization data", "Registry", "Infrastructure"],
+                      'Organizational Portal': ["Visualization data", "Registry", "Infrastructure"],
                       'Specification': ["specification"],
                       'Image Collection': ["observation", "images", "gallery", "photography", "picture"],
                       'Web page': ["web page"],
