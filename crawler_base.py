@@ -39,6 +39,16 @@ class Resource:
     disciplines = []
     resource_type = []
 
+    def find_links(self):
+        urls_found = []
+        if check_link(self.link) is not " ":
+            soup = BeautifulSoup(urlopen(self.link).read())
+            for link_tag in soup.find_all('a', href=True):
+                if HTTP in link_tag['href'] or preFTP in link_tag['href']:
+                    url_correct = check_link(link_tag['href'])
+                    if url_correct is not " ":
+                        urls_found.append(url_correct)
+            return urls_found
 # </editor-fold>
 
 # <editor-fold desc="Functions">
@@ -216,16 +226,6 @@ def visible(element):
     return True
 
 
-def find_links(this_url):
-    urls_found = []
-    if check_link(this_url) is not " ":
-        soup = BeautifulSoup(urlopen(this_url).read())
-        for link_tag in soup.find_all('a', href=True):
-            if HTTP in link_tag['href'] or preFTP in link_tag['href']:
-                url_correct = check_link(link_tag['href'])
-                if url_correct is not " ":
-                    urls_found.append(url_correct)
-        return urls_found
 
 
 def find_disciplines(url):
