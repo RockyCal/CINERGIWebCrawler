@@ -636,8 +636,7 @@ print('Creating xlsx file')
 wb = Workbook()
 filename = 'Crawl.xlsx'
 
-# First run
-crawl(find_links(start_url), 0)
+links_to_crawl = [res0.find_links()]
 
 # </editor-fold>
 
