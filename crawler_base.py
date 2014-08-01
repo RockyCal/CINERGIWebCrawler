@@ -42,37 +42,36 @@ class Resource:
 # </editor-fold>
 
 # <editor-fold desc="Functions">
-def get_resource_data(ws, links):
+def get_resource_data(ws, link):
     term_links = []
-    for link in links:
-        url_final = check_link(link)  # named so b/c url may be changed in function
-        if url_final is not " ":
-            if url_final not in visited:
-                res = Resource(link)
-                res.title = build_title(res.link)
-                res.url_type = check_type(res.link)
-                term_links.append('URL Type: http://cinergiterms.weebly.com/url-type.html')
-                res.org = find_organization(res.link)
-                res.disciplines = find_disciplines(res.link)
-                term_links.append(find_term_links(res.disciplines))
-                res.resource_type = find_resource_types(res.link)
-                term_links.append(find_term_links(res.resource_type))
-                res.tld = find_suffix(res.link)
-                term_links.append('TLD: http://cinergiterms.weebly.com/top-level-domain.html')
-                res.country_code = find_country_code(res.link)
-                term_links.append('Country Code: http://cinergiterms.weebly.com/country-codes.html')
-                res.social_media = find_social_media(res.link)
-                row_num = ws.get_highest_row() + 1
-                ws['A%s' % row_num].value = res.title
-                ws['C%s' % row_num].value = res.link
-                ws['D%s' % row_num].value = res.org
-                ws['E%s' % row_num].value = ', '.join(sorted(res.disciplines))
-                ws['F%s' % row_num].value = ', '.join(sorted(res.resource_type))
-                ws['G%s' % row_num].value = res.url_type
-                ws['H%s' % row_num].value = res.tld
-                ws['I%s' % row_num].value = res.country_code
-                ws['J%s' % row_num].value = res.social_media
-                ws['K%s' % row_num].value = str(term_links)
+    url_final = check_link(link)  # named so b/c url may be changed in function
+    if url_final is not " ":
+        if url_final not in visited:
+            res = Resource(link)
+            res.title = build_title(res.link)
+            res.url_type = check_type(res.link)
+            term_links.append('URL Type: http://cinergiterms.weebly.com/url-type.html')
+            res.org = find_organization(res.link)
+            res.disciplines = find_disciplines(res.link)
+            term_links.append(find_term_links(res.disciplines))
+            res.resource_type = find_resource_types(res.link)
+            term_links.append(find_term_links(res.resource_type))
+            res.tld = find_suffix(res.link)
+            term_links.append('TLD: http://cinergiterms.weebly.com/top-level-domain.html')
+            res.country_code = find_country_code(res.link)
+            term_links.append('Country Code: http://cinergiterms.weebly.com/country-codes.html')
+            res.social_media = find_social_media(res.link)
+            row_num = ws.get_highest_row() + 1
+            ws['A%s' % row_num].value = res.title
+            ws['C%s' % row_num].value = res.link
+            ws['D%s' % row_num].value = res.org
+            ws['E%s' % row_num].value = ', '.join(sorted(res.disciplines))
+            ws['F%s' % row_num].value = ', '.join(sorted(res.resource_type))
+            ws['G%s' % row_num].value = res.url_type
+            ws['H%s' % row_num].value = res.tld
+            ws['I%s' % row_num].value = res.country_code
+            ws['J%s' % row_num].value = res.social_media
+            ws['K%s' % row_num].value = str(term_links)
         
 
 def make_headers(ws):
@@ -112,9 +111,9 @@ def crawl(links_found, index):
     make_headers(ws)
     links_deep = []
 
-    # Start thread for turning urls into resources
-    thread = ThreadClass(ws, links_found, index)
-    thread.start()
+    for each in links_found:
+        t = ThreadClass(ws, each, index)
+        t.start()
     for each in links_found:
         links_deep.extend(find_links(each))
 
@@ -219,13 +218,14 @@ def visible(element):
 
 def find_links(this_url):
     urls_found = []
-    soup = BeautifulSoup(urlopen(this_url).read())
-    for link_tag in soup.find_all('a', href=True):
-        if HTTP in link_tag['href'] or preFTP in link_tag['href']:
-            url_correct = check_link(link_tag['href'])
-            if url_correct is not " ":
-                urls_found.append(url_correct)
-    return urls_found
+    if check_link(this_url) is not " ":
+        soup = BeautifulSoup(urlopen(this_url).read())
+        for link_tag in soup.find_all('a', href=True):
+            if HTTP in link_tag['href'] or preFTP in link_tag['href']:
+                url_correct = check_link(link_tag['href'])
+                if url_correct is not " ":
+                    urls_found.append(url_correct)
+        return urls_found
 
 
 def find_disciplines(url):
@@ -308,10 +308,8 @@ def find_country_code(url):
     for each in countriesOfficial:
         str2 = str(each)
         str2 = str2.lower()
-        print(str2)
         if suffix in str2[:5]:
             # if ext:
-            print(suffix + " = " + str2)
             return str2.upper()
 
 
@@ -323,7 +321,7 @@ def find_social_media(url):
             if each in title:
                 return each
     else:
-         return ret_statement
+        return ret_statement
 
 
 def find_term_links(string):
