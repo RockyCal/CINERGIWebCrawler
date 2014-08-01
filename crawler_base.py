@@ -24,7 +24,9 @@ class ThreadClass(threading.Thread):
         self.url = url
 
     def run(self):
+        print('Starting ' + str(self.counter))
         get_resource_data(self.ws, self.url)
+        print('Ending ' + str(self.counter))
 
 # <editor-fold desc="class Resource">
 class Resource:
@@ -43,32 +45,35 @@ class Resource:
 def get_resource_data(ws, links):
     term_links = []
     for link in links:
-        res = Resource(link)
-        res.title = build_title(res.link)
-        res.url_type = check_type(res.link)
-        term_links.append('URL Type: http://cinergiterms.weebly.com/url-type.html')
-        res.org = find_organization(res.link)
-        res.disciplines = find_disciplines(res.link)
-        term_links.append(find_term_links(res.disciplines))
-        res.resource_type = find_resource_types(res.link)
-        term_links.append(find_term_links(res.resource_type))
-        res.tld = find_suffix(res.link)
-        term_links.append('TLD: http://cinergiterms.weebly.com/top-level-domain.html')
-        res.country_code = find_country_code(res.link)
-        term_links.append('Country Code: http://cinergiterms.weebly.com/country-codes.html')
-        res.social_media = find_social_media(res.link)
-        row_num = ws.get_highest_row() + 1
-        ws['A%s' % row_num].value = res.title
-        ws['C%s' % row_num].value = res.link
-        ws['D%s' % row_num].value = res.org
-        ws['E%s' % row_num].value = ', '.join(sorted(res.disciplines))
-        ws['F%s' % row_num].value = ', '.join(sorted(res.resource_type))
-        ws['G%s' % row_num].value = res.url_type
-        ws['H%s' % row_num].value = res.tld
-        ws['I%s' % row_num].value = res.country_code
-        ws['J%s' % row_num].value = res.social_media
-        ws['K%s' % row_num].value = str(term_links)
-
+        url_final = check_link(link)  # named so b/c url may be changed in function
+        if url_final is not " ":
+            if url_final not in visited:
+                res = Resource(link)
+                res.title = build_title(res.link)
+                res.url_type = check_type(res.link)
+                term_links.append('URL Type: http://cinergiterms.weebly.com/url-type.html')
+                res.org = find_organization(res.link)
+                res.disciplines = find_disciplines(res.link)
+                term_links.append(find_term_links(res.disciplines))
+                res.resource_type = find_resource_types(res.link)
+                term_links.append(find_term_links(res.resource_type))
+                res.tld = find_suffix(res.link)
+                term_links.append('TLD: http://cinergiterms.weebly.com/top-level-domain.html')
+                res.country_code = find_country_code(res.link)
+                term_links.append('Country Code: http://cinergiterms.weebly.com/country-codes.html')
+                res.social_media = find_social_media(res.link)
+                row_num = ws.get_highest_row() + 1
+                ws['A%s' % row_num].value = res.title
+                ws['C%s' % row_num].value = res.link
+                ws['D%s' % row_num].value = res.org
+                ws['E%s' % row_num].value = ', '.join(sorted(res.disciplines))
+                ws['F%s' % row_num].value = ', '.join(sorted(res.resource_type))
+                ws['G%s' % row_num].value = res.url_type
+                ws['H%s' % row_num].value = res.tld
+                ws['I%s' % row_num].value = res.country_code
+                ws['J%s' % row_num].value = res.social_media
+                ws['K%s' % row_num].value = str(term_links)
+        
 
 def make_headers(ws):
     header_style = Style(font=Font(bold=True))
@@ -182,7 +187,8 @@ def check_link(url):
                 ext_url = tldextract.extract(url)
                 url_sub = ext_url.subdomain
                 url_dom = ext_url.domain
-                url_suff = ext_url.suffix
+                suff = url.split(ext_url.suffix)
+                url_suff = ext_url.suffix + suff[1]
                 new_url = "http://www." + url_sub + url_dom + "." + url_suff
                 return check_again(new_url)
         except URLError as e:
@@ -191,7 +197,8 @@ def check_link(url):
                 ext_url = tldextract.extract(url)
                 url_sub = ext_url.subdomain
                 url_dom = ext_url.domain
-                url_suff = ext_url.suffix
+                suff = url.split(ext_url.suffix)
+                url_suff = ext_url.suffix + suff[1]
                 new_url = "http://www." + url_sub + url_dom + "." + url_suff
                 return check_again(new_url)
             else:
@@ -268,21 +275,15 @@ def find_resource_types(url):
 
 
 def find_organization(url):
-    ext = tldextract.extract(url)
-    extDom = ext.domain
-    extSuff = ext.suffix
-    newUrl = "http://" + extDom + "." + extSuff
+    basic_org = build_title(url)
 
-    if check_link(newUrl) != 1:
-     newUrl = "www." + extDom + "." + extSuff
-
-    basic_org = build_title(newUrl)
     if basic_org in orgsOfficial:
         return "Verified: " + basic_org
     elif build_title(url) is not 'No title':
         return build_title(url)
     else:
         return "NA"
+
 
 def find_suffix(url):
     ext = tldextract.extract(url)
@@ -299,6 +300,7 @@ def find_suffix(url):
     elif "net" in suff:
         return "Internet service provider/Other network"
 
+
 def find_country_code(url):
     ext = tldextract.extract(url)
     # print(ext)
@@ -306,8 +308,10 @@ def find_country_code(url):
     for each in countriesOfficial:
         str2 = str(each)
         str2 = str2.lower()
+        print(str2)
         if suffix in str2[:5]:
             # if ext:
+            print(suffix + " = " + str2)
             return str2.upper()
 
 
@@ -466,7 +470,7 @@ def find_term_links(string):
 
 def link_type(url):
     if url not in brokenLinks:
-        souper2 = BeautifulSoup(requests.get(url).text)
+        souper2 = BeautifulSoup(urlopen(url).read())
         link_string = ""
         if souper2.find("form") is not None:
             link_string += "search engine/"
@@ -479,7 +483,6 @@ def link_type(url):
         return link_string
 
 def find_home_page(url):
-
     ext = tldextract.extract(url)
     extDom = ext.domain
     extSuff = ext.suffix
@@ -546,7 +549,7 @@ resourceTypesKnown = {'Activity': ["Conference"],
                       'Data Service': ["Network", "Services", "Tools", "Platform", "Infrastructure"],
                       'Catalog': ["search engine", "catalog"], 'Community': ["community"],
                       'Web Application': ["web application"],
-                      'Organizational Portal': ["Visualization data", "Registry", "Infrastructure"],
+                      'Portal': ["Visualization data", "Registry", "Infrastructure"],
                       'Specification': ["specification"],
                       'Image Collection': ["observation", "images", "gallery", "photography", "picture"],
                       'Web page': ["web page"],
