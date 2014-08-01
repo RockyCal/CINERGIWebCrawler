@@ -17,16 +17,18 @@ indexReal = 0
 # </editor-fold>
 
 class ThreadClass(threading.Thread):
-    def __init__(self, ws, url, counter):
+    def __init__(self, ws, url, counter, links_deep):
         threading.Thread.__init__(self)
         self.counter = counter
         self.ws = ws
         self.url = url
+        self.links = links_deep
 
     def run(self):
         print('Starting ' + str(self.counter))
-        get_resource_data(self.ws, self.url)
+        linksReturned = get_resource_data(self.ws, self.url)
         print('Ending ' + str(self.counter))
+        return linksReturned
 
 # <editor-fold desc="class Resource">
 class Resource:
@@ -48,17 +50,23 @@ class Resource:
                     url_correct = check_link(link_tag['href'])
                     if url_correct is not " ":
                         urls_found.append(url_correct)
-            return urls_found
+        print(str(urls_found))
+        return urls_found
 # </editor-fold>
 
 # <editor-fold desc="Functions">
 def get_resource_data(ws, link):
+    #ws2 = wb.create_sheet(0, str(0))
+    print(link)
     term_links = []
     url_final = check_link(link)  # named so b/c url may be changed in function
     if url_final is not " ":
+        print("Through 1")
         if url_final not in visited:
+            print("Through 2")
             res = Resource(link)
             res.title = build_title(res.link)
+            print(build_title(res.link))
             res.url_type = check_type(res.link)
             term_links.append('URL Type: http://cinergiterms.weebly.com/url-type.html')
             res.org = find_organization(res.link)
@@ -71,7 +79,9 @@ def get_resource_data(ws, link):
             res.country_code = find_country_code(res.link)
             term_links.append('Country Code: http://cinergiterms.weebly.com/country-codes.html')
             res.social_media = find_social_media(res.link)
+            #print("ROW: " + str(ws.get_highest_row))
             row_num = ws.get_highest_row() + 1
+            print("ROW: " + str(row_num))
             ws['A%s' % row_num].value = res.title
             ws['C%s' % row_num].value = res.link
             ws['D%s' % row_num].value = res.org
@@ -82,6 +92,8 @@ def get_resource_data(ws, link):
             ws['I%s' % row_num].value = res.country_code
             ws['J%s' % row_num].value = res.social_media
             ws['K%s' % row_num].value = str(term_links)
+            return res.find_links()
+            #row_num += 1
         
 
 def make_headers(ws):
@@ -122,16 +134,11 @@ def crawl(links_found, index):
     links_deep = []
 
     for each in links_found:
-        t = ThreadClass(ws, each, index)
-        t.start()
-    for each in links_found:
-        links_deep.extend(find_links(each))
+        t = ThreadClass(ws, each, index, links_deep)
+        #t.start()
+        links_deep.extend(t.run())
 
-    print("Sheet " + str(wb.get_index(wb.get_active_sheet())))
     print("Sheet Ind " + str(index))
-    if wb.get_index(wb.get_active_sheet()) is 2:
-        print("Active sheet")
-        return
     if index > 1:
         print("Index")
         return
@@ -637,7 +644,7 @@ wb = Workbook()
 filename = 'Crawl.xlsx'
 
 # First run
-crawl(find_links(start_url), 0)
+crawl(res0.find_links(), 0)
 
 # </editor-fold>
 
