@@ -17,16 +17,17 @@ indexReal = 0
 # </editor-fold>
 
 class ThreadClass(threading.Thread):
-    def __init__(self, ws, url, counter, links_deep):
+    def __init__(self, ws, url, counter, row):
         threading.Thread.__init__(self)
         self.counter = counter
         self.ws = ws
         self.url = url
-        self.links = links_deep
+        # self.links_deep = links_deep
+        self.row = row
 
     def run(self):
         print('Starting ' + str(self.counter))
-        linksReturned = get_resource_data(self.ws, self.url)
+        linksReturned = get_resource_data(self.ws, self.url, self.row)
         print('Ending ' + str(self.counter))
         return linksReturned
 
@@ -55,11 +56,11 @@ class Resource:
 # </editor-fold>
 
 # <editor-fold desc="Functions">
-def get_resource_data(ws, link):
+def get_resource_data(ws, link, row):
     #ws2 = wb.create_sheet(0, str(0))
     print(link)
     term_links = []
-    url_final = check_link(link)  # named so b/c url may be changed in function
+    url_final = check_again(link)  # named so b/c url may be changed in function
     if url_final is not " ":
         print("Through 1")
         if url_final not in visited:
@@ -80,7 +81,7 @@ def get_resource_data(ws, link):
             term_links.append('Country Code: http://cinergiterms.weebly.com/country-codes.html')
             res.social_media = find_social_media(res.link)
             #print("ROW: " + str(ws.get_highest_row))
-            row_num = ws.get_highest_row() + 1
+            row_num = row
             print("ROW: " + str(row_num))
             ws['A%s' % row_num].value = res.title
             ws['C%s' % row_num].value = res.link
@@ -94,7 +95,6 @@ def get_resource_data(ws, link):
             ws['K%s' % row_num].value = str(term_links)
             return res.find_links()
             #row_num += 1
-        
 
 def make_headers(ws):
     header_style = Style(font=Font(bold=True))
@@ -133,11 +133,21 @@ def crawl(links_found, index):
     make_headers(ws)
     links_deep = []
 
+    #wb._active_sheet_index
+    print("Links deep length prelim: " + str(len(links_deep)))
     for each in links_found:
-        t = ThreadClass(ws, each, index, links_deep)
+        row = ws.get_highest_row() + 1
+        print("WS Title: " + ws._title)
+        t = ThreadClass(ws, each, index, row)
         #t.start()
-        links_deep.extend(t.run())
-
+        threadRun = t.run()
+        if threadRun is not None:
+            for each in threadRun:
+                if each is not None:
+                    print("Crawl for: " + each)
+        #print("Thread Run: " + ', '.join(threadRun))
+                links_deep.append(each)
+    print("Links deep length: " + str(len(links_deep)))
     print("Sheet Ind " + str(index))
     if index > 1:
         print("Index")
@@ -160,9 +170,14 @@ def check_type(url):
 def check_again(new_url):
     print('Checking {} again...'.format(new_url))
     link = new_url
-    req = Request(new_url)
+    # req = Request(new_url)
     try:
+        req = Request(new_url)
         urlopen(req)
+    except ValueError:
+        print("Value Error caught")
+        brokenLinks.append(new_url)
+        return " "
     except HTTPError as h:
         print('{}: {}, {}'.format(new_url, h.reason, h.code))
         brokenLinks.append(new_url)
@@ -173,6 +188,10 @@ def check_again(new_url):
         return " "
     except URLError as e:
         print('{}: {}'.format(new_url, e.reason))
+        brokenLinks.append(new_url)
+        return " "
+    except ValueError:
+        print("Value Error caught")
         brokenLinks.append(new_url)
         return " "
     return link
