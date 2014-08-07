@@ -190,10 +190,6 @@ def check_again(new_url):
         print('{}: {}'.format(new_url, e.reason))
         brokenLinks.append(new_url)
         return " "
-    except ValueError:
-        print("Value Error caught")
-        brokenLinks.append(new_url)
-        return " "
     return link
 
 
