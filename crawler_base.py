@@ -9,6 +9,7 @@ from socket import error as SocketError
 import tldextract
 import threading
 from disciplines_known import disciplinesKnown
+import time
 
 # <editor-fold desc="Protocol constants">
 HTTP = 'http://'
@@ -17,19 +18,17 @@ indexReal = 0
 # </editor-fold>
 
 class ThreadClass(threading.Thread):
-    def __init__(self, ws, url, counter, row):
+    def __init__(self, url, counter, links_found):
         threading.Thread.__init__(self)
         self.counter = counter
-        self.ws = ws
+
         self.url = url
+        self.links_found = links_found
         # self.links_deep = links_deep
         self.row = row
 
     def run(self):
-        print('Starting ' + str(self.counter))
-        linksReturned = get_resource_data(self.ws, self.url, self.row)
-        print('Ending ' + str(self.counter))
-        return linksReturned
+        get_resource_data(self.url)
 
 # <editor-fold desc="class Resource">
 class Resource:
@@ -39,87 +38,44 @@ class Resource:
     title = 'No title'
     url_type = 'Type not identified'
     org = 'Organization not found'
+    tld = ''
+    country_code = ''
+    social_media = []
     disciplines = []
     resource_type = []
+    links_found = []  # urls found on the page, found after find_links is called
+    # if doesn't work, use an if statement
 
-    def find_links(self):
-        urls_found = []
-        if check_link(self.link) is not " ":
-            soup = BeautifulSoup(urlopen(self.link).read())
-            for link_tag in soup.find_all('a', href=True):
-                if HTTP in link_tag['href'] or preFTP in link_tag['href']:
-                    url_correct = check_link(link_tag['href'])
-                    if url_correct is not " ":
-                        urls_found.append(url_correct)
-        print(str(urls_found))
-        return urls_found
+def find_links(link):
+    #urls_found = [link]
+    urls_found = []
+    if check_link(link) is not " ":
+        soup = BeautifulSoup(urlopen(link).read())
+        for link_tag in soup.find_all('a', href=True):
+            if HTTP in link_tag['href'] or preFTP in link_tag['href']:
+                url_correct = check_link(link_tag['href'])
+                if url_correct is not " ":
+                    urls_found.append(url_correct)
+    return urls_found
 # </editor-fold>
 
+
 # <editor-fold desc="Functions">
-def get_resource_data(ws, link, row):
-    #ws2 = wb.create_sheet(0, str(0))
-    print(link)
-    term_links = []
-    url_final = check_again(link)  # named so b/c url may be changed in function
+def get_resource_data(link):
+    url_final = check_link(link)  # named so b/c url may be changed in function
     if url_final is not " ":
-        print("Through 1")
         if url_final not in visited:
-            print("Through 2")
             res = Resource(link)
             res.title = build_title(res.link)
-            print(build_title(res.link))
             res.url_type = check_type(res.link)
-            term_links.append('URL Type: http://cinergiterms.weebly.com/url-type.html')
             res.org = find_organization(res.link)
             res.disciplines = find_disciplines(res.link)
-            term_links.append(find_term_links(res.disciplines))
             res.resource_type = find_resource_types(res.link)
-            term_links.append(find_term_links(res.resource_type))
             res.tld = find_suffix(res.link)
-            term_links.append('TLD: http://cinergiterms.weebly.com/top-level-domain.html')
             res.country_code = find_country_code(res.link)
-            term_links.append('Country Code: http://cinergiterms.weebly.com/country-codes.html')
             res.social_media = find_social_media(res.link)
-            #print("ROW: " + str(ws.get_highest_row))
-            row_num = row
-            print("ROW: " + str(row_num))
-            ws['A%s' % row_num].value = res.title
-            ws['C%s' % row_num].value = res.link
-            ws['D%s' % row_num].value = res.org
-            ws['E%s' % row_num].value = ', '.join(sorted(res.disciplines))
-            ws['F%s' % row_num].value = ', '.join(sorted(res.resource_type))
-            ws['G%s' % row_num].value = res.url_type
-            ws['H%s' % row_num].value = res.tld
-            ws['I%s' % row_num].value = res.country_code
-            ws['J%s' % row_num].value = res.social_media
-            ws['K%s' % row_num].value = str(term_links)
-            return res.find_links()
-            #row_num += 1
-
-def make_headers(ws):
-    header_style = Style(font=Font(bold=True))
-    ws.cell('A1').value = 'Title'  # we need to find out how to do
-    ws['A1'].style = header_style
-    ws.cell('B1').value = 'Label'  # tag.text
-    ws['B1'].style = header_style
-    ws.cell('C1').value = 'URL'
-    ws['C1'].style = header_style
-    ws.cell('D1').value = 'Organization'
-    ws['D1'].style = header_style
-    ws['E1'].style = header_style
-    ws.cell('E1').value = 'Domain(s)'
-    ws.cell('F1').value = 'Resource Type'
-    ws['F1'].style = header_style
-    ws.cell('G1').value = "Content Type/Format"
-    ws['G1'].style = header_style
-    ws['H1'].value = "TLD"
-    ws['H1'].style = header_style
-    ws['I1'].value = "Country"
-    ws['I1'].style = header_style
-    ws['J1'].value = "Social Media?"
-    ws['J1'].style = header_style
-    ws['K1'].value = "Term Definitions"
-    ws['K1'].style = header_style
+            visited.append(link)
+            resources.append(res)
 
 
 """
@@ -127,34 +83,47 @@ name: crawl
 recursive function to make new sheet from each set of links
 and scrape them
 """
-def crawl(links_found, index):
-    #ws.title = '{}'.format((wb.get_index(wb.get_active_sheet())))
-    ws = wb.create_sheet(index, str(index))
-    make_headers(ws)
-    links_deep = []
-
-    #wb._active_sheet_index
-    print("Links deep length prelim: " + str(len(links_deep)))
-    for each in links_found:
-        row = ws.get_highest_row() + 1
-        print("WS Title: " + ws._title)
-        t = ThreadClass(ws, each, index, row)
-        #t.start()
-        threadRun = t.run()
-        if threadRun is not None:
-            for each in threadRun:
-                if each is not None:
-                    print("Crawl for: " + each)
-        #print("Thread Run: " + ', '.join(threadRun))
-                links_deep.append(each)
-    print("Links deep length: " + str(len(links_deep)))
-    print("Sheet Ind " + str(index))
-    if index > 1:
-        print("Index")
-        return
+def crawl(tier):
+    if len(tiers) is 7:
+        return tiers
     else:
-        index += 1
-        crawl(links_deep, index)
+        next_tier = []
+        tier.pop(0)
+        for i in tier:
+            if i not in visited:
+                next_tier.extend(find_links(i))
+        if len(next_tier) > 0:
+            tiers.append(next_tier)
+            last = next_tier[len(next_tier) - 1]
+            get_resource_data(last)
+            new = [last] + find_links(last)
+            tiers.append(crawl(new))
+
+
+def make_headers(sheet):
+    header_style = Style(font=Font(bold=True))
+    sheet.cell('A1').value = 'Title'  # we need to find out how to do
+    sheet['A1'].style = header_style
+    sheet.cell('B1').value = 'Label'  # tag.text
+    sheet['B1'].style = header_style
+    sheet.cell('C1').value = 'URL'
+    sheet['C1'].style = header_style
+    sheet.cell('D1').value = 'Organization'
+    sheet['D1'].style = header_style
+    sheet['E1'].style = header_style
+    sheet.cell('E1').value = 'Domain(s)'
+    sheet.cell('F1').value = 'Resource Type'
+    sheet['F1'].style = header_style
+    sheet.cell('G1').value = "Content Type/Format"
+    sheet['G1'].style = header_style
+    sheet['H1'].value = "TLD"
+    sheet['H1'].style = header_style
+    sheet['I1'].value = "Country"
+    sheet['I1'].style = header_style
+    sheet['J1'].value = "Social Media?"
+    sheet['J1'].style = header_style
+    sheet['K1'].value = "Term Definitions"
+    sheet['K1'].style = header_style
 
 
 def check_type(url):
@@ -170,9 +139,8 @@ def check_type(url):
 def check_again(new_url):
     print('Checking {} again...'.format(new_url))
     link = new_url
-    # req = Request(new_url)
+    req = Request(new_url)
     try:
-        req = Request(new_url)
         urlopen(req)
     except ValueError:
         print("Value Error caught")
@@ -204,38 +172,45 @@ Returns: 1 if link works w/o error
 
 def check_link(url):
     link = url
-    req = Request(url)
-    if HTTP in url or preFTP in url:
-        try:
-            response = urlopen(req, timeout=10)
-        except HTTPError as e:
-            print('{}: {}, {}'.format(url, e.reason, e.code))
-            brokenLinks.append(url)
-            return " "
-        except SocketError:
-            if 'www' not in url:
-                print('Adding www to {}'.format(url))
-                ext_url = tldextract.extract(url)
-                url_sub = ext_url.subdomain
-                url_dom = ext_url.domain
-                suff = url.split(ext_url.suffix)
-                url_suff = ext_url.suffix + suff[1]
-                new_url = "http://www." + url_sub + url_dom + "." + url_suff
-                return check_again(new_url)
-        except URLError as e:
-            if 'www' not in url:
-                print('Adding www to {}'.format(url))
-                ext_url = tldextract.extract(url)
-                url_sub = ext_url.subdomain
-                url_dom = ext_url.domain
-                suff = url.split(ext_url.suffix)
-                url_suff = ext_url.suffix + suff[1]
-                new_url = "http://www." + url_sub + url_dom + "." + url_suff
-                return check_again(new_url)
-            else:
-                print('{}: {}'.format(url, e.reason))
+    if link:
+        if HTTP in url or preFTP in url:
+            try:
+                req = Request(url)
+                urlopen(req, timeout=10)
+            except HTTPError as e:
+                print('{}: {}, {}'.format(url, e.reason, e.code))
                 brokenLinks.append(url)
                 return " "
+            except SocketError:
+                if 'www' not in url:
+                    print('Adding www to {}'.format(url))
+                    ext_url = tldextract.extract(url)
+                    url_sub = ext_url.subdomain
+                    url_dom = ext_url.domain
+                    suff = url.split(ext_url.suffix)
+                    url_suff = ext_url.suffix + suff[1]
+                    new_url = "http://www." + url_sub + url_dom + "." + url_suff
+                    return check_again(new_url)
+            except URLError as e:
+                if 'www' not in url:
+                    print('Adding www to {}'.format(url))
+                    ext_url = tldextract.extract(url)
+                    url_sub = ext_url.subdomain
+                    url_dom = ext_url.domain
+                    suff = url.split(ext_url.suffix)
+                    url_suff = ext_url.suffix + suff[1]
+                    new_url = "http://www." + url_sub + url_dom + "." + url_suff
+                    return check_again(new_url)
+                else:
+                    print('{}: {}'.format(url, e.reason))
+                    brokenLinks.append(url)
+                    return " "
+            except ValueError:
+                print('{}: ValueError'.format(url))
+                brokenLinks.append(url)
+                return " "
+        else:
+            return " "
     else:
         return " "
     return link
@@ -246,8 +221,6 @@ def visible(element):
     elif re.match('<!--.*-->', str(element)):
         return False
     return True
-
-
 
 
 def find_disciplines(url):
@@ -309,7 +282,6 @@ def find_organization(url):
 
 def find_suffix(url):
     ext = tldextract.extract(url)
-    # print(ext)
     suff = ext.suffix
     if "com" in suff:
         return "Company"
@@ -325,7 +297,6 @@ def find_suffix(url):
 
 def find_country_code(url):
     ext = tldextract.extract(url)
-    # print(ext)
     suffix = ext.suffix
     for each in countriesOfficial:
         str2 = str(each)
@@ -342,6 +313,7 @@ def find_social_media(url):
         for each in socialMedia:
             if each in title:
                 return each
+            # possible else: return ret_statement
     else:
         return ret_statement
 
@@ -504,14 +476,14 @@ def link_type(url):
 
 def find_home_page(url):
     ext = tldextract.extract(url)
-    extDom = ext.domain
-    extSuff = ext.suffix
-    newUrl = "http://" + extDom + "." + extSuff
+    ext_dom = ext.domain
+    ext_suff = ext.suffix
+    new_url = "http://" + ext_dom + "." + ext_suff
 
-    if check_link(newUrl) != 1:
-     newUrl = "www." + extDom + "." + extSuff
+    if check_link(new_url) is not 1:
+        new_url = "www." + ext_dom + "." + ext_suff
 
-    return newUrl
+    return new_url
 """
 Name: build_labels()
 Params: url - page to get titles from
@@ -527,7 +499,7 @@ def build_text(soup):
 
 
 def build_title(page_url):
-    page_text = BeautifulSoup(urlopen(page_url, timeout=7).read())
+    page_text = BeautifulSoup(urlopen(page_url).read())
     for title in page_text.find_all('title'):
         if title.has_attr('string'):
             return title.string
@@ -585,13 +557,13 @@ resourceTypesKnown = {'Activity': ["Conference"],
 #start_label = 'GreenSeas Home'
 #start_title = 'Standards and Information'
 
-start_url = 'http://cinergi.weebly.com/'
-start_title = 'CINERGI Test Bed'
-start_label = 'CINERGI Home'
+#start_url = 'http://cinergi.weebly.com/'
+#start_title = 'CINERGI Test Bed'
+#start_label = 'CINERGI Home'
 
-#start_url = 'http://www.antarctica.ac.uk/dms/'
-#start_title = "Antarctica"
-#start_label = 'Antartica Home'
+start_url = 'http://www.antarctica.ac.uk/dms/'
+start_title = "Antarctica"
+start_label = 'Antartica Home'
 
 # List of organizations
 org_url = 'http://opr.ca.gov/s_listoforganizations.php'
@@ -630,7 +602,6 @@ if check_link(country_codes_url) is not " ":
     s = requests.get(country_codes_url)
     counText = s.text
     soupCoun = BeautifulSoup(counText)
-    #print(soupCoun)
 if statusSocUrls != " ":
     b = requests.get(social_media_url)
     socText = b.text
@@ -656,10 +627,73 @@ res0.url_type = check_type(res0.link)
 print('Creating xlsx file')
 # Create excel file
 wb = Workbook()
-filename = 'Crawl.xlsx'
+filename = 'Crawl_Antarctica_8_18.xlsx'
 
-# First run
-crawl(res0.find_links(), 0)
+resources = []
+tiers = []
+res0.links_found = find_links(res0.link)
+tier0 = res0.link
+# first link of every tier is the source link
+tier1 = res0.links_found
+tiers.append(tier0)
+tiers.append(tier1)
+
+crawl_time = time.clock()
+crawl(tier1)
+
+print('Finished crawl. {} process time'.format(time.clock() - crawl_time))
+
+write_time0 = time.clock()
+index = 0
+for a_tier in tiers:
+    if a_tier is not None:
+        ws = wb.create_sheet(index, str(index))
+        make_headers(ws)
+        for item in a_tier:
+            if not isinstance(item, Resource):
+                get_resource_data(item)
+                term_links = []
+                row_num = ws.get_highest_row() + 1
+                resource = resources[len(resources) - 1]
+                ws['A%s' % row_num].value = resource.title
+                ws['C%s' % row_num].value = resource.link
+                term_links.append('URL Type: http://cinergiterms.weebly.com/url-type.html')
+                ws['D%s' % row_num].value = resource.org
+                ws['E%s' % row_num].value = ', '.join(sorted(resource.disciplines))
+                term_links.append(find_term_links(resource.disciplines))
+                ws['F%s' % row_num].value = ', '.join(sorted(resource.resource_type))
+                term_links.append(find_term_links(resource.resource_type))
+                ws['G%s' % row_num].value = resource.url_type
+                ws['H%s' % row_num].value = resource.tld
+                term_links.append('TLD: http://cinergiterms.weebly.com/top-level-domain.html')
+                ws['I%s' % row_num].value = resource.country_code
+                term_links.append('Country Code: http://cinergiterms.weebly.com/country-codes.html')
+                ws['J%s' % row_num].value = resource.social_media
+                ws['K%s' % row_num].value = str(term_links)
+            else:
+                term_links = []
+                row_num = ws.get_highest_row() + 1
+                resource = item
+                ws['A%s' % row_num].value = resource.title
+                ws['C%s' % row_num].value = resource.link
+                term_links.append('URL Type: http://cinergiterms.weebly.com/url-type.html')
+                ws['D%s' % row_num].value = resource.org
+                ws['E%s' % row_num].value = ', '.join(sorted(resource.disciplines))
+                term_links.append(find_term_links(resource.disciplines))
+                ws['F%s' % row_num].value = ', '.join(sorted(resource.resource_type))
+                term_links.append(find_term_links(resource.resource_type))
+                ws['G%s' % row_num].value = resource.url_type
+                ws['H%s' % row_num].value = resource.tld
+                term_links.append('TLD: http://cinergiterms.weebly.com/top-level-domain.html')
+                ws['I%s' % row_num].value = resource.country_code
+                term_links.append('Country Code: http://cinergiterms.weebly.com/country-codes.html')
+                ws['J%s' % row_num].value = resource.social_media
+                ws['K%s' % row_num].value = str(term_links)
+    else:
+        continue
+    index += 1
+write_time = time.clock() - write_time0
+print('Write time: {}'.format(write_time))
 
 # </editor-fold>
 
