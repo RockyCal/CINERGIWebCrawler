@@ -620,7 +620,7 @@ res0.url_type = check_type(res0.link)
 print('Creating xlsx file')
 # Create excel file
 wb = Workbook()
-filename = 'Crawl.xlsx'
+filename = 'Crawl_Antarctica_8_18.xlsx'
 
 resources = []
 tiers = []
