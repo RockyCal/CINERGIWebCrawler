@@ -9,19 +9,19 @@ from socket import error as SocketError
 import tldextract
 import threading
 from disciplines_known import disciplinesKnown
+from term_links import find_term_links
+from resourceTypes import resourceTypesKnown
 import time
 
 # <editor-fold desc="Protocol constants">
 HTTP = 'http://'
 preFTP = 'ftp://'
-indexReal = 0
 # </editor-fold>
 
 class ThreadClass(threading.Thread):
     def __init__(self, url, counter, links_found):
         threading.Thread.__init__(self)
         self.counter = counter
-
         self.url = url
         self.links_found = links_found
         # self.links_deep = links_deep
@@ -46,9 +46,9 @@ class Resource:
     links_found = []  # urls found on the page, found after find_links is called
     # if doesn't work, use an if statement
 
+# <editor-fold desc="Functions">
 def find_links(link):
-    #urls_found = [link]
-    urls_found = []
+    urls_found = [link]
     if check_link(link) is not " ":
         soup = BeautifulSoup(urlopen(link).read())
         for link_tag in soup.find_all('a', href=True):
@@ -57,10 +57,8 @@ def find_links(link):
                 if url_correct is not " ":
                     urls_found.append(url_correct)
     return urls_found
-# </editor-fold>
 
 
-# <editor-fold desc="Functions">
 def get_resource_data(link):
     url_final = check_link(link)  # named so b/c url may be changed in function
     if url_final is not " ":
@@ -80,8 +78,8 @@ def get_resource_data(link):
 
 """
 name: crawl
-recursive function to make new sheet from each set of links
-and scrape them
+recursive function to make a new tier
+from each set of links and scrape them
 """
 def crawl(tier):
     if len(tiers) is 7:
@@ -298,8 +296,8 @@ def find_suffix(url):
 def find_country_code(url):
     ext = tldextract.extract(url)
     suffix = ext.suffix
-    for each in countriesOfficial:
-        str2 = str(each)
+    for ea in countriesOfficial:
+        str2 = str(ea)
         str2 = str2.lower()
         if suffix in str2[:5]:
             # if ext:
@@ -310,155 +308,13 @@ def find_social_media(url):
     title = build_title(url)
     ret_statement = ""
     if title is not None:
-        for each in socialMedia:
-            if each in title:
-                return each
+        for soc in socialMedia:
+            if soc in title:
+                return soc
             # possible else: return ret_statement
     else:
         return ret_statement
 
-
-def find_term_links(string):
-    ret_url = []
-
-    # Domains
-    for each in string:
-        if "Agriculture" in string:
-            ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/agr2.jpg, ")
-        if "Atmosphere" in string:
-            ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/atmos.jpg, ")
-        if "Biodiversity" in string:
-            ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/biod.jpg, ")
-        if "Biology" in string:
-            ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/bio.jpg, ")
-        if "Cadastral" in string:
-            ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/cadas.jpg, ")
-        if "Chemistry" in string:
-            ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/chem.jpg, ")
-        if "Climatology" in string:
-            ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/clima.jpg, ")
-        if "Coastal Science" in string:
-            ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/coastal.jpg, ")
-        if "Data Systems" in string:
-            ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/datasys.jpg, ")
-        if "Earth Science" in string:
-            ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/earths.jpg, ")
-        if "Ecology" in string:
-            ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/eco.jpg, ")
-        if "Environmental Science" in string:
-            ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/environ.jpg, ")
-        if "Estuarine Science" in string:
-            ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/estua.jpg, ")
-        if "Extreme Events" in string:
-            ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/extremeevents.jpg, ")
-        if "Forestry" in string:
-            ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/forestry.jpg, ")
-        if "Geochemistry" in string:
-            ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/geochem.jpg, ")
-        if "Geochronology" in string:
-            ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/geochron.jpg, ")
-        if "Geodesy" in string:
-            ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/geodesy.jpg, ")
-        if "Geography" in string:
-            ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/geograph.jpg, ")
-        if "Geology" in string:
-            ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/geology.jpg, ")
-        if "Geophysics" in string:
-            ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/geophys.jpg, ")
-        if "GIS" in string:
-            ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/gis.jpg, ")
-        if "Glaciology" in string:
-            ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/glacia.jpg, ")
-        if "Human Dimensions" in string:
-            ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/humandim.jpg, ")
-        if "Hydrobiology" in string:
-            ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/hydrobio.jpg, ")
-        if "Hydrology" in string:
-            ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/hydrology.jpg, ")
-        if "Infrastructure" in string:
-            ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/infra.jpg, ")
-        if "LIDAR" in string:
-            ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/lidar.jpg, ")
-        if "Limnology" in string:
-            ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/limno.jpg, ")
-        if "Maps/Imaging" in string:
-            ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/maps.jpg, ")
-        if "Marine Biology" in string:
-            ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/marinebio.jpg, ")
-        if "Marine Geology" in string:
-            ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/marinegeo.jpg, ")
-        if "Meteorology" in string:
-            ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/meteor.jpg, ")
-        if "Mineralogy" in string:
-            ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/minera.jpg, ")
-        if "Mining" in string:
-            ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/mining.jpg, ")
-        if "Oceanography" in string:
-            ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/oceano.jpg, ")
-        if "Paleobiology" in string:
-            ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/paleobio.jpg, ")
-        if "Paleontology" in string:
-            ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/paleo.jpg, ")
-        if "Petrology" in string:
-            ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/petro.jpg, ")
-        if "Planetary Science" in string:
-            ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/planetary.jpg, ")
-        if "Plate Tectonics" in string:
-            ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/platetect.jpg, ")
-        if "Polar/Ice Satellite" in string:
-            ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/polar.jpg, ")
-        if "Sedimentology" in string:
-            ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/sediment.jpg, ")
-        if "Seismology" in string:
-            ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/seism.jpg, ")
-        if "Soil" in string:
-            ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/soil.jpg, ")
-        if "Spatial" in string:
-            ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/spatial.jpg, ")
-        if "Taxonomy" in string:
-            ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/taxon.jpg, ")
-        if "Topography" in string:
-            ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/topog.jpg, ")
-
-        # Resource Types
-        if "Activity" in string:
-            ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/activity.jpg, ")
-        if "Consensus effort" in string:
-            ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/conseffort.jpg, ")
-        if "Data service" in string:
-            ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/dataservice.jpg, ")
-        if "Catalog" in string:
-            ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/catalog.jpg, ")
-        if "Community" in string:
-            ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/community.jpg, ")
-        if "Web application" in string:
-            ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/webapp.jpg, ")
-        if "Organizational portal" in string:
-            ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/orgport.jpg, ")
-        if "Specification" in string:
-            ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/specific.jpg, ")
-        if "Image collection" in string:
-            ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/imagecollect.jpg, ")
-        if "Web page" in string:
-            ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/webpage.jpg, ")
-        if "Interchange format" in string:
-            ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/interformat.jpg, ")
-        if "Vocabulary" in string:
-            ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/vocab.jpg, ")
-        if "Service" in string:
-            ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/service.jpg, ")
-        if "Digital repository" in string:
-            ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/digitalrepo.jpg, ")
-        if "Functional specification" in string:
-            ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/functspec.jpg, ")
-        if "Software" in string:
-            ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/software.jpg, ")
-        if "Forum" in string:
-            ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/forum.jpg, ")
-        if "Organization" in string:
-            ret_url.append("http://cinergiterms.weebly.com/uploads/7/5/1/1/7511984/organization.jpg, ")
-
-    return ret_url
 
 def link_type(url):
     if url not in brokenLinks:
@@ -526,45 +382,44 @@ def build_labels(soup):
 
 # </editor-fold>
 
-# #####################
+"""
+Program begins.
+"""
 # Total visited links
 visited = []
 # Total working links found
 urls = []
 # Total broken links
 brokenLinks = []
-# Total titles - the text attribute of tag
+
 titles = []
 
-resourceTypesKnown = {'Activity': ["Conference"],
-                      'Consensus Effort': ["Consortium", "Association", "Union"],
-                      'Data Service': ["Network", "Services", "Tools", "Platform", "Infrastructure"],
-                      'Catalog': ["search engine", "catalog"], 'Community': ["community"],
-                      'Web Application': ["web application"],
-                      'Portal': ["Visualization data", "Registry", "Infrastructure"],
-                      'Specification': ["specification"],
-                      'Image Collection': ["observation", "images", "gallery", "photography", "picture"],
-                      'Web page': ["web page"],
-                      'Interchange format': ["extension"],
-                      'Vocabulary': ['vocabulary', 'vocab'],
-                      'Service': ["spatial analysis", "spatial mapping"],
-                      'Digital Repository': ["digital repository", "repository"],
-                      'Functional Specification': ["functional specification", "queries of data"],
-                      'Software': ["software", "code", "programming"],
-                      'Forum': ["forum"], 'Organization': ["organization"]}
+"""
+Resources is the list of actual resources
+"""
+resources = []
+"""
+Tiers are levels of link crawling. The start url is tier0.
+The links on the page of the start url are tier1. All the links
+on all the pages of those urls in tier1 are tier2. And so on.
+The first link of every tier is the source link
+"""
+tiers = []
 
-#start_url = 'http://www.greenseas.eu/content/standards-and-related-web-information'
-#start_label = 'GreenSeas Home'
-#start_title = 'Standards and Information'
+prompt = input("Enter 1) to crawl for data and find other links from a single start point. Enter 2) to "
+               "scrape data from a list of links: ")
+mode = int(prompt)
+if mode is 1:
+    start_url = input("Enter a start url: ")
+    start_title = input("Enter a title for the start_url: ")
+    print("Starting crawl...")
+elif mode is 2:
+    url_list = input("Enter a list of urls, each on a different line: ")
+else:
+    re_prompt = input("Error: That integer is not an option. Please enter 1) to crawl from a single url or 2) to"
+                      "scrape data from a list of urls")
 
-#start_url = 'http://cinergi.weebly.com/'
-#start_title = 'CINERGI Test Bed'
-#start_label = 'CINERGI Home'
-
-start_url = 'http://www.antarctica.ac.uk/dms/'
-start_title = "Antarctica"
-start_label = 'Antartica Home'
-
+# <editor-fold desc="Build org, country, social media">
 # List of organizations
 org_url = 'http://opr.ca.gov/s_listoforganizations.php'
 # List of country codes
@@ -576,20 +431,6 @@ status = check_link(start_url)  # Check functioning of start url
 statusOrgs = check_link(org_url)
 statusCountryCodes = check_link(country_codes_url)
 statusSocUrls = check_link(social_media_url)
-
-tags = []
-
-# Add start url link and title to lists
-urls.append(start_url)
-visited.append(start_url)
-
-# Check functioning of start url
-if check_link(start_url) is " ":
-    # exit if start url is broken
-    exit()
-
-# Add to list of working urls
-urls.append(start_url)
 
 # Check functioning of organizations list
 if check_link(org_url) is not " ":
@@ -615,89 +456,121 @@ socialMedia = build_social_links(soupSoc)
 # Get rid of first four, random values
 for t in range(0, 4):
     countriesOfficial.pop(0)
+# </editor-fold>
 
-# Create first resource
-res0 = Resource(start_url)
-start_html = (requests.get(start_url)).text
-start_soup = BeautifulSoup(start_html)
-res0.title = build_title(start_url)
-res0.url_type = check_type(res0.link)
+if mode is 1:
+    # If start_url is broken program exits
+    if check_link(start_url) is " ":
+        print("Error with start url.")
+        exit()
+    # Add start url link and title to lists
+    urls.append(start_url)
+    visited.append(start_url)
 
-# <editor-fold desc="Excel Sheet 1">
+    # Create first resource
+    res0 = Resource(start_url)
+    start_html = (requests.get(start_url)).text
+    start_soup = BeautifulSoup(start_html)
+    res0.title = build_title(start_url)
+    res0.url_type = check_type(res0.link)
+    res0.links_found = find_links(res0.link)
+    # Set up for crawl
+    tier0 = res0.link
+    tier1 = res0.links_found
+    tiers.append(tier0)
+    tiers.append(tier1)
+    crawl_time = time.clock()
+    crawl(tier1)
+elif mode is 2:
+    for each in url_list:
+        get_resource_data(each)
+
+print('Finished crawl. {} process time'.format(time.clock() - crawl_time))
+
+# <editor-fold desc="Write to excel">
 print('Creating xlsx file')
 # Create excel file
 wb = Workbook()
 filename = 'Crawl_Antarctica_8_18.xlsx'
 
-resources = []
-tiers = []
-res0.links_found = find_links(res0.link)
-tier0 = res0.link
-# first link of every tier is the source link
-tier1 = res0.links_found
-tiers.append(tier0)
-tiers.append(tier1)
-
-crawl_time = time.clock()
-crawl(tier1)
-
-print('Finished crawl. {} process time'.format(time.clock() - crawl_time))
-
 write_time0 = time.clock()
-index = 0
-for a_tier in tiers:
-    if a_tier is not None:
-        ws = wb.create_sheet(index, str(index))
-        make_headers(ws)
-        for item in a_tier:
-            if not isinstance(item, Resource):
-                get_resource_data(item)
-                term_links = []
-                row_num = ws.get_highest_row() + 1
-                resource = resources[len(resources) - 1]
-                ws['A%s' % row_num].value = resource.title
-                ws['C%s' % row_num].value = resource.link
-                term_links.append('URL Type: http://cinergiterms.weebly.com/url-type.html')
-                ws['D%s' % row_num].value = resource.org
-                ws['E%s' % row_num].value = ', '.join(sorted(resource.disciplines))
-                term_links.append(find_term_links(resource.disciplines))
-                ws['F%s' % row_num].value = ', '.join(sorted(resource.resource_type))
-                term_links.append(find_term_links(resource.resource_type))
-                ws['G%s' % row_num].value = resource.url_type
-                ws['H%s' % row_num].value = resource.tld
-                term_links.append('TLD: http://cinergiterms.weebly.com/top-level-domain.html')
-                ws['I%s' % row_num].value = resource.country_code
-                term_links.append('Country Code: http://cinergiterms.weebly.com/country-codes.html')
-                ws['J%s' % row_num].value = resource.social_media
-                ws['K%s' % row_num].value = str(term_links)
-            else:
-                term_links = []
-                row_num = ws.get_highest_row() + 1
-                resource = item
-                ws['A%s' % row_num].value = resource.title
-                ws['C%s' % row_num].value = resource.link
-                term_links.append('URL Type: http://cinergiterms.weebly.com/url-type.html')
-                ws['D%s' % row_num].value = resource.org
-                ws['E%s' % row_num].value = ', '.join(sorted(resource.disciplines))
-                term_links.append(find_term_links(resource.disciplines))
-                ws['F%s' % row_num].value = ', '.join(sorted(resource.resource_type))
-                term_links.append(find_term_links(resource.resource_type))
-                ws['G%s' % row_num].value = resource.url_type
-                ws['H%s' % row_num].value = resource.tld
-                term_links.append('TLD: http://cinergiterms.weebly.com/top-level-domain.html')
-                ws['I%s' % row_num].value = resource.country_code
-                term_links.append('Country Code: http://cinergiterms.weebly.com/country-codes.html')
-                ws['J%s' % row_num].value = resource.social_media
-                ws['K%s' % row_num].value = str(term_links)
-    else:
-        continue
-    index += 1
+if mode is 1:
+    index = 0
+    for a_tier in tiers:
+        if a_tier is not None:
+            ws = wb.create_sheet(index, str(index))
+            make_headers(ws)
+            for item in a_tier:
+                if not isinstance(item, Resource):
+                    get_resource_data(item)
+                    term_links = []
+                    row_num = ws.get_highest_row() + 1
+                    resource = resources[len(resources) - 1]
+                    ws['A%s' % row_num].value = resource.title
+                    ws['C%s' % row_num].value = resource.link
+                    term_links.append('URL Type: http://cinergiterms.weebly.com/url-type.html')
+                    ws['D%s' % row_num].value = resource.org
+                    ws['E%s' % row_num].value = ', '.join(sorted(resource.disciplines))
+                    term_links.append(find_term_links(resource.disciplines))
+                    ws['F%s' % row_num].value = ', '.join(sorted(resource.resource_type))
+                    term_links.append(find_term_links(resource.resource_type))
+                    ws['G%s' % row_num].value = resource.url_type
+                    ws['H%s' % row_num].value = resource.tld
+                    term_links.append('TLD: http://cinergiterms.weebly.com/top-level-domain.html')
+                    ws['I%s' % row_num].value = resource.country_code
+                    term_links.append('Country Code: http://cinergiterms.weebly.com/country-codes.html')
+                    ws['J%s' % row_num].value = resource.social_media
+                    ws['K%s' % row_num].value = str(term_links)
+                else:
+                    term_links = []
+                    row_num = ws.get_highest_row() + 1
+                    resource = item
+                    ws['A%s' % row_num].value = resource.title
+                    ws['C%s' % row_num].value = resource.link
+                    term_links.append('URL Type: http://cinergiterms.weebly.com/url-type.html')
+                    ws['D%s' % row_num].value = resource.org
+                    ws['E%s' % row_num].value = ', '.join(sorted(resource.disciplines))
+                    term_links.append(find_term_links(resource.disciplines))
+                    ws['F%s' % row_num].value = ', '.join(sorted(resource.resource_type))
+                    term_links.append(find_term_links(resource.resource_type))
+                    ws['G%s' % row_num].value = resource.url_type
+                    ws['H%s' % row_num].value = resource.tld
+                    term_links.append('TLD: http://cinergiterms.weebly.com/top-level-domain.html')
+                    ws['I%s' % row_num].value = resource.country_code
+                    term_links.append('Country Code: http://cinergiterms.weebly.com/country-codes.html')
+                    ws['J%s' % row_num].value = resource.social_media
+                    ws['K%s' % row_num].value = str(term_links)
+        else:
+            continue
+        index += 1
+elif mode is 2:
+    index = 0
+    ws = wb.create_sheet(index, str(index))
+    make_headers(ws)
+    row_num = ws.get_highest_row() + 1
+    term_links = []
+    for res in resources:
+        ws['A%s' % row_num].value = res.title
+        ws['C%s' % row_num].value = res.link
+        term_links.append('URL Type: http://cinergiterms.weebly.com/url-type.html')
+        ws['D%s' % row_num].value = res.org
+        ws['E%s' % row_num].value = ', '.join(sorted(res.disciplines))
+        term_links.append(find_term_links(res.disciplines))
+        ws['F%s' % row_num].value = ', '.join(sorted(res.resource_type))
+        term_links.append(find_term_links(res.resource_type))
+        ws['G%s' % row_num].value = res.url_type
+        ws['H%s' % row_num].value = res.tld
+        term_links.append('TLD: http://cinergiterms.weebly.com/top-level-domain.html')
+        ws['I%s' % row_num].value = res.country_code
+        term_links.append('Country Code: http://cinergiterms.weebly.com/country-codes.html')
+        ws['J%s' % row_num].value = res.social_media
+        ws['K%s' % row_num].value = str(term_links)
+        index += 1
 write_time = time.clock() - write_time0
 print('Write time: {}'.format(write_time))
 
-# </editor-fold>
 
-
+# <editor-fold desc="Org and Country sheets">
 ws2 = wb.create_sheet()
 ws2.title = 'List of Official Organizations'
 if len(orgsOfficial) > 0:
@@ -719,6 +592,8 @@ if len(countriesOfficial) > 0:
         for cell in row:
             cell.value = countriesOfficial[t]
             t += 1
+# </editor-fold>
+# </editor-fold>
 
 print('broken links: {}'.format(brokenLinks))
 print('visited: {}'.format(visited))
