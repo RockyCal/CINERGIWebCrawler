@@ -9,8 +9,8 @@ from socket import error as SocketError
 import tldextract
 import threading
 from disciplines_known import disciplinesKnown
-from term_links import find_term_links
 from resourceTypes import resourceTypesKnown
+from write import write_resource
 import time
 
 # <editor-fold desc="Protocol constants">
@@ -53,6 +53,7 @@ def find_links(link):
         soup = BeautifulSoup(urlopen(link).read())
         for link_tag in soup.find_all('a', href=True):
             if HTTP in link_tag['href'] or preFTP in link_tag['href']:
+            #link_tag['href'] = urljoin(link, link_tag['href'])
                 url_correct = check_link(link_tag['href'])
                 if url_correct is not " ":
                     urls_found.append(url_correct)
@@ -503,43 +504,13 @@ if mode is 1:
             for item in a_tier:
                 if not isinstance(item, Resource):
                     get_resource_data(item)
-                    term_links = []
-                    row_num = ws.get_highest_row() + 1
+                    row = ws.get_highest_row() + 1
                     resource = resources[len(resources) - 1]
-                    ws['A%s' % row_num].value = resource.title
-                    ws['C%s' % row_num].value = resource.link
-                    term_links.append('URL Type: http://cinergiterms.weebly.com/url-type.html')
-                    ws['D%s' % row_num].value = resource.org
-                    ws['E%s' % row_num].value = ', '.join(sorted(resource.disciplines))
-                    term_links.append(find_term_links(resource.disciplines))
-                    ws['F%s' % row_num].value = ', '.join(sorted(resource.resource_type))
-                    term_links.append(find_term_links(resource.resource_type))
-                    ws['G%s' % row_num].value = resource.url_type
-                    ws['H%s' % row_num].value = resource.tld
-                    term_links.append('TLD: http://cinergiterms.weebly.com/top-level-domain.html')
-                    ws['I%s' % row_num].value = resource.country_code
-                    term_links.append('Country Code: http://cinergiterms.weebly.com/country-codes.html')
-                    ws['J%s' % row_num].value = resource.social_media
-                    ws['K%s' % row_num].value = str(term_links)
+                    write_resource(ws, row, resource)
                 else:
-                    term_links = []
-                    row_num = ws.get_highest_row() + 1
+                    row = ws.get_highest_row() + 1
                     resource = item
-                    ws['A%s' % row_num].value = resource.title
-                    ws['C%s' % row_num].value = resource.link
-                    term_links.append('URL Type: http://cinergiterms.weebly.com/url-type.html')
-                    ws['D%s' % row_num].value = resource.org
-                    ws['E%s' % row_num].value = ', '.join(sorted(resource.disciplines))
-                    term_links.append(find_term_links(resource.disciplines))
-                    ws['F%s' % row_num].value = ', '.join(sorted(resource.resource_type))
-                    term_links.append(find_term_links(resource.resource_type))
-                    ws['G%s' % row_num].value = resource.url_type
-                    ws['H%s' % row_num].value = resource.tld
-                    term_links.append('TLD: http://cinergiterms.weebly.com/top-level-domain.html')
-                    ws['I%s' % row_num].value = resource.country_code
-                    term_links.append('Country Code: http://cinergiterms.weebly.com/country-codes.html')
-                    ws['J%s' % row_num].value = resource.social_media
-                    ws['K%s' % row_num].value = str(term_links)
+                    write_resource(ws, row, resource)
         else:
             continue
         index += 1
@@ -547,25 +518,15 @@ elif mode is 2:
     index = 0
     ws = wb.create_sheet(index, str(index))
     make_headers(ws)
-    row_num = ws.get_highest_row() + 1
+    row = ws.get_highest_row() + 1
     term_links = []
     for res in resources:
-        ws['A%s' % row_num].value = res.title
-        ws['C%s' % row_num].value = res.link
-        term_links.append('URL Type: http://cinergiterms.weebly.com/url-type.html')
-        ws['D%s' % row_num].value = res.org
-        ws['E%s' % row_num].value = ', '.join(sorted(res.disciplines))
-        term_links.append(find_term_links(res.disciplines))
-        ws['F%s' % row_num].value = ', '.join(sorted(res.resource_type))
-        term_links.append(find_term_links(res.resource_type))
-        ws['G%s' % row_num].value = res.url_type
-        ws['H%s' % row_num].value = res.tld
-        term_links.append('TLD: http://cinergiterms.weebly.com/top-level-domain.html')
-        ws['I%s' % row_num].value = res.country_code
-        term_links.append('Country Code: http://cinergiterms.weebly.com/country-codes.html')
-        ws['J%s' % row_num].value = res.social_media
-        ws['K%s' % row_num].value = str(term_links)
+        write_resource(ws, row, res)
         index += 1
+else:
+    print("Error in write processing")
+    exit()
+
 write_time = time.clock() - write_time0
 print('Write time: {}'.format(write_time))
 
