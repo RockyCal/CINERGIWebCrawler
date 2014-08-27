@@ -1,9 +1,10 @@
 from bs4 import BeautifulSoup
 import requests
 import re
+import queue
 from openpyxl import Workbook, cell
 from openpyxl.styles import Style, Font
-from urllib.request import urlopen, Request
+from urllib.request import urlopen
 from urllib.error import URLError, HTTPError
 from socket import error as SocketError
 import tldextract
@@ -12,6 +13,7 @@ from disciplines_known import disciplinesKnown
 from resourceTypes import resourceTypesKnown
 from write import write_resource
 import time
+from urllib.parse import urljoin
 
 # <editor-fold desc="Protocol constants">
 HTTP = 'http://'
@@ -19,16 +21,16 @@ preFTP = 'ftp://'
 # </editor-fold>
 
 class ThreadClass(threading.Thread):
-    def __init__(self, url, counter, links_found):
+    def __init__(self, quu, count):
         threading.Thread.__init__(self)
-        self.counter = counter
-        self.url = url
-        self.links_found = links_found
-        # self.links_deep = links_deep
-        self.row = row
+        self.queue = quu
+        self.count = count
 
     def run(self):
-        get_resource_data(self.url)
+        while True:
+            url = self.queue.get()
+            crawl(url)
+            self.queue.task_done()
 
 # <editor-fold desc="class Resource">
 class Resource:
@@ -40,41 +42,37 @@ class Resource:
     org = 'Organization not found'
     tld = ''
     country_code = ''
-    social_media = []
+    social_media = ""
     disciplines = []
     resource_type = []
     links_found = []  # urls found on the page, found after find_links is called
     # if doesn't work, use an if statement
 
 # <editor-fold desc="Functions">
-def find_links(link):
-    urls_found = [link]
-    if check_link(link) is not " ":
-        soup = BeautifulSoup(urlopen(link).read())
+def find_links(start_link):
+    urls_found = [start_link]
+    if check_link(start_link) is not " ":
+        soup = BeautifulSoup(urlopen(start_link).read())
         for link_tag in soup.find_all('a', href=True):
-            if HTTP in link_tag['href'] or preFTP in link_tag['href']:
-            #link_tag['href'] = urljoin(link, link_tag['href'])
-                url_correct = check_link(link_tag['href'])
-                if url_correct is not " ":
-                    urls_found.append(url_correct)
+            #if HTTP in link_tag['href'] or preFTP in link_tag['href']:
+            link_tag['href'] = urljoin(start_link, link_tag['href'])
+            url_correct = check_link(link_tag['href'])
+            if url_correct is not " ":
+                urls_found.append(url_correct)
     return urls_found
 
 
 def get_resource_data(link):
-    url_final = check_link(link)  # named so b/c url may be changed in function
-    if url_final is not " ":
-        if url_final not in visited:
-            res = Resource(link)
-            res.title = build_title(res.link)
-            res.url_type = check_type(res.link)
-            res.org = find_organization(res.link)
-            res.disciplines = find_disciplines(res.link)
-            res.resource_type = find_resource_types(res.link)
-            res.tld = find_suffix(res.link)
-            res.country_code = find_country_code(res.link)
-            res.social_media = find_social_media(res.link)
-            visited.append(link)
-            resources.append(res)
+    res = Resource(link)
+    res.title = build_title(res.link)
+    res.url_type = check_type(res.link)
+    res.org = find_organization(res.link)
+    res.disciplines = find_disciplines(res.link)
+    res.resource_type = find_resource_types(res.link)
+    res.tld = find_suffix(res.link)
+    res.country_code = find_country_code(res.link)
+    res.social_media = find_social_media(res.link)
+    return res
 
 
 """
@@ -82,22 +80,46 @@ name: crawl
 recursive function to make a new tier
 from each set of links and scrape them
 """
-def crawl(tier):
-    if len(tiers) is 7:
-        return tiers
-    else:
-        next_tier = []
-        tier.pop(0)
-        for i in tier:
-            if i not in visited:
-                next_tier.extend(find_links(i))
-        if len(next_tier) > 0:
-            tiers.append(next_tier)
-            last = next_tier[len(next_tier) - 1]
-            get_resource_data(last)
-            new = [last] + find_links(last)
-            tiers.append(crawl(new))
+def crawl(url):
+    urls = [url]
+    visited = [url]
+    sub_resources = []
 
+    while len(urls) > 0:
+        if len(urls) < 40:
+            if check_link(urls[0]) is not " ":
+                soup = BeautifulSoup(urlopen(urls[0]).read())
+                urls.pop(0)
+                link_of_interest = ''
+                for tag in soup.find_all('a', href=True):
+                    if HTTP or preFTP in tag['href']:
+                        link_check = check_link(tag['href'])
+                        if link_check is " ":
+                            brokenLinks.append(link_check)
+                        else:
+                            link_of_interest = link_check
+                    else:
+                        if "javascript" not in tag['href']:
+                            # First try joining current page and part of link
+                            new_url = urljoin(url, tag['href'])
+                            link_check = check_link(new_url)
+                            if link_check is not " ":
+                                    link_of_interest = link_check
+                            else:
+                                # Try using a home page and part of link
+                                home_url = find_home_page(url)
+                                new_url = urljoin(home_url, tag['href'])
+                                link_check = check_link(new_url)
+                                if link_check is not " ":
+                                        link_of_interest = link_check
+                                else:
+                                    brokenLinks.append(link_check)
+                    if link_of_interest is not '' and link_of_interest not in visited:
+                        Resource(link_of_interest)
+                        sub_resources.append(get_resource_data(link_of_interest))
+                        urls.append(link_of_interest)
+                        visited.append(link_of_interest)
+    resources.append(sub_resources)
 
 def make_headers(sheet):
     header_style = Style(font=Font(bold=True))
@@ -138,9 +160,8 @@ def check_type(url):
 def check_again(new_url):
     print('Checking {} again...'.format(new_url))
     link = new_url
-    req = Request(new_url)
     try:
-        urlopen(req)
+        urlopen(new_url, timeout=10)
     except ValueError:
         print("Value Error caught")
         brokenLinks.append(new_url)
@@ -174,22 +195,9 @@ def check_link(url):
     if link:
         if HTTP in url or preFTP in url:
             try:
-                req = Request(url)
-                urlopen(req, timeout=10)
-            except HTTPError as e:
-                print('{}: {}, {}'.format(url, e.reason, e.code))
-                brokenLinks.append(url)
+                urlopen(url, timeout=7)
+            except HTTPError:
                 return " "
-            except SocketError:
-                if 'www' not in url:
-                    print('Adding www to {}'.format(url))
-                    ext_url = tldextract.extract(url)
-                    url_sub = ext_url.subdomain
-                    url_dom = ext_url.domain
-                    suff = url.split(ext_url.suffix)
-                    url_suff = ext_url.suffix + suff[1]
-                    new_url = "http://www." + url_sub + url_dom + "." + url_suff
-                    return check_again(new_url)
             except URLError as e:
                 if 'www' not in url:
                     print('Adding www to {}'.format(url))
@@ -201,8 +209,22 @@ def check_link(url):
                     new_url = "http://www." + url_sub + url_dom + "." + url_suff
                     return check_again(new_url)
                 else:
-                    print('{}: {}'.format(url, e.reason))
-                    brokenLinks.append(url)
+                    # print('{}: {}'.format(url, e.reason))
+                    # brokenLinks.append(url)
+                    return " "
+            except SocketError as e:
+                if 'www' not in url:
+                    print('Adding www to {}'.format(url))
+                    ext_url = tldextract.extract(url)
+                    url_sub = ext_url.subdomain
+                    url_dom = ext_url.domain
+                    suff = url.split(ext_url.suffix)
+                    url_suff = ext_url.suffix + suff[1]
+                    new_url = "http://www." + url_sub + url_dom + "." + url_suff
+                    return check_again(new_url)
+                else:
+                    # print('{}: {}'.format(url, e.reason))
+                    # brokenLinks.append(url)
                     return " "
             except ValueError:
                 print('{}: ValueError'.format(url))
@@ -335,11 +357,8 @@ def find_home_page(url):
     ext = tldextract.extract(url)
     ext_dom = ext.domain
     ext_suff = ext.suffix
-    new_url = "http://" + ext_dom + "." + ext_suff
-
-    if check_link(new_url) is not 1:
-        new_url = "www." + ext_dom + "." + ext_suff
-
+    new_url = "http://www." + ext_dom + "." + ext_suff
+    new_url = new_url.strip('/')
     return new_url
 """
 Name: build_labels()
@@ -357,11 +376,11 @@ def build_text(soup):
 
 def build_title(page_url):
     page_text = BeautifulSoup(urlopen(page_url).read())
-    for title in page_text.find_all('title'):
-        if title.has_attr('string'):
-            return title.string
-        else:
-            return title.text
+    for title in page_text.find_all('title', text=True):
+        #if title.has_attr('string'):
+        #    return title.string
+        #else:
+        return title.text
 
 
 def build_social_links(soup):
@@ -387,9 +406,9 @@ def build_labels(soup):
 Program begins.
 """
 # Total visited links
-visited = []
+#visited = []
 # Total working links found
-urls = []
+#urls = []
 # Total broken links
 brokenLinks = []
 
@@ -413,7 +432,7 @@ mode = int(prompt)
 if mode is 1:
     start_url = input("Enter a start url: ")
     start_title = input("Enter a title for the start_url: ")
-    print("Starting crawl...")
+    print("Crawling...")
 elif mode is 2:
     url_list = input("Enter a list of urls, each on a different line: ")
 else:
@@ -464,10 +483,6 @@ if mode is 1:
     if check_link(start_url) is " ":
         print("Error with start url.")
         exit()
-    # Add start url link and title to lists
-    urls.append(start_url)
-    visited.append(start_url)
-
     # Create first resource
     res0 = Resource(start_url)
     start_html = (requests.get(start_url)).text
@@ -476,41 +491,54 @@ if mode is 1:
     res0.url_type = check_type(res0.link)
     res0.links_found = find_links(res0.link)
     # Set up for crawl
-    tier0 = res0.link
-    tier1 = res0.links_found
-    tiers.append(tier0)
-    tiers.append(tier1)
+    tier0 = [res0]
+    resources.append(tier0)
+    tier1 = []
+    for each in res0.links_found:
+        if check_link(each) is not " ":
+            Resource(each)
+            tier1.append(get_resource_data(each))
+    resources.append(tier1)
+
+    tier1_len = len(tier1)
+    hosts = []
+    q = queue.Queue(50)
     crawl_time = time.clock()
-    crawl(tier1)
+    # Create pool of threads for each resource in tier1
+    # Pass queue instance, url, and an int id
+    for i in range(tier1_len):
+        thread = ThreadClass(q, i)
+        thread.setDaemon(True)
+        thread.start()
+
+    # Populate queue with links from tier1
+    for reso in tier1:
+        q.put(reso.link)
+
+    # Wait until everything is processed
+    q.join()
+
+    print('Finished crawl. {} process time'.format(time.clock() - crawl_time))
 elif mode is 2:
     for each in url_list:
         get_resource_data(each)
-
-print('Finished crawl. {} process time'.format(time.clock() - crawl_time))
 
 # <editor-fold desc="Write to excel">
 print('Creating xlsx file')
 # Create excel file
 wb = Workbook()
-filename = 'Crawl_Antarctica_8_18.xlsx'
+filename = 'Crawl_8_25.xlsx'
 
 write_time0 = time.clock()
 if mode is 1:
     index = 0
-    for a_tier in tiers:
-        if a_tier is not None:
+    for tier in resources:
+        if tier is not None and len(tier) > 0:
             ws = wb.create_sheet(index, str(index))
             make_headers(ws)
-            for item in a_tier:
-                if not isinstance(item, Resource):
-                    get_resource_data(item)
-                    row = ws.get_highest_row() + 1
-                    resource = resources[len(resources) - 1]
-                    write_resource(ws, row, resource)
-                else:
-                    row = ws.get_highest_row() + 1
-                    resource = item
-                    write_resource(ws, row, resource)
+            for item in tier:
+                row = ws.get_highest_row() + 1
+                write_resource(ws, row, item)
         else:
             continue
         index += 1
@@ -520,9 +548,10 @@ elif mode is 2:
     make_headers(ws)
     row = ws.get_highest_row() + 1
     term_links = []
-    for res in resources:
-        write_resource(ws, row, res)
-        index += 1
+    for tier in resources:
+        for item in tier:
+            write_resource(ws, row, item)
+            index += 1
 else:
     print("Error in write processing")
     exit()
@@ -557,6 +586,5 @@ if len(countriesOfficial) > 0:
 # </editor-fold>
 
 print('broken links: {}'.format(brokenLinks))
-print('visited: {}'.format(visited))
-print('Length of visited: ' + str(len(visited)))
+
 wb.save(filename)
