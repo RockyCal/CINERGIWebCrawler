@@ -21,17 +21,19 @@ preFTP = 'ftp://'
 # </editor-fold>
 
 class ThreadClass(threading.Thread):
-    def __init__(self, quu, count):
+    def __init__(self, queue, count):
         threading.Thread.__init__(self)
-        self.queue = quu
+        self.queue = queue
         self.count = count
 
     def run(self):
         while True:
-            sub_resources = {}
-            url = self.queue.get()
-            resources.append(crawl(sub_resources, url))
+            print("{} start".format(self.count))
+            stack = self.queue.get()
+            crawl(stack)
             self.queue.task_done()
+            print("{} done".format(self.count))
+
 
 # <editor-fold desc="class Resource">
 class Resource:
@@ -39,6 +41,7 @@ class Resource:
         link_status = check_link(url)
         if link_status is "working":
             self.link = url
+            self.status = link_status
         else:
             if 'www' not in url:
                 ext_url = tldextract.extract(url)
@@ -77,42 +80,36 @@ class Resource:
         self.themes = find_themes(self.link)
         self.org = find_organization(self.link)
         find_contact_info(self, self.link)
-        #self.url_type = check_type(self.link)
+        # self.url_type = check_type(self.link)
         #self.tld = find_suffix(self.link)
         #self.country_code = find_country_code(self.link)
         self.social_media = find_social_media(self.link)
 
+    def find_links(self, new_tier):
+        if self.status is "working":
+            soup = BeautifulSoup(urlopen(self.link).read())
+            for link_tag in soup.find_all('a', href=True):
+                if check_link(link_tag['href']) is not "working":
+                    new_url = urljoin(self.link, link_tag['href'])
+                    if check_link(new_url) is "working" and new_url != self.link:
+                        if new_url not in self.links_found:
+                            self.links_found.append(new_url)
+                            new_resource = Resource(new_url)
+                            new_resource.source_link = self.link
+                            new_tier.append(new_resource)
+                else:
+                    if link_tag['href'] != self.link:
+                        if link_tag['href'] not in self.links_found:
+                            self.links_found.append(link_tag['href'])
+                            new_resource = Resource(link_tag['href'])
+                            new_resource.source_link = self.link
+                            new_tier.append(new_resource)
+        #self.links_found = list(set(self.links_found))
+
 # <editor-fold desc="Functions">
-def find_links(start_link):
-    urls_found = []
-    if check_link(start_link) is "working":
-        soup = BeautifulSoup(urlopen(start_link).read())
-        for link_tag in soup.find_all('a', href=True):
-            if check_link(link_tag['href']) is not "working":
-                new_url = urljoin(start_link, link_tag['href'])
-                if check_link(new_url) is "working" and new_url != start_link:
-                    urls_found.append(new_url)
-            else:
-                if link_tag['href'] != start_link:
-                    urls_found.append(link_tag['href'])
-    urls_found = list(set(urls_found))
-    return urls_found
-
 
 """
-name: crawl
-recursive function to make a new tier
-from each set of links and scrape them
-"""
-def crawl(sub_resources, url):
-    urls = [url]
-    visited = [url]
-
-    while len(urls) > 0:
-        if check_link(urls[0]) is "working":
-            soup = BeautifulSoup(urlopen(urls[0]).read())
-            urls.pop(0)
-            for tag in soup.find_all('a', href=True):
+for tag in soup.find_all('a', href=True):
                 if HTTP in tag['href'] and tag['href'] not in all_visited:
                     resource = Resource(tag['href'])
                 else:
@@ -126,33 +123,50 @@ def crawl(sub_resources, url):
                     all_visited.append(resource.link)
                     resource.get_resource_data()
                     sub_resources[resource.title] = resource
-    if len(sub_resources) > 0:
-        return sub_resources
+"""
+"""
+name: crawl
+stack is stack of links
+"""
+
+def crawl(stack):
+    while len(stack) > 0:
+        # Make instance of Resource
+        resource = Resource(stack.pop(0))
+        if resource.status is "working":
+            if resource.link not in visited:
+                resource.get_resource_data()
+                visited.append(resource.link)
+                #tier2[resource.title] = resource
+                tier2.append(resource)
+        else:
+            brokenLinks.append(resource.link)
+
 
 def make_headers(sheet):
     header_style = Style(font=Font(bold=True))
     sheet.cell('A1').value = 'Title'  # we need to find out how to do
     sheet['A1'].style = header_style
-    sheet.cell('B1').value = 'Label'  # tag.text
+    #sheet.cell('B1').value = 'Label'  # tag.text
+    #sheet['B1'].style = header_style
+    sheet.cell('B1').value = 'URL'
     sheet['B1'].style = header_style
-    sheet.cell('C1').value = 'URL'
+    sheet.cell('C1').value = 'Organization'
     sheet['C1'].style = header_style
-    sheet.cell('D1').value = 'Organization'
     sheet['D1'].style = header_style
+    sheet.cell('D1').value = 'Theme(s)'
+    sheet.cell('E1').value = 'Resource Type'
     sheet['E1'].style = header_style
-    sheet.cell('E1').value = 'Domain(s)'
-    sheet.cell('F1').value = 'Resource Type'
+    #sheet.cell('G1').value = "Content Type/Format"
+    #sheet['G1'].style = header_style
+    #sheet['H1'].value = "TLD"
+    #heet['H1'].style = header_style
+    sheet['F1'].value = "Country"
     sheet['F1'].style = header_style
-    sheet.cell('G1').value = "Content Type/Format"
+    sheet['G1'].value = "Social Media?"
     sheet['G1'].style = header_style
-    sheet['H1'].value = "TLD"
+    sheet['H1'].value = "Term Definitions"
     sheet['H1'].style = header_style
-    sheet['I1'].value = "Country"
-    sheet['I1'].style = header_style
-    sheet['J1'].value = "Social Media?"
-    sheet['J1'].style = header_style
-    sheet['K1'].value = "Term Definitions"
-    sheet['K1'].style = header_style
 
 
 def check_type(url):
@@ -189,6 +203,8 @@ Purpose: Make sure links work and go somewhere
 Returns: Returns working link if works or
          returns None
 """
+
+
 def check_link(url):
     if url and HTTP in url:
         link = url
@@ -301,7 +317,7 @@ def find_social_media(url):
         for soc in socialMedia:
             if soc in title:
                 return soc
-            # possible else: return ret_statement
+                # possible else: return ret_statement
     else:
         return ret_statement
 
@@ -318,6 +334,7 @@ def link_type(url):
     if souper2.find(["request", "login", "order", "purchase"]) is not None:
         link_string += "offlineAccess"
     return link_string
+
 
 def find_home_page(url):
     ext = tldextract.extract(url)
@@ -385,7 +402,8 @@ def build_labels(soup):
                 titles.append(tag.text)
     return titles_found
 
-def find_contact_info(res, url):
+
+def find_contact_info(reso, url):
     page = BeautifulSoup(urlopen(url).read())
     contact = page.find(text=re.compile('Contact/i'))
     if contact is not None:
@@ -395,7 +413,7 @@ def find_contact_info(res, url):
     # first look for tag with class = phone
     phone = page.find({'class': 'phone'})
     if phone is not None:
-        res.resource_contact_phone = phone.text
+        reso.resource_contact_phone = phone.text
     else:
         # if not class = phone, look for phone number
         phone = page.find(text=re.compile('\+(9[976]\d|8[987530]\d|6[987]\d'
@@ -405,16 +423,14 @@ def find_contact_info(res, url):
                                           '|2[70]|7|1)\d{1,14}$'))
         if phone is not None:
             print(phone)
-            res.resource_contact_phone = phone.text
+            reso.resource_contact_phone = phone.text
     email = page.find({'class': 'email'})
     if email is not None:
-        res.resource_contact_email = email.text
+        reso.resource_contact_email = email.text
     else:
         email = page.find(text=re.compile('\b[A-Z0-9._%+-]+[@(at)][A-Z0-9.-]+\.[A-Z]{2,4}\b'))
         if email is not None:
-            res.resource_contact_email = email.text
-
-
+            reso.resource_contact_email = email.text
 
 
 # </editor-fold>
@@ -423,14 +439,13 @@ def find_contact_info(res, url):
 Program begins.
 """
 # Total visited links
-#visited = []
+visited = []
 # Total working links found
-#urls = []
+urls = []
 # Total broken links
 brokenLinks = []
 
 titles = []
-
 
 """
 Resources is the list of actual resources
@@ -501,43 +516,44 @@ if mode is 1:
 
     # Create first resource
     res0 = Resource(start_url)
-    all_visited.append(start_url)
+    visited.append(start_url)
     start_html = (requests.get(start_url)).text
-    start_soup = BeautifulSoup(start_html)
     res0.title = build_title(start_url)
     res0.url_type = check_type(res0.link)
-    res0.links_found = find_links(res0.link)
+    #tier0 = {res0.title: res0}
+    tier0 = [res0]
+    tier1 = []
+    res0.find_links(tier1)
+    print(len(res0.links_found))
     # Set up for crawl
-    tier0 = {res0.title: res0}
     resources.append(tier0)
-    tier1 = {}
-    print(res0.links_found)
-    if len(res0.links_found) > 0:
-        for each in res0.links_found:
-            current = Resource(each)
-            current.get_resource_data()
-            tier1[current.title] = current
-            all_visited.append(current.link)
-    resources.append(tier1)
-
-    tier1_len = len(tier1)
-    print(tier1_len)
-    hosts = []
+    tier2 = []
+    if len(tier1) > 0:
+        for each in tier1:
+            #tier1[each.title] = each
+            #t1_resource = Resource(each)
+            if each.status is "working":
+                each.get_resource_data()
+                each.find_links(tier2)
+            visited.append(each.link)
+        resources.append(tier1)
+    print("Done visiting each in tier1")
     q = queue.Queue()
     crawl_time = time.clock()
     # Create pool of threads for each resource in tier1
     # Pass queue instance, url, and an int id
-    for i in range(tier1_len):
+    for i in range(len(tier1)):
         thread = ThreadClass(q, i)
         thread.setDaemon(True)
         thread.start()
 
     # Populate queue with links from tier1
-    for a_key in tier1.keys():
-        q.put(tier1[a_key].link)
+    for res in tier1:
+        q.put(res.links_found)
 
     # Wait until everything is processed
     q.join()
+    resources.append(tier2)
     print('Finished crawl. {} process time'.format(time.clock() - crawl_time))
 elif mode is 2:
     for each in url_list:
@@ -546,12 +562,12 @@ elif mode is 2:
         resources.append(r)
 
 for tier in resources:
-    print(tier)
+    print(len(tier))
 # <editor-fold desc="Write to excel">
 print('Creating xlsx file')
 # Create excel file
 wb = Workbook()
-filename = 'Crawl_8_25.xlsx'
+filename = 'Crawl_9_8.xlsx'
 
 write_time0 = time.clock()
 if mode is 1:
@@ -560,7 +576,7 @@ if mode is 1:
         if tier is not None and len(tier) > 0:
             ws = wb.create_sheet(index, str(index))
             make_headers(ws)
-            for value in tier.values():
+            for value in tier:
                 row = ws.get_highest_row() + 1
                 write_resource(ws, row, value)
         else:
