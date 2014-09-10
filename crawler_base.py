@@ -129,6 +129,7 @@ name: crawl
 stack is stack of links
 """
 
+
 def crawl(stack):
     while len(stack) > 0:
         # Make instance of Resource
@@ -486,26 +487,31 @@ if check_link(org_url) is "working":
     t = requests.get(org_url)
     orgText = t.text
     soupOrg = BeautifulSoup(orgText)
+    orgsOfficial = build_labels(soupOrg)
+else:
+    print("Error with org url")
 
 # Check functioning of country codes list
 if check_link(country_codes_url) is "working":
     s = requests.get(country_codes_url)
     counText = s.text
     soupCoun = BeautifulSoup(counText)
+    countriesOfficial = build_text(soupCoun)
+    countriesOfficial.append("EU - European Union")
+    # Get rid of first four, random values
+    for t in range(0, 4):
+        countriesOfficial.pop(0)
+else:
+    print("Error with country codes url")
 
 if check_link(social_media_url) is "working":
     b = requests.get(social_media_url)
     socText = b.text
     soupSoc = BeautifulSoup(socText)
+    socialMedia = build_social_links(soupSoc)
+else:
+    print("Error with social media url")
 
-orgsOfficial = build_labels(soupOrg)
-countriesOfficial = build_text(soupCoun)
-countriesOfficial.append("EU - European Union")
-socialMedia = build_social_links(soupSoc)
-
-# Get rid of first four, random values
-for t in range(0, 4):
-    countriesOfficial.pop(0)
 # </editor-fold>
 
 if mode is 1:
@@ -567,7 +573,7 @@ for tier in resources:
 print('Creating xlsx file')
 # Create excel file
 wb = Workbook()
-filename = 'Crawl_9_8.xlsx'
+filename = 'Crawl_9_10.xlsx'
 
 write_time0 = time.clock()
 if mode is 1:
