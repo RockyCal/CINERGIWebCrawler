@@ -465,56 +465,11 @@ all_visited = []
 prompt = input("Enter 1) to crawl for data and find other links from a single start point. Enter 2) to "
                "scrape data from a list of links: ")
 mode = int(prompt)
+
+
 if mode is 1:
     start_url = input("Enter a start url: ")
     start_title = input("Enter a title for the start_url: ")
-    print("Crawling...")
-elif mode is 2:
-    url_list = input("Enter a list of urls, each on a different line: ")
-else:
-    re_prompt = input("Error: That integer is not an option. Please enter 1) to crawl from a single url or 2) to"
-                      "scrape data from a list of urls")
-
-# <editor-fold desc="Build org, country, social media">
-# List of organizations
-org_url = 'http://opr.ca.gov/s_listoforganizations.php'
-# List of country codes
-country_codes_url = 'http://www.thrall.org/domains.htm'
-social_media_url = 'http://en.wikipedia.org/wiki/List_of_social_networking_websites#L'
-
-# Check functioning of organizations list
-if check_link(org_url) is "working":
-    t = requests.get(org_url)
-    orgText = t.text
-    soupOrg = BeautifulSoup(orgText)
-    orgsOfficial = build_labels(soupOrg)
-else:
-    print("Error with org url")
-
-# Check functioning of country codes list
-if check_link(country_codes_url) is "working":
-    s = requests.get(country_codes_url)
-    counText = s.text
-    soupCoun = BeautifulSoup(counText)
-    countriesOfficial = build_text(soupCoun)
-    countriesOfficial.append("EU - European Union")
-    # Get rid of first four, random values
-    for t in range(0, 4):
-        countriesOfficial.pop(0)
-else:
-    print("Error with country codes url")
-
-if check_link(social_media_url) is "working":
-    b = requests.get(social_media_url)
-    socText = b.text
-    soupSoc = BeautifulSoup(socText)
-    socialMedia = build_social_links(soupSoc)
-else:
-    print("Error with social media url")
-
-# </editor-fold>
-
-if mode is 1:
     # If start_url is broken program exits
     if check_link(start_url) is not "working":
         print("Error with start url.")
@@ -534,6 +489,7 @@ if mode is 1:
     # Set up for crawl
     resources.append(tier0)
     tier2 = []
+    print("Visiting each in tier1")
     if len(tier1) > 0:
         for each in tier1:
             #tier1[each.title] = each
@@ -562,10 +518,14 @@ if mode is 1:
     resources.append(tier2)
     print('Finished crawl. {} process time'.format(time.clock() - crawl_time))
 elif mode is 2:
+    url_list = input("Enter a list of urls, each on a different line: ")
     for each in url_list:
         r = Resource(each)
         r.get_resource_data()
         resources.append(r)
+else:
+    re_prompt = input("Error: That integer is not an option. Please enter 1) to crawl from a single url or 2) to"
+                      "scrape data from a list of urls")
 
 for tier in resources:
     print(len(tier))
@@ -605,6 +565,44 @@ else:
 write_time = time.clock() - write_time0
 print('Write time: {}'.format(write_time))
 
+# <editor-fold desc="Build org, country, social media">
+# List of organizations
+org_url = 'http://opr.ca.gov/s_listoforganizations.php'
+# List of country codes
+country_codes_url = 'http://www.thrall.org/domains.htm'
+social_media_url = 'http://en.wikipedia.org/wiki/List_of_social_networking_websites#L'
+
+# Check functioning of organizations list
+if check_link(org_url) is "working":
+    t = requests.get(org_url)
+    orgText = t.text
+    soupOrg = BeautifulSoup(orgText)
+    orgsOfficial = build_labels(soupOrg)
+else:
+    print("Error with org url")
+
+# Check functioning of country codes list
+if check_link(country_codes_url) is "working":
+    s = requests.get(country_codes_url)
+    counText = s.text
+    soupCoun = BeautifulSoup(counText)
+    countriesOfficial = build_text(soupCoun)
+    countriesOfficial.append("EU - European Union")
+    # Get rid of first four, random values
+    for t in range(0, 4):
+        countriesOfficial.pop(0)
+else:
+    print("Error with country codes url")
+
+if check_link(social_media_url) is "working":
+    b = requests.get(social_media_url)
+    socText = b.text
+    soupSoc = BeautifulSoup(socText)
+    socialMedia = build_social_links(soupSoc)
+else:
+    print("Error with social media url")
+
+# </editor-fold>
 
 # <editor-fold desc="Org and Country sheets">
 ws2 = wb.create_sheet()
