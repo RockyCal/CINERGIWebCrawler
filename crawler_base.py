@@ -448,6 +448,71 @@ brokenLinks = []
 
 titles = []
 
+# Create excel file
+wb = Workbook()
+filename = 'Crawl_9_10.xlsx'
+
+# <editor-fold desc="Build org, country, social media">
+# List of organizations
+org_url = 'http://opr.ca.gov/s_listoforganizations.php'
+# List of country codes
+country_codes_url = 'http://www.thrall.org/domains.htm'
+social_media_url = 'http://en.wikipedia.org/wiki/List_of_social_networking_websites#L'
+
+# Check functioning of organizations list
+if check_link(org_url) is "working":
+    t = requests.get(org_url)
+    orgText = t.text
+    soupOrg = BeautifulSoup(orgText)
+    orgsOfficial = build_labels(soupOrg)
+
+    ws2 = wb.create_sheet()
+    ws2.title = 'List of Official Organizations'
+    if len(orgsOfficial) > 0:
+        start_row = ws2.get_highest_row() + 1
+        last_row = (start_row + len(orgsOfficial)) - 1
+        t = 0
+        for row in ws2.range('%s%s:%s%s' % ('A', start_row, 'A', last_row)):
+            for cell in row:
+                cell.value = orgsOfficial[t]
+                t += 1
+else:
+    print("Error with org url")
+
+# Check functioning of country codes list
+if check_link(country_codes_url) is "working":
+    s = requests.get(country_codes_url)
+    counText = s.text
+    soupCoun = BeautifulSoup(counText)
+    countriesOfficial = build_text(soupCoun)
+    countriesOfficial.append("EU - European Union")
+    # Get rid of first four, random values
+    for t in range(0, 4):
+        countriesOfficial.pop(0)
+
+    ws3 = wb.create_sheet()
+    ws3.title = 'List of Country Codes'
+    if len(countriesOfficial) > 0:
+        start_row = ws3.get_highest_row() + 1
+        last_row = (start_row + len(countriesOfficial)) - 1
+        t = 0
+        for row in ws3.range('%s%s:%s%s' % ('A', start_row, 'A', last_row)):
+            for cell in row:
+                cell.value = countriesOfficial[t]
+                t += 1
+else:
+    print("Error with country codes url")
+
+if check_link(social_media_url) is "working":
+    b = requests.get(social_media_url)
+    socText = b.text
+    soupSoc = BeautifulSoup(socText)
+    socialMedia = build_social_links(soupSoc)
+else:
+    print("Error with social media url")
+
+# </editor-fold>
+
 """
 Resources is the list of actual resources
 """
@@ -529,12 +594,8 @@ else:
 
 for tier in resources:
     print(len(tier))
-# <editor-fold desc="Write to excel">
-print('Creating xlsx file')
-# Create excel file
-wb = Workbook()
-filename = 'Crawl_9_10.xlsx'
 
+# <editor-fold desc="Write to excel">
 write_time0 = time.clock()
 if mode is 1:
     index = 0
@@ -564,69 +625,6 @@ else:
 
 write_time = time.clock() - write_time0
 print('Write time: {}'.format(write_time))
-
-# <editor-fold desc="Build org, country, social media">
-# List of organizations
-org_url = 'http://opr.ca.gov/s_listoforganizations.php'
-# List of country codes
-country_codes_url = 'http://www.thrall.org/domains.htm'
-social_media_url = 'http://en.wikipedia.org/wiki/List_of_social_networking_websites#L'
-
-# Check functioning of organizations list
-if check_link(org_url) is "working":
-    t = requests.get(org_url)
-    orgText = t.text
-    soupOrg = BeautifulSoup(orgText)
-    orgsOfficial = build_labels(soupOrg)
-else:
-    print("Error with org url")
-
-# Check functioning of country codes list
-if check_link(country_codes_url) is "working":
-    s = requests.get(country_codes_url)
-    counText = s.text
-    soupCoun = BeautifulSoup(counText)
-    countriesOfficial = build_text(soupCoun)
-    countriesOfficial.append("EU - European Union")
-    # Get rid of first four, random values
-    for t in range(0, 4):
-        countriesOfficial.pop(0)
-else:
-    print("Error with country codes url")
-
-if check_link(social_media_url) is "working":
-    b = requests.get(social_media_url)
-    socText = b.text
-    soupSoc = BeautifulSoup(socText)
-    socialMedia = build_social_links(soupSoc)
-else:
-    print("Error with social media url")
-
-# </editor-fold>
-
-# <editor-fold desc="Org and Country sheets">
-ws2 = wb.create_sheet()
-ws2.title = 'List of Official Organizations'
-if len(orgsOfficial) > 0:
-    start_row = ws2.get_highest_row() + 1
-    last_row = (start_row + len(orgsOfficial)) - 1
-    t = 0
-    for row in ws2.range('%s%s:%s%s' % ('A', start_row, 'A', last_row)):
-        for cell in row:
-            cell.value = orgsOfficial[t]
-            t += 1
-
-ws3 = wb.create_sheet()
-ws3.title = 'List of Country Codes'
-if len(countriesOfficial) > 0:
-    start_row = ws3.get_highest_row() + 1
-    last_row = (start_row + len(countriesOfficial)) - 1
-    t = 0
-    for row in ws3.range('%s%s:%s%s' % ('A', start_row, 'A', last_row)):
-        for cell in row:
-            cell.value = countriesOfficial[t]
-            t += 1
-# </editor-fold>
 # </editor-fold>
 
 print('broken links: {}'.format(brokenLinks))
