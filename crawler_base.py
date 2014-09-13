@@ -29,8 +29,10 @@ class ThreadClass(threading.Thread):
     def run(self):
         while True:
             print("{} start".format(self.count))
-            stack = self.queue.get()
-            crawl(stack)
+            items = self.queue.get()
+            stack = items[0]
+            new_tier = items[1]
+            crawl(stack, new_tier)
             self.queue.task_done()
             print("{} done".format(self.count))
 
@@ -81,11 +83,11 @@ class Resource:
         self.org = find_organization(self.link)
         find_contact_info(self, self.link)
         # self.url_type = check_type(self.link)
-        #self.tld = find_suffix(self.link)
-        #self.country_code = find_country_code(self.link)
+        # self.tld = find_suffix(self.link)
+        # self.country_code = find_country_code(self.link)
         self.social_media = find_social_media(self.link)
 
-    def find_links(self, new_tier):
+    def find_links(self):
         if self.status is "working":
             soup = BeautifulSoup(urlopen(self.link).read())
             for link_tag in soup.find_all('a', href=True):
@@ -94,43 +96,20 @@ class Resource:
                     if check_link(new_url) is "working" and new_url != self.link:
                         if new_url not in self.links_found:
                             self.links_found.append(new_url)
-                            new_resource = Resource(new_url)
-                            new_resource.source_link = self.link
-                            new_tier.append(new_resource)
                 else:
                     if link_tag['href'] != self.link:
                         if link_tag['href'] not in self.links_found:
                             self.links_found.append(link_tag['href'])
-                            new_resource = Resource(link_tag['href'])
-                            new_resource.source_link = self.link
-                            new_tier.append(new_resource)
-        #self.links_found = list(set(self.links_found))
 
 # <editor-fold desc="Functions">
 
-"""
-for tag in soup.find_all('a', href=True):
-                if HTTP in tag['href'] and tag['href'] not in all_visited:
-                    resource = Resource(tag['href'])
-                else:
-                    if "javascript" not in tag['href']:
-                        # First try joining current page and part of link
-                        new_url = urljoin(url, tag['href'])
-                        resource = Resource(new_url)
-                if resource.status is "working" and resource.link not in visited:
-                    urls.append(resource.link)
-                    visited.append(resource.link)
-                    all_visited.append(resource.link)
-                    resource.get_resource_data()
-                    sub_resources[resource.title] = resource
-"""
 """
 name: crawl
 stack is stack of links
 """
 
 
-def crawl(stack):
+def crawl(stack, new_tier):
     while len(stack) > 0:
         # Make instance of Resource
         resource = Resource(stack.pop(0))
@@ -138,8 +117,7 @@ def crawl(stack):
             if resource.link not in visited:
                 resource.get_resource_data()
                 visited.append(resource.link)
-                #tier2[resource.title] = resource
-                tier2.append(resource)
+                new_tier.append(resource)
         else:
             brokenLinks.append(resource.link)
 
@@ -546,25 +524,18 @@ if mode is 1:
     start_html = (requests.get(start_url)).text
     res0.title = build_title(start_url)
     res0.url_type = check_type(res0.link)
-    #tier0 = {res0.title: res0}
+    res0.find_links()
     tier0 = [res0]
-    tier1 = []
-    res0.find_links(tier1)
-    print(len(res0.links_found))
     # Set up for crawl
     resources.append(tier0)
-    tier2 = []
+    tier1 = []
     print("Visiting each in tier1")
-    if len(tier1) > 0:
-        for each in tier1:
-            #tier1[each.title] = each
-            #t1_resource = Resource(each)
-            if each.status is "working":
-                each.get_resource_data()
-                each.find_links(tier2)
-            visited.append(each.link)
-        resources.append(tier1)
+    crawl(res0.links_found, tier1)
     print("Done visiting each in tier1")
+    for r in tier1:
+        r.find_links()
+    resources.append(tier1)
+    tier2 = []
     q = queue.Queue()
     crawl_time = time.clock()
     # Create pool of threads for each resource in tier1
@@ -576,7 +547,7 @@ if mode is 1:
 
     # Populate queue with links from tier1
     for res in tier1:
-        q.put(res.links_found)
+        q.put((res.links_found, tier2))
 
     # Wait until everything is processed
     q.join()
