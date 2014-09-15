@@ -573,7 +573,7 @@ for tier in resources:
 print('Creating xlsx file')
 # Create excel file
 wb = Workbook()
-filename = 'Crawl_9_10.xlsx'
+filename = 'CrawlAntarctica.xlsx'
 
 write_time0 = time.clock()
 if mode is 1:
