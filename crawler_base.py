@@ -28,13 +28,11 @@ class ThreadClass(threading.Thread):
 
     def run(self):
         while True:
-            print("{} start".format(self.count))
             items = self.queue.get()
             stack = items[0]
             new_tier = items[1]
             crawl(stack, new_tier)
             self.queue.task_done()
-            print("{} done".format(self.count))
 
 
 # <editor-fold desc="class Resource">
@@ -163,16 +161,16 @@ def check_again(new_url):
     req = Request(new_url)
     try:
         urlopen(req, timeout=10)
-    except ValueError:
-        print("Value Error caught")
-        return " "
     except HTTPError:
         return " "
     except SocketError:
         return " "
     except URLError:
         return " "
-    return new_url
+    except ValueError:
+        print("Value Error caught")
+        return " "
+    return "working"
 
 
 """
@@ -428,7 +426,7 @@ titles = []
 
 # Create excel file
 wb = Workbook()
-filename = 'Crawl_9_10.xlsx'
+filename = 'Crawl_9_15.xlsx'
 
 # <editor-fold desc="Build org, country, social media">
 # List of organizations
@@ -525,19 +523,20 @@ if mode is 1:
     res0.title = build_title(start_url)
     res0.url_type = check_type(res0.link)
     res0.find_links()
+    print("Crawling...")
+    res0.get_resource_data()
     tier0 = [res0]
     # Set up for crawl
     resources.append(tier0)
     tier1 = []
-    print("Visiting each in tier1")
     crawl(res0.links_found, tier1)
-    print("Done visiting each in tier1")
     for r in tier1:
         r.find_links()
     resources.append(tier1)
     tier2 = []
     q = queue.Queue()
     crawl_time = time.clock()
+    print("Gathering data from pages...")
     # Create pool of threads for each resource in tier1
     # Pass queue instance, url, and an int id
     for i in range(len(tier1)):
