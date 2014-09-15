@@ -426,7 +426,8 @@ titles = []
 
 # Create excel file
 wb = Workbook()
-filename = 'Crawl_9_15.xlsx'
+filename = input("Enter a title for the excel file: ")
+#filename = 'GreenSeas_9_15.xlsx'
 
 # <editor-fold desc="Build org, country, social media">
 # List of organizations
@@ -510,7 +511,6 @@ mode = int(prompt)
 
 if mode is 1:
     start_url = input("Enter a start url: ")
-    start_title = input("Enter a title for the start_url: ")
     # If start_url is broken program exits
     if check_link(start_url) is not "working":
         print("Error with start url.")
