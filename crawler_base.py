@@ -126,6 +126,8 @@ def crawl(stack, new_tier):
         # Make instance of Resource
         resource = Resource(stack.pop(0))
         if resource.status is "working":
+            response = urlopen(resource.link)
+            info = response.info()
             if resource.link not in visited:
                 resource.get_resource_data()
                 visited.append(resource.link)
@@ -342,9 +344,9 @@ Params: url - page to get titles from
 Purpose: Extract the title of the pages these links lead to
 Returns: List of titles
 """
+
+
 # titles -> texts
-
-
 def build_text(soup):
     texts = []
     for tag in soup.find_all('li'):
@@ -538,46 +540,71 @@ if mode is 1:
     start_html = (requests.get(start_url)).text
     res0.title = build_title(start_url)
     res0.url_type = check_type(res0.link)
-    res0.find_links()
     print("Crawling...")
+    # Scrape source url
     res0.get_resource_data()
+    # Find links on source url web page,
+    # will be crawled and become tier1
     res0.find_links()
     print("Length of res0.links_found: {}".format(len(res0.links_found)))
     tier0 = [res0]
     # Set up for crawl
     resources.append(tier0)
     tier1 = []
-    num_threads = 4
-    chunksize = int((len(res0.links_found))/num_threads)
+
+    # Number of threads for second layer (tier1)
+    t1_num_threads = 4
+
+    # Create a size based on length of links found
+    chunksize = int((len(res0.links_found))/t1_num_threads)
     threads = []
 
-    for i in range(num_threads):
+    # Pass in chunks of res0.links_found to threads to be processed
+    for i in range(t1_num_threads):
         t = Thread(res0.links_found[chunksize*i:
         (chunksize*(i+1))], tier1, i)
         threads.append(t)
         t.start()
 
+    # Wait for all threads to finish
+    # Tier1 should be populated with resources
     for t in threads:
         t.join()
 
+    print("Length tier1: {}".format(len(tier1)))
+    # To hold the links found in third layer
+    tier2_links = []
+
+    # Find links on the pages in tier1
     for r in tier1:
         r.find_links()
-    print("Length tier1: {}".format(len(tier1)))
+        if r.links_found is not None:
+            tier2_links.extend(r.links_found)
+
+    # Add tier1 to resources
     resources.append(tier1)
     tier2 = []
+
+    # Queue for third layer processing
     q = queue.Queue()
     crawl_time = time.clock()
     print("Gathering data from pages...")
-    # Create pool of threads for each resource in tier1
-    # Pass queue instance, url, and an int id
-    for j in range(len(tier1)):
+
+    # Create pool of threads, more threads since
+    # third layer is larger, naturally
+    # Pass queue instance and thread count
+    t2_num_threads = 10
+    for j in range(t2_num_threads):
         thread = ThreadClass(q, j)
         thread.setDaemon(True)
         thread.start()
 
-    # Populate queue with links from tier1
-    for res in tier1:
-        q.put((res.links_found, tier2))
+    size = int((len(tier2_links))/t2_num_threads)
+    # Populate queue with chunks of links
+    # Will be passed into crawl
+    for k in range(t2_num_threads):
+        q.put((tier2_links[(size*k):(size*(k+1))], tier2))
+    # TODO: fix 429 Too many requests
 
     # Wait until everything is processed
     q.join()
