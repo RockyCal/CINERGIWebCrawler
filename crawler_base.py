@@ -20,10 +20,24 @@ HTTP = 'http://'
 preFTP = 'ftp://'
 # </editor-fold>
 
-class ThreadClass(threading.Thread):
-    def __init__(self, queue, count):
+
+class Thread(threading.Thread):
+    def __init__(self, stack, tier, count):
         threading.Thread.__init__(self)
-        self.queue = queue
+        self.stack = stack
+        self.tier = tier
+        self.count = count
+
+    def run(self):
+        crawl(self.stack, self.tier)
+
+
+
+
+class ThreadClass(threading.Thread):
+    def __init__(self, que, count):
+        threading.Thread.__init__(self)
+        self.queue = que
         self.count = count
 
     def run(self):
@@ -329,6 +343,8 @@ Purpose: Extract the title of the pages these links lead to
 Returns: List of titles
 """
 # titles -> texts
+
+
 def build_text(soup):
     texts = []
     for tag in soup.find_all('li'):
@@ -510,7 +526,7 @@ mode = int(prompt)
 
 
 if mode is 1:
-    start_url = input("Enter a start url: ")
+    start_url = input("Enter a start url to begin crawl: ")
     # If start_url is broken program exits
     if check_link(start_url) is not "working":
         print("Error with start url.")
@@ -525,13 +541,28 @@ if mode is 1:
     res0.find_links()
     print("Crawling...")
     res0.get_resource_data()
+    res0.find_links()
+    print("Length of res0.links_found: {}".format(len(res0.links_found)))
     tier0 = [res0]
     # Set up for crawl
     resources.append(tier0)
     tier1 = []
-    crawl(res0.links_found, tier1)
+    num_threads = 4
+    chunksize = int((len(res0.links_found))/num_threads)
+    threads = []
+
+    for i in range(num_threads):
+        t = Thread(res0.links_found[chunksize*i:
+        (chunksize*(i+1))], tier1, i)
+        threads.append(t)
+        t.start()
+
+    for t in threads:
+        t.join()
+
     for r in tier1:
         r.find_links()
+    print("Length tier1: {}".format(len(tier1)))
     resources.append(tier1)
     tier2 = []
     q = queue.Queue()
@@ -539,8 +570,8 @@ if mode is 1:
     print("Gathering data from pages...")
     # Create pool of threads for each resource in tier1
     # Pass queue instance, url, and an int id
-    for i in range(len(tier1)):
-        thread = ThreadClass(q, i)
+    for j in range(len(tier1)):
+        thread = ThreadClass(q, j)
         thread.setDaemon(True)
         thread.start()
 
@@ -599,4 +630,4 @@ print('Write time: {}'.format(write_time))
 
 print('broken links: {}'.format(brokenLinks))
 
-wb.save(filename)
+wb.save(filename+".xlsx")
