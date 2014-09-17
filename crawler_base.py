@@ -6,6 +6,7 @@ from openpyxl import Workbook, cell
 from openpyxl.styles import Style, Font
 from urllib.request import urlopen, Request
 from urllib.error import URLError, HTTPError
+import urllib.parse
 from socket import error as SocketError
 import tldextract
 import threading
@@ -22,30 +23,30 @@ preFTP = 'ftp://'
 
 
 class Thread(threading.Thread):
-    def __init__(self, stack, tier, count):
+    def __init__(self, stack, tier, count, delay):
         threading.Thread.__init__(self)
         self.stack = stack
         self.tier = tier
         self.count = count
+        self.delay = delay
 
     def run(self):
-        crawl(self.stack, self.tier)
-
-
+        crawl(self.stack, self.tier, self.delay)
 
 
 class ThreadClass(threading.Thread):
-    def __init__(self, que, count):
+    def __init__(self, que, count, delay):
         threading.Thread.__init__(self)
         self.queue = que
         self.count = count
+        self.delay = delay
 
     def run(self):
         while True:
             items = self.queue.get()
             stack = items[0]
             new_tier = items[1]
-            crawl(stack, new_tier)
+            crawl(stack, new_tier, self.delay)
             self.queue.task_done()
 
 
@@ -73,6 +74,7 @@ class Resource:
                 self.link = link_status
                 self.status = link_status
 
+    text = ""
     title = "No title"
     status = "No status"
     resource_type = []
@@ -101,17 +103,21 @@ class Resource:
 
     def find_links(self):
         if self.status is "working":
-            soup = BeautifulSoup(urlopen(self.link).read())
-            for link_tag in soup.find_all('a', href=True):
-                if check_link(link_tag['href']) is not "working":
-                    new_url = urljoin(self.link, link_tag['href'])
-                    if check_link(new_url) is "working" and new_url != self.link:
-                        if new_url not in self.links_found:
-                            self.links_found.append(new_url)
-                else:
-                    if link_tag['href'] != self.link:
-                        if link_tag['href'] not in self.links_found:
-                            self.links_found.append(link_tag['href'])
+            try:
+                soup = BeautifulSoup(urlopen(self.link, timeout=7).read())
+                for link_tag in soup.find_all('a', href=True):
+                    if check_link(link_tag['href']) is not "working":
+                        new_url = urljoin(self.link, link_tag['href'])
+                        if check_link(new_url) is "working" and new_url != self.link:
+                            if new_url not in self.links_found:
+                                self.links_found.append(new_url)
+                    else:
+                        if link_tag['href'] != self.link:
+                            if link_tag['href'] not in self.links_found:
+                                self.links_found.append(link_tag['href'])
+            except URLError as e:
+                self.status = "{} {} {}".format(self.link, e.reason)
+                brokenLinks.append(self.link)
 
 # <editor-fold desc="Functions">
 
@@ -121,19 +127,17 @@ stack is stack of links
 """
 
 
-def crawl(stack, new_tier):
+def crawl(stack, new_tier, delay):
     while len(stack) > 0:
         # Make instance of Resource
         resource = Resource(stack.pop(0))
         if resource.status is "working":
-            response = urlopen(resource.link)
-            info = response.info()
+            urlopen(resource.link)
             if resource.link not in visited:
                 resource.get_resource_data()
                 visited.append(resource.link)
                 new_tier.append(resource)
-        else:
-            brokenLinks.append(resource.link)
+        time.sleep(delay)
 
 
 def make_headers(sheet):
@@ -271,10 +275,22 @@ def find_resource_types(url):
 def find_organization(url):
     basic_org = build_title(url)
 
-    if basic_org in orgsOfficial:
-        return "Verified: " + basic_org
-    elif basic_org is not 'No title':
+    verify_url = "https://orcid.org/orcid-search/quick-search"
+    data = {'searchQuery': basic_org}
+    url_values = urllib.parse.urlencode(data)
+    full_url = verify_url + '?' + url_values
+    response = urllib.request.urlopen(full_url)
+    soup = BeautifulSoup(urlopen(full_url).read())
+    no_result_text = soup.find(text=re.compile('No results found'))
+    if visible(no_result_text):
         return basic_org
+    else:
+        return "Verified: " + basic_org
+
+    #if basic_org in orgsOfficial:
+    #    return "Verified: " + basic_org
+    #elif basic_org is not 'No title':
+    #    return basic_org
 
 
 def find_suffix(url):
@@ -537,9 +553,7 @@ if mode is 1:
     # Create first resource
     res0 = Resource(start_url)
     visited.append(start_url)
-    start_html = (requests.get(start_url)).text
-    res0.title = build_title(start_url)
-    res0.url_type = check_type(res0.link)
+    res0.text = BeautifulSoup(urlopen(start_url).read())
     print("Crawling...")
     # Scrape source url
     res0.get_resource_data()
@@ -554,6 +568,7 @@ if mode is 1:
 
     # Number of threads for second layer (tier1)
     t1_num_threads = 4
+    wait = 0
 
     # Create a size based on length of links found
     chunksize = int((len(res0.links_found))/t1_num_threads)
@@ -561,8 +576,7 @@ if mode is 1:
 
     # Pass in chunks of res0.links_found to threads to be processed
     for i in range(t1_num_threads):
-        t = Thread(res0.links_found[chunksize*i:
-        (chunksize*(i+1))], tier1, i)
+        t = Thread(res0.links_found[chunksize*i:(chunksize*(i+1))], tier1, i, wait)
         threads.append(t)
         t.start()
 
@@ -570,6 +584,14 @@ if mode is 1:
     # Tier1 should be populated with resources
     for t in threads:
         t.join()
+
+    # process remaining links
+    remains = []
+    remaining = len(res0.links_found) % t1_num_threads
+    rem = (len(res0.links_found) - remaining)
+    for rem in range(len(res0.links_found)):
+        remains.append(res0.links_found[rem])
+    crawl(remains, tier1, wait)
 
     print("Length tier1: {}".format(len(tier1)))
     # To hold the links found in third layer
@@ -593,9 +615,10 @@ if mode is 1:
     # Create pool of threads, more threads since
     # third layer is larger, naturally
     # Pass queue instance and thread count
+    wait = 30
     t2_num_threads = 10
     for j in range(t2_num_threads):
-        thread = ThreadClass(q, j)
+        thread = ThreadClass(q, j, wait)
         thread.setDaemon(True)
         thread.start()
 
