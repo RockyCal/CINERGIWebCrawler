@@ -5,9 +5,9 @@ import queue
 from openpyxl import Workbook, cell
 from openpyxl.styles import Style, Font
 from urllib.request import urlopen, Request
-from urllib.error import URLError, HTTPError
+from urllib.error import URLError
 import urllib.parse
-from socket import error as SocketError
+from check_link import check_link
 import tldextract
 import threading
 from disciplines_known import disciplinesKnown
@@ -176,23 +176,6 @@ def check_type(url):
         return "None"
 
 
-def check_again(new_url):
-    print('Checking {} again...'.format(new_url))
-    req = Request(new_url)
-    try:
-        urlopen(req, timeout=10)
-    except HTTPError:
-        return " "
-    except SocketError:
-        return " "
-    except URLError:
-        return " "
-    except ValueError:
-        print("Value Error caught")
-        return " "
-    return "working"
-
-
 """
 Name: check_link()
 Params: url - link to check
@@ -200,24 +183,6 @@ Purpose: Make sure links work and go somewhere
 Returns: Returns working link if works or
          returns None
 """
-
-
-def check_link(url):
-    if url and HTTP in url:
-        link = url
-        try:
-            urlopen(link, timeout=7)
-        except HTTPError as e:
-            return "{}: {}, {}".format(url, e.reason, e.code)
-        except URLError as e:
-            return "{}: {}".format(url, e.reason)
-        except SocketError:
-            return "{}: Socket Error".format(url)
-        except ValueError:
-            return "{}: Value Error".format(url)
-    else:
-        return "{}: Other Error".format(url)
-    return "working"
 
 
 def visible(element):
@@ -372,20 +337,6 @@ def build_text(soup):
 
 def build_title(url):
     req = Request(url)
-    try:
-        urlopen(req)
-    except HTTPError as e:
-        print("{}: {}, {}".format(url, e.reason, e.code))
-        return "No title: error occurred"
-    except URLError as e:
-        print("{}: {}".format(url, e.reason))
-        return "No title: error occurred"
-    except SocketError:
-        print("{}: Socket Error".format(url))
-        return "No title: error occurred"
-    except ValueError:
-        print("{}: Value Error".format(url))
-        return "Not title: error occurred"
     page_text = BeautifulSoup(urlopen(req).read())
     title = page_text.find('title', text=True)
     if title is not None:
