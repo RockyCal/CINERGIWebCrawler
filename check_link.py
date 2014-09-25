@@ -13,7 +13,7 @@ preFTP = 'ftp://'
 def check_link(url):
     if url:
         try:
-            urlopen(url, timeout=11)
+            urlopen(url, timeout=12)
         except HTTPError as e:
             return "{}: {}, {}".format(url, e.reason, e.code)
         except URLError as e:

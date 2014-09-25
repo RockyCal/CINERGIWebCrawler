@@ -144,8 +144,6 @@ def make_headers(sheet):
     header_style = Style(font=Font(bold=True))
     sheet.cell('A1').value = 'Title'  # we need to find out how to do
     sheet['A1'].style = header_style
-    #sheet.cell('B1').value = 'Label'  # tag.text
-    #sheet['B1'].style = header_style
     sheet.cell('B1').value = 'URL'
     sheet['B1'].style = header_style
     sheet.cell('C1').value = 'Organization'
@@ -154,10 +152,6 @@ def make_headers(sheet):
     sheet.cell('D1').value = 'Theme(s)'
     sheet.cell('E1').value = 'Resource Type'
     sheet['E1'].style = header_style
-    #sheet.cell('G1').value = "Content Type/Format"
-    #sheet['G1'].style = header_style
-    #sheet['H1'].value = "TLD"
-    #heet['H1'].style = header_style
     sheet['F1'].value = "Country"
     sheet['F1'].style = header_style
     sheet['G1'].value = "Social Media?"
