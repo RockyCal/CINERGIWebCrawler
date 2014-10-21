@@ -5,8 +5,9 @@ import queue
 from openpyxl import Workbook, cell
 from openpyxl.styles import Style, Font
 from urllib.request import urlopen, Request
-from urllib.error import URLError, HTTPError
-from socket import error as SocketError
+from urllib.error import URLError
+import urllib.parse
+from check_link import check_link
 import tldextract
 import threading
 from disciplines_known import disciplinesKnown
@@ -20,21 +21,33 @@ HTTP = 'http://'
 preFTP = 'ftp://'
 # </editor-fold>
 
-class ThreadClass(threading.Thread):
-    def __init__(self, queue, count):
+
+class Thread(threading.Thread):
+    def __init__(self, stack, tier, count, delay):
         threading.Thread.__init__(self)
-        self.queue = queue
+        self.stack = stack
+        self.tier = tier
         self.count = count
+        self.delay = delay
+
+    def run(self):
+        crawl(self.stack, self.tier, self.delay)
+
+
+class ThreadClass(threading.Thread):
+    def __init__(self, que, count, delay):
+        threading.Thread.__init__(self)
+        self.queue = que
+        self.count = count
+        self.delay = delay
 
     def run(self):
         while True:
-            print("{} start".format(self.count))
             items = self.queue.get()
             stack = items[0]
             new_tier = items[1]
-            crawl(stack, new_tier)
+            crawl(stack, new_tier, self.delay)
             self.queue.task_done()
-            print("{} done".format(self.count))
 
 
 # <editor-fold desc="class Resource">
@@ -61,6 +74,7 @@ class Resource:
                 self.link = link_status
                 self.status = link_status
 
+    text = ""
     title = "No title"
     status = "No status"
     resource_type = []
@@ -89,17 +103,21 @@ class Resource:
 
     def find_links(self):
         if self.status is "working":
-            soup = BeautifulSoup(urlopen(self.link).read())
-            for link_tag in soup.find_all('a', href=True):
-                if check_link(link_tag['href']) is not "working":
-                    new_url = urljoin(self.link, link_tag['href'])
-                    if check_link(new_url) is "working" and new_url != self.link:
-                        if new_url not in self.links_found:
-                            self.links_found.append(new_url)
-                else:
-                    if link_tag['href'] != self.link:
-                        if link_tag['href'] not in self.links_found:
-                            self.links_found.append(link_tag['href'])
+            try:
+                soup = BeautifulSoup(urlopen(self.link, timeout=7).read())
+                for link_tag in soup.find_all('a', href=True):
+                    if check_link(link_tag['href']) is not "working":
+                        new_url = urljoin(self.link, link_tag['href'])
+                        if check_link(new_url) is "working" and new_url != self.link:
+                            if new_url not in self.links_found:
+                                self.links_found.append(new_url)
+                    else:
+                        if link_tag['href'] != self.link:
+                            if link_tag['href'] not in self.links_found:
+                                self.links_found.append(link_tag['href'])
+            except URLError as e:
+                self.status = "{} {} {}".format(self.link, e.reason)
+                brokenLinks.append(self.link)
 
 # <editor-fold desc="Functions">
 
@@ -109,25 +127,23 @@ stack is stack of links
 """
 
 
-def crawl(stack, new_tier):
+def crawl(stack, new_tier, delay):
     while len(stack) > 0:
         # Make instance of Resource
         resource = Resource(stack.pop(0))
         if resource.status is "working":
+            urlopen(resource.link)
             if resource.link not in visited:
                 resource.get_resource_data()
                 visited.append(resource.link)
                 new_tier.append(resource)
-        else:
-            brokenLinks.append(resource.link)
+        time.sleep(delay)
 
 
 def make_headers(sheet):
     header_style = Style(font=Font(bold=True))
     sheet.cell('A1').value = 'Title'  # we need to find out how to do
     sheet['A1'].style = header_style
-    #sheet.cell('B1').value = 'Label'  # tag.text
-    #sheet['B1'].style = header_style
     sheet.cell('B1').value = 'URL'
     sheet['B1'].style = header_style
     sheet.cell('C1').value = 'Organization'
@@ -136,10 +152,6 @@ def make_headers(sheet):
     sheet.cell('D1').value = 'Theme(s)'
     sheet.cell('E1').value = 'Resource Type'
     sheet['E1'].style = header_style
-    #sheet.cell('G1').value = "Content Type/Format"
-    #sheet['G1'].style = header_style
-    #sheet['H1'].value = "TLD"
-    #heet['H1'].style = header_style
     sheet['F1'].value = "Country"
     sheet['F1'].style = header_style
     sheet['G1'].value = "Social Media?"
@@ -158,23 +170,6 @@ def check_type(url):
         return "None"
 
 
-def check_again(new_url):
-    print('Checking {} again...'.format(new_url))
-    req = Request(new_url)
-    try:
-        urlopen(req, timeout=10)
-    except ValueError:
-        print("Value Error caught")
-        return " "
-    except HTTPError:
-        return " "
-    except SocketError:
-        return " "
-    except URLError:
-        return " "
-    return new_url
-
-
 """
 Name: check_link()
 Params: url - link to check
@@ -182,24 +177,6 @@ Purpose: Make sure links work and go somewhere
 Returns: Returns working link if works or
          returns None
 """
-
-
-def check_link(url):
-    if url and HTTP in url:
-        link = url
-        try:
-            urlopen(link, timeout=7)
-        except HTTPError as e:
-            return "{}: {}, {}".format(url, e.reason, e.code)
-        except URLError as e:
-            return "{}: {}".format(url, e.reason)
-        except SocketError:
-            return "{}: Socket Error".format(url)
-        except ValueError:
-            return "{}: Value Error".format(url)
-    else:
-        return "{}: Other Error".format(url)
-    return "working"
 
 
 def visible(element):
@@ -257,10 +234,22 @@ def find_resource_types(url):
 def find_organization(url):
     basic_org = build_title(url)
 
-    if basic_org in orgsOfficial:
-        return "Verified: " + basic_org
-    elif basic_org is not 'No title':
+    verify_url = "https://orcid.org/orcid-search/quick-search"
+    data = {'searchQuery': basic_org}
+    url_values = urllib.parse.urlencode(data)
+    full_url = verify_url + '?' + url_values
+    response = urllib.request.urlopen(full_url)
+    soup = BeautifulSoup(urlopen(full_url).read())
+    no_result_text = soup.find(text=re.compile('No results found'))
+    if visible(no_result_text):
         return basic_org
+    else:
+        return "Verified: " + basic_org
+
+    #if basic_org in orgsOfficial:
+    #    return "Verified: " + basic_org
+    #elif basic_org is not 'No title':
+    #    return basic_org
 
 
 def find_suffix(url):
@@ -330,6 +319,8 @@ Params: url - page to get titles from
 Purpose: Extract the title of the pages these links lead to
 Returns: List of titles
 """
+
+
 # titles -> texts
 def build_text(soup):
     texts = []
@@ -340,20 +331,6 @@ def build_text(soup):
 
 def build_title(url):
     req = Request(url)
-    try:
-        urlopen(req)
-    except HTTPError as e:
-        print("{}: {}, {}".format(url, e.reason, e.code))
-        return "No title: error occurred"
-    except URLError as e:
-        print("{}: {}".format(url, e.reason))
-        return "No title: error occurred"
-    except SocketError:
-        print("{}: Socket Error".format(url))
-        return "No title: error occurred"
-    except ValueError:
-        print("{}: Value Error".format(url))
-        return "Not title: error occurred"
     page_text = BeautifulSoup(urlopen(req).read())
     title = page_text.find('title', text=True)
     if title is not None:
@@ -428,7 +405,8 @@ titles = []
 
 # Create excel file
 wb = Workbook()
-filename = 'Crawl_9_10.xlsx'
+filename = input("Enter a title for the excel file: ")
+#filename = 'GreenSeas_9_15.xlsx'
 
 # <editor-fold desc="Build org, country, social media">
 # List of organizations
@@ -511,8 +489,7 @@ mode = int(prompt)
 
 
 if mode is 1:
-    start_url = input("Enter a start url: ")
-    start_title = input("Enter a title for the start_url: ")
+    start_url = input("Enter a start url to begin crawl: ")
     # If start_url is broken program exits
     if check_link(start_url) is not "working":
         print("Error with start url.")
@@ -521,33 +498,81 @@ if mode is 1:
     # Create first resource
     res0 = Resource(start_url)
     visited.append(start_url)
-    start_html = (requests.get(start_url)).text
-    res0.title = build_title(start_url)
-    res0.url_type = check_type(res0.link)
+    res0.text = BeautifulSoup(urlopen(start_url).read())
+    print("Crawling...")
+    # Scrape source url
+    res0.get_resource_data()
+    # Find links on source url web page,
+    # will be crawled and become tier1
     res0.find_links()
+    print("Length of res0.links_found: {}".format(len(res0.links_found)))
     tier0 = [res0]
     # Set up for crawl
     resources.append(tier0)
     tier1 = []
-    print("Visiting each in tier1")
-    crawl(res0.links_found, tier1)
-    print("Done visiting each in tier1")
+
+    # Number of threads for second layer (tier1)
+    t1_num_threads = 4
+    wait = 0
+
+    # Create a size based on length of links found
+    chunksize = int((len(res0.links_found))/t1_num_threads)
+    threads = []
+
+    # Pass in chunks of res0.links_found to threads to be processed
+    for i in range(t1_num_threads):
+        t = Thread(res0.links_found[chunksize*i:(chunksize*(i+1))], tier1, i, wait)
+        threads.append(t)
+        t.start()
+
+    # Wait for all threads to finish
+    # Tier1 should be populated with resources
+    for t in threads:
+        t.join()
+
+    # process remaining links
+    remains = []
+    remaining = len(res0.links_found) % t1_num_threads
+    rem = (len(res0.links_found) - remaining)
+    for rem in range(len(res0.links_found)):
+        remains.append(res0.links_found[rem])
+    crawl(remains, tier1, wait)
+
+    print("Length tier1: {}".format(len(tier1)))
+    # To hold the links found in third layer
+    tier2_links = []
+
+    # Find links on the pages in tier1
     for r in tier1:
         r.find_links()
+        if r.links_found is not None:
+            tier2_links.extend(r.links_found)
+
+    # Add tier1 to resources
     resources.append(tier1)
     tier2 = []
+
+    # Queue for third layer processing
     q = queue.Queue()
     crawl_time = time.clock()
-    # Create pool of threads for each resource in tier1
-    # Pass queue instance, url, and an int id
-    for i in range(len(tier1)):
-        thread = ThreadClass(q, i)
+    print("Gathering data from pages...")
+
+    # Create pool of threads, more threads since
+    # third layer is larger, naturally
+    # Pass queue instance and thread count
+    wait = 30
+    t2_num_threads = 10
+    for j in range(t2_num_threads):
+        thread = ThreadClass(q, j, wait)
         thread.setDaemon(True)
         thread.start()
 
-    # Populate queue with links from tier1
-    for res in tier1:
-        q.put((res.links_found, tier2))
+    size = int((len(tier2_links))/t2_num_threads)
+    # Populate queue with chunks of links
+    # Will be passed into crawl
+    for k in range(t2_num_threads):
+        q.put((tier2_links[(size*k):(size*(k+1))], tier2))
+    # TODO: fix 429 Too many requests
 
     # Wait until everything is processed
     q.join()
@@ -600,4 +625,4 @@ print('Write time: {}'.format(write_time))
 
 print('broken links: {}'.format(brokenLinks))
 
-wb.save(filename)
+wb.save(filename+".xlsx")

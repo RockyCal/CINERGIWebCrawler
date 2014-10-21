@@ -1,5 +1,6 @@
 __author__ = 'Raquel'
 
+
 def find_term_links(string):
     ret_url = []
 
