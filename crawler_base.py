@@ -29,8 +29,10 @@ class ThreadClass(threading.Thread):
     def run(self):
         while True:
             print("{} start".format(self.count))
-            stack = self.queue.get()
-            crawl(stack)
+            items = self.queue.get()
+            stack = items[0]
+            new_tier = items[1]
+            crawl(stack, new_tier)
             self.queue.task_done()
             print("{} done".format(self.count))
 
@@ -81,11 +83,11 @@ class Resource:
         self.org = find_organization(self.link)
         find_contact_info(self, self.link)
         # self.url_type = check_type(self.link)
-        #self.tld = find_suffix(self.link)
-        #self.country_code = find_country_code(self.link)
+        # self.tld = find_suffix(self.link)
+        # self.country_code = find_country_code(self.link)
         self.social_media = find_social_media(self.link)
 
-    def find_links(self, new_tier):
+    def find_links(self):
         if self.status is "working":
             soup = BeautifulSoup(urlopen(self.link).read())
             for link_tag in soup.find_all('a', href=True):
@@ -94,43 +96,20 @@ class Resource:
                     if check_link(new_url) is "working" and new_url != self.link:
                         if new_url not in self.links_found:
                             self.links_found.append(new_url)
-                            new_resource = Resource(new_url)
-                            new_resource.source_link = self.link
-                            new_tier.append(new_resource)
                 else:
                     if link_tag['href'] != self.link:
                         if link_tag['href'] not in self.links_found:
                             self.links_found.append(link_tag['href'])
-                            new_resource = Resource(link_tag['href'])
-                            new_resource.source_link = self.link
-                            new_tier.append(new_resource)
-        #self.links_found = list(set(self.links_found))
 
 # <editor-fold desc="Functions">
 
-"""
-for tag in soup.find_all('a', href=True):
-                if HTTP in tag['href'] and tag['href'] not in all_visited:
-                    resource = Resource(tag['href'])
-                else:
-                    if "javascript" not in tag['href']:
-                        # First try joining current page and part of link
-                        new_url = urljoin(url, tag['href'])
-                        resource = Resource(new_url)
-                if resource.status is "working" and resource.link not in visited:
-                    urls.append(resource.link)
-                    visited.append(resource.link)
-                    all_visited.append(resource.link)
-                    resource.get_resource_data()
-                    sub_resources[resource.title] = resource
-"""
 """
 name: crawl
 stack is stack of links
 """
 
 
-def crawl(stack):
+def crawl(stack, new_tier):
     while len(stack) > 0:
         # Make instance of Resource
         resource = Resource(stack.pop(0))
@@ -138,8 +117,7 @@ def crawl(stack):
             if resource.link not in visited:
                 resource.get_resource_data()
                 visited.append(resource.link)
-                #tier2[resource.title] = resource
-                tier2.append(resource)
+                new_tier.append(resource)
         else:
             brokenLinks.append(resource.link)
 
@@ -448,6 +426,71 @@ brokenLinks = []
 
 titles = []
 
+# Create excel file
+wb = Workbook()
+filename = 'Crawl_9_10.xlsx'
+
+# <editor-fold desc="Build org, country, social media">
+# List of organizations
+org_url = 'http://opr.ca.gov/s_listoforganizations.php'
+# List of country codes
+country_codes_url = 'http://www.thrall.org/domains.htm'
+social_media_url = 'http://en.wikipedia.org/wiki/List_of_social_networking_websites#L'
+
+# Check functioning of organizations list
+if check_link(org_url) is "working":
+    t = requests.get(org_url)
+    orgText = t.text
+    soupOrg = BeautifulSoup(orgText)
+    orgsOfficial = build_labels(soupOrg)
+
+    ws2 = wb.create_sheet()
+    ws2.title = 'List of Official Organizations'
+    if len(orgsOfficial) > 0:
+        start_row = ws2.get_highest_row() + 1
+        last_row = (start_row + len(orgsOfficial)) - 1
+        t = 0
+        for row in ws2.range('%s%s:%s%s' % ('A', start_row, 'A', last_row)):
+            for cell in row:
+                cell.value = orgsOfficial[t]
+                t += 1
+else:
+    print("Error with org url")
+
+# Check functioning of country codes list
+if check_link(country_codes_url) is "working":
+    s = requests.get(country_codes_url)
+    counText = s.text
+    soupCoun = BeautifulSoup(counText)
+    countriesOfficial = build_text(soupCoun)
+    countriesOfficial.append("EU - European Union")
+    # Get rid of first four, random values
+    for t in range(0, 4):
+        countriesOfficial.pop(0)
+
+    ws3 = wb.create_sheet()
+    ws3.title = 'List of Country Codes'
+    if len(countriesOfficial) > 0:
+        start_row = ws3.get_highest_row() + 1
+        last_row = (start_row + len(countriesOfficial)) - 1
+        t = 0
+        for row in ws3.range('%s%s:%s%s' % ('A', start_row, 'A', last_row)):
+            for cell in row:
+                cell.value = countriesOfficial[t]
+                t += 1
+else:
+    print("Error with country codes url")
+
+if check_link(social_media_url) is "working":
+    b = requests.get(social_media_url)
+    socText = b.text
+    soupSoc = BeautifulSoup(socText)
+    socialMedia = build_social_links(soupSoc)
+else:
+    print("Error with social media url")
+
+# </editor-fold>
+
 """
 Resources is the list of actual resources
 """
@@ -465,56 +508,11 @@ all_visited = []
 prompt = input("Enter 1) to crawl for data and find other links from a single start point. Enter 2) to "
                "scrape data from a list of links: ")
 mode = int(prompt)
+
+
 if mode is 1:
     start_url = input("Enter a start url: ")
     start_title = input("Enter a title for the start_url: ")
-    print("Crawling...")
-elif mode is 2:
-    url_list = input("Enter a list of urls, each on a different line: ")
-else:
-    re_prompt = input("Error: That integer is not an option. Please enter 1) to crawl from a single url or 2) to"
-                      "scrape data from a list of urls")
-
-# <editor-fold desc="Build org, country, social media">
-# List of organizations
-org_url = 'http://opr.ca.gov/s_listoforganizations.php'
-# List of country codes
-country_codes_url = 'http://www.thrall.org/domains.htm'
-social_media_url = 'http://en.wikipedia.org/wiki/List_of_social_networking_websites#L'
-
-# Check functioning of organizations list
-if check_link(org_url) is "working":
-    t = requests.get(org_url)
-    orgText = t.text
-    soupOrg = BeautifulSoup(orgText)
-    orgsOfficial = build_labels(soupOrg)
-else:
-    print("Error with org url")
-
-# Check functioning of country codes list
-if check_link(country_codes_url) is "working":
-    s = requests.get(country_codes_url)
-    counText = s.text
-    soupCoun = BeautifulSoup(counText)
-    countriesOfficial = build_text(soupCoun)
-    countriesOfficial.append("EU - European Union")
-    # Get rid of first four, random values
-    for t in range(0, 4):
-        countriesOfficial.pop(0)
-else:
-    print("Error with country codes url")
-
-if check_link(social_media_url) is "working":
-    b = requests.get(social_media_url)
-    socText = b.text
-    soupSoc = BeautifulSoup(socText)
-    socialMedia = build_social_links(soupSoc)
-else:
-    print("Error with social media url")
-
-# </editor-fold>
-
-if mode is 1:
     # If start_url is broken program exits
     if check_link(start_url) is not "working":
         print("Error with start url.")
@@ -526,24 +524,18 @@ if mode is 1:
     start_html = (requests.get(start_url)).text
     res0.title = build_title(start_url)
     res0.url_type = check_type(res0.link)
-    #tier0 = {res0.title: res0}
+    res0.find_links()
     tier0 = [res0]
-    tier1 = []
-    res0.find_links(tier1)
-    print(len(res0.links_found))
     # Set up for crawl
     resources.append(tier0)
-    tier2 = []
-    if len(tier1) > 0:
-        for each in tier1:
-            #tier1[each.title] = each
-            #t1_resource = Resource(each)
-            if each.status is "working":
-                each.get_resource_data()
-                each.find_links(tier2)
-            visited.append(each.link)
-        resources.append(tier1)
+    tier1 = []
+    print("Visiting each in tier1")
+    crawl(res0.links_found, tier1)
     print("Done visiting each in tier1")
+    for r in tier1:
+        r.find_links()
+    resources.append(tier1)
+    tier2 = []
     q = queue.Queue()
     crawl_time = time.clock()
     # Create pool of threads for each resource in tier1
@@ -555,26 +547,26 @@ if mode is 1:
 
     # Populate queue with links from tier1
     for res in tier1:
-        q.put(res.links_found)
+        q.put((res.links_found, tier2))
 
     # Wait until everything is processed
     q.join()
     resources.append(tier2)
     print('Finished crawl. {} process time'.format(time.clock() - crawl_time))
 elif mode is 2:
+    url_list = input("Enter a list of urls, each on a different line: ")
     for each in url_list:
         r = Resource(each)
         r.get_resource_data()
         resources.append(r)
+else:
+    re_prompt = input("Error: That integer is not an option. Please enter 1) to crawl from a single url or 2) to"
+                      "scrape data from a list of urls")
 
 for tier in resources:
     print(len(tier))
-# <editor-fold desc="Write to excel">
-print('Creating xlsx file')
-# Create excel file
-wb = Workbook()
-filename = 'CrawlAntarctica.xlsx'
 
+# <editor-fold desc="Write to excel">
 write_time0 = time.clock()
 if mode is 1:
     index = 0
@@ -604,31 +596,6 @@ else:
 
 write_time = time.clock() - write_time0
 print('Write time: {}'.format(write_time))
-
-
-# <editor-fold desc="Org and Country sheets">
-ws2 = wb.create_sheet()
-ws2.title = 'List of Official Organizations'
-if len(orgsOfficial) > 0:
-    start_row = ws2.get_highest_row() + 1
-    last_row = (start_row + len(orgsOfficial)) - 1
-    t = 0
-    for row in ws2.range('%s%s:%s%s' % ('A', start_row, 'A', last_row)):
-        for cell in row:
-            cell.value = orgsOfficial[t]
-            t += 1
-
-ws3 = wb.create_sheet()
-ws3.title = 'List of Country Codes'
-if len(countriesOfficial) > 0:
-    start_row = ws3.get_highest_row() + 1
-    last_row = (start_row + len(countriesOfficial)) - 1
-    t = 0
-    for row in ws3.range('%s%s:%s%s' % ('A', start_row, 'A', last_row)):
-        for cell in row:
-            cell.value = countriesOfficial[t]
-            t += 1
-# </editor-fold>
 # </editor-fold>
 
 print('broken links: {}'.format(brokenLinks))
