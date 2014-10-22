@@ -186,7 +186,6 @@ def visible(element):
         return False
     return True
 
-
 def find_themes(url):
     disciplines_found = []
     set_of_disciplines = set()
