@@ -482,129 +482,132 @@ tiers = []
 
 all_visited = []
 
-prompt = input("Enter 1) to crawl for data and find other links from a single start point. Enter 2) to "
-               "scrape data from a list of links: ")
+prompt = input("Enter 1 if you have made a text file with each link separated by a newline or a comma. ")
 mode = int(prompt)
 
-
 if mode is 1:
-    start_url = input("Enter a start url to begin crawl: ")
-    # If start_url is broken program exits
-    if check_link(start_url) is not "working":
-        print("Error with start url.")
-        exit()
-
-    # Create first resource
-    res0 = Resource(start_url)
-    visited.append(start_url)
-    res0.text = BeautifulSoup(urlopen(start_url).read())
-    print("Crawling...")
-    # Scrape source url
-    res0.get_resource_data()
-    # Find links on source url web page,
-    # will be crawled and become tier1
-    res0.find_links()
-    print("Length of res0.links_found: {}".format(len(res0.links_found)))
-    tier0 = [res0]
-    # Set up for crawl
-    resources.append(tier0)
-    tier1 = []
-
-    # Number of threads for second layer (tier1)
-    t1_num_threads = 4
-    wait = 0
-
-    # Create a size based on length of links found
-    chunksize = int((len(res0.links_found))/t1_num_threads)
-    threads = []
-
-    # Pass in chunks of res0.links_found to threads to be processed
-    for i in range(t1_num_threads):
-        t = Thread(res0.links_found[chunksize*i:(chunksize*(i+1))], tier1, i, wait)
-        threads.append(t)
-        t.start()
-
-    # Wait for all threads to finish
-    # Tier1 should be populated with resources
-    for t in threads:
-        t.join()
-
-    # process remaining links
-    remains = []
-    remaining = len(res0.links_found) % t1_num_threads
-    rem = (len(res0.links_found) - remaining)
-    for rem in range(len(res0.links_found)):
-        remains.append(res0.links_found[rem])
-    crawl(remains, tier1, wait)
-
-    print("Length tier1: {}".format(len(tier1)))
-    # To hold the links found in third layer
-    tier2_links = []
-
-    # Find links on the pages in tier1
-    for r in tier1:
-        r.find_links()
-        if r.links_found is not None:
-            tier2_links.extend(r.links_found)
-
-    # Add tier1 to resources
-    resources.append(tier1)
-    tier2 = []
-
-    # Queue for third layer processing
-    q = queue.Queue()
-    crawl_time = time.clock()
-    print("Gathering data from pages...")
-
-    # Create pool of threads, more threads since
-    # third layer is larger, naturally
-    # Pass queue instance and thread count
-    wait = 30
-    t2_num_threads = 10
-    for j in range(t2_num_threads):
-        thread = ThreadClass(q, j, wait)
-        thread.setDaemon(True)
-        thread.start()
-
-    size = int((len(tier2_links))/t2_num_threads)
-    # Populate queue with chunks of links
-    # Will be passed into crawl
-    for k in range(t2_num_threads):
-        q.put((tier2_links[(size*k):(size*(k+1))], tier2))
-    # TODO: fix 429 Too many requests
-
-    # Wait until everything is processed
-    q.join()
-    resources.append(tier2)
-    print('Finished crawl. {} process time'.format(time.clock() - crawl_time))
-elif mode is 2:
-    url_list = input("Enter a list of urls, each on a different line: ")
+    print("Found list")
+    url_list = []
+    f = open('ListOfLinks.txt', 'r')
+    for link in f:
+        url_list.append(link)
     for each in url_list:
         r = Resource(each)
         r.get_resource_data()
         resources.append(r)
 else:
-    re_prompt = input("Error: That integer is not an option. Please enter 1) to crawl from a single url or 2) to"
-                      "scrape data from a list of urls")
+    re_prompt = input("Error: Please add the correct text file.")
+# if mode is 1:
+#     f = open('ListOfLinks', 'r')
+#     start_url = f.readLine()
+#     # If start_url is broken program exits
+#     if check_link(start_url) is not "working":
+#         print("Error with start url.")
+#         exit()
+#
+#     # Create first resource
+#     res0 = Resource(start_url)
+#     visited.append(start_url)
+#     res0.text = BeautifulSoup(urlopen(start_url).read())
+#     print("Crawling...")
+#     # Scrape source url
+#     res0.get_resource_data()
+#     # Find links on source url web page,
+#     # will be crawled and become tier1
+#     res0.find_links()
+#     print("Length of res0.links_found: {}".format(len(res0.links_found)))
+#     tier0 = [res0]
+#     # Set up for crawl
+#     resources.append(tier0)
+#     tier1 = []
+#
+#     # Number of threads for second layer (tier1)
+#     t1_num_threads = 4
+#     wait = 0
+#
+#     # Create a size based on length of links found
+#     chunksize = int((len(res0.links_found))/t1_num_threads)
+#     threads = []
+#
+#     # Pass in chunks of res0.links_found to threads to be processed
+#     for i in range(t1_num_threads):
+#         t = Thread(res0.links_found[chunksize*i:(chunksize*(i+1))], tier1, i, wait)
+#         threads.append(t)
+#         t.start()
+#
+#     # Wait for all threads to finish
+#     # Tier1 should be populated with resources
+#     for t in threads:
+#         t.join()
+#
+#     # process remaining links
+#     remains = []
+#     remaining = len(res0.links_found) % t1_num_threads
+#     rem = (len(res0.links_found) - remaining)
+#     for rem in range(len(res0.links_found)):
+#         remains.append(res0.links_found[rem])
+#     crawl(remains, tier1, wait)
+#
+#     print("Length tier1: {}".format(len(tier1)))
+#     # To hold the links found in third layer
+#     tier2_links = []
+#
+#     # Find links on the pages in tier1
+#     for r in tier1:
+#         r.find_links()
+#         if r.links_found is not None:
+#             tier2_links.extend(r.links_found)
+#
+#     # Add tier1 to resources
+#     resources.append(tier1)
+#     tier2 = []
+#
+#     # Queue for third layer processing
+#     q = queue.Queue()
+#     crawl_time = time.clock()
+#     print("Gathering data from pages...")
+#
+#     # Create pool of threads, more threads since
+#     # third layer is larger, naturally
+#     # Pass queue instance and thread count
+#     wait = 30
+#     t2_num_threads = 10
+#     for j in range(t2_num_threads):
+#         thread = ThreadClass(q, j, wait)
+#         thread.setDaemon(True)
+#         thread.start()
+#
+#     size = int((len(tier2_links))/t2_num_threads)
+#     # Populate queue with chunks of links
+#     # Will be passed into crawl
+#     for k in range(t2_num_threads):
+#         q.put((tier2_links[(size*k):(size*(k+1))], tier2))
+#     # TODO: fix 429 Too many requests
+#
+#     # Wait until everything is processed
+#     q.join()
+#     resources.append(tier2)
+#     print('Finished crawl. {} process time'.format(time.clock() - crawl_time))
+
 
 for tier in resources:
     print(len(tier))
 
 # <editor-fold desc="Write to excel">
 write_time0 = time.clock()
+# if mode is 1:
+#     index = 0
+#     for tier in resources:
+#         if tier is not None and len(tier) > 0:
+#             ws = wb.create_sheet(index, str(index))
+#             make_headers(ws)
+#             for value in tier:
+#                 row = ws.get_highest_row() + 1
+#                 write_resource(ws, row, value)
+#         else:
+#             continue
+#         index += 1
 if mode is 1:
-    index = 0
-    for tier in resources:
-        if tier is not None and len(tier) > 0:
-            ws = wb.create_sheet(index, str(index))
-            make_headers(ws)
-            for value in tier:
-                row = ws.get_highest_row() + 1
-                write_resource(ws, row, value)
-        else:
-            continue
-        index += 1
-elif mode is 2:
     index = 0
     ws = wb.create_sheet(index, str(index))
     make_headers(ws)
