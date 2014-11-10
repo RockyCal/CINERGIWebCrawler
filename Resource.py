@@ -1,7 +1,6 @@
 __author__ = 'Anoushka'
 
 from check_link import check_link
-from crawler_base import brokenLinks
 import tldextract
 from find_disciplines import find_themes
 from bs4 import BeautifulSoup
@@ -33,7 +32,6 @@ class Resource:
                     self.link = link
                     self.status = link_status
             else:
-                brokenLinks.append(url)
                 self.link = link_status
                 self.status = link_status
 
@@ -80,4 +78,3 @@ class Resource:
                                 self.links_found.append(link_tag['href'])
             except URLError as e:
                 self.status = "{} {} {}".format(self.link, e.reason)
-                brokenLinks.append(self.link)

@@ -1,10 +1,10 @@
-# from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup
 import requests
 # import re
 import queue
 from openpyxl import Workbook, cell
 # from openpyxl.styles import Style, Font
-# from urllib.request import urlopen, Request
+from urllib.request import urlopen, Request
 # from urllib.error import URLError
 # import urllib.parse
 # import tldextract
@@ -15,7 +15,7 @@ from write import write_resource
 import time
 # from urllib.parse import urljoin
 # from build_title import build_title
-# from check_link import check_link
+from check_link import check_link
 # from check_type import check_type
 # from find_contact_info import find_contact_info
 # from find_disciplines import find_themes
@@ -30,7 +30,7 @@ from make_headers import make_headers
 # from find_home_page import find_home_page
 from build_text import build_text
 from build_labels import build_labels
-from Resource import *
+from Resource import Resource
 # <editor-fold desc="Protocol constants">
 HTTP = 'http://'
 preFTP = 'ftp://'
@@ -95,9 +95,7 @@ visited = []
 # Total working links found
 urls = []
 # Total broken links
-brokenLinks = []
 
-titles = []
 
 # Create excel file
 wb = Workbook()
@@ -181,134 +179,108 @@ if mode is 1:
     f = open('ListOfLinks.txt', 'r')
     for link in f:
         url_list.append(link)
-    # for each in url_list:
-    #     r = Resource(each)
-    #     r.get_resource_data()
-    #     resources.append(r)
-else:
-    re_prompt = input("Error: Please add the correct text file.")
-
-if mode is 1:
-    f = open('ListOfLinks', 'r')
-    start_url = f.readLine()
-    # If start_url is broken program exits
-    if check_link(start_url) is not "working":
-        print("Error with start url.")
-        exit()
-
-    for each in url_list:
-        r = Resource(each)
+        print(link)
+        r = Resource(link)
+        print(r)
         r.get_resource_data()
         resources.append(r)
+        links = r.find_links()
+        if links is not None:
+            print("Not none")
+            for each2 in links:
+                r.links_found.append(each2)
 
-        visited.append(each)
-        tier0.append(r)
-        resources.append(r)
+                visited.append(link)
+                tier0.append(r)
+                resources.append(r)
 
-        # Number of threads for second layer (tier1)
-        t1_num_threads = 4
-        wait = 0
+                # Number of threads for second layer (tier1)
+                t1_num_threads = 2
+                wait = 0
 
-        # Create a size based on length of links found
-        chunksize = int((len(r.links_found))/t1_num_threads)
-        threads = []
+                # Create a size based on length of links found
+                chunksize = int((len(r.links_found))/t1_num_threads)
+                threads = []
 
-        # Pass in chunks of res0.links_found to threads to be processed
-        for i in range(t1_num_threads):
-            t = Thread(r.links_found[chunksize*i:(chunksize*(i+1))], tier1, i, wait)
-            threads.append(t)
-            t.start()
+                # Pass in chunks of res0.links_found to threads to be processed
+                for i in range(t1_num_threads):
+                    t = Thread(r.links_found[chunksize*i:(chunksize*(i+1))], tier1, i, wait)
+                    threads.append(t)
+                    t.start()
 
-        # Wait for all threads to finish
-        # Tier1 should be populated with resources
-        for t in threads:
-            t.join()
+                # Wait for all threads to finish
+                # Tier1 should be populated with resources
+                for t in threads:
+                    t.join()
 
-        # process remaining links
-        remains = []
-        remaining = len(r.links_found) % t1_num_threads
-        rem = (len(r.links_found) - remaining)
-        for rem in range(len(r.links_found)):
-            remains.append(r.links_found[rem])
-        crawl(remains, tier1, wait)
+                # process remaining links
+                remains = []
+                remaining = len(r.links_found) % t1_num_threads
+                rem = (len(r.links_found) - remaining)
+                for rem in range(len(r.links_found)):
+                    remains.append(r.links_found[rem])
+                crawl(remains, tier1, wait)
 
-        print("Length tier1: {}".format(len(tier1)))
-        # To hold the links found in third layer
-        tier2_links = []
+                print("Length tier1: {}".format(len(tier1)))
+                # To hold the links found in third layer
+                tier2_links = []
 
-        # Find links on the pages in tier1
-        for r in tier1:
-            r.find_links()
-            if r.links_found is not None:
-                tier2_links.extend(r.links_found)
+                # Find links on the pages in tier1
+                for r in tier1:
+                    r.find_links()
+                    if r.links_found is not None:
+                        tier2_links.extend(r.links_found)
 
-        # Add tier1 to resources
-        resources.append(tier1)
-        tier2 = []
+                # Add tier1 to resources
+                resources.append(tier1)
+                tier2 = []
 
-        # Queue for third layer processing
-        q = queue.Queue()
-        crawl_time = time.clock()
-        print("Gathering data from pages...")
+                # Queue for third layer processing
+                q = queue.Queue()
+                crawl_time = time.clock()
+                print("Gathering data from pages...")
 
-        # Create pool of threads, more threads since
-        # third layer is larger, naturally
-        # Pass queue instance and thread count
-        wait = 30
-        t2_num_threads = 10
-        for j in range(t2_num_threads):
-            thread = ThreadClass(q, j, wait)
-            thread.setDaemon(True)
-            thread.start()
+                # Create pool of threads, more threads since
+                # third layer is larger, naturally
+                # Pass queue instance and thread count
+                wait = 30
+                t2_num_threads = 10
+                for j in range(t2_num_threads):
+                    thread = ThreadClass(q, j, wait)
+                    thread.setDaemon(True)
+                    thread.start()
 
-        size = int((len(tier2_links))/t2_num_threads)
-        # Populate queue with chunks of links
-        # Will be passed into crawl
-        for k in range(t2_num_threads):
-            q.put((tier2_links[(size*k):(size*(k+1))], tier2))
-        # TODO: fix 429 Too many requests
+                size = int((len(tier2_links))/t2_num_threads)
+                # Populate queue with chunks of links
+                # Will be passed into crawl
+                for k in range(t2_num_threads):
+                    q.put((tier2_links[(size*k):(size*(k+1))], tier2))
+                # TODO: fix 429 Too many requests
 
-        # Wait until everything is processed
-        q.join()
-        resources.append(tier2)
-        print('Finished crawl. {} process time'.format(time.clock() - crawl_time))
+                # Wait until everything is processed
+                q.join()
+                resources.append(tier2)
+      #  print('Finished crawl. {} process time'.format(time.clock() - crawl_time))
+        print("Finished crawl")
 
-
-for tier in resources:
-    print(len(tier))
+#
+# for tier in resources:
+#     print(len(tier))
 
 # <editor-fold desc="Write to excel">
 write_time0 = time.clock()
-# if mode is 1:
-#     index = 0
-#     for tier in resources:
-#         if tier is not None and len(tier) > 0:
-#             ws = wb.create_sheet(index, str(index))
-#             make_headers(ws)
-#             for value in tier:
-#                 row = ws.get_highest_row() + 1
-#                 write_resource(ws, row, value)
-#         else:
-#             continue
-#         index += 1
-if mode is 1:
-    index = 0
-    ws = wb.create_sheet(index, str(index))
-    make_headers(ws)
-    row = ws.get_highest_row() + 1
-    term_links = []
-    for tier in resources:
-        for item in tier:
-            write_resource(ws, row, item)
-            index += 1
-else:
-    print("Error in write processing")
-    exit()
+index = 0
+ws = wb.create_sheet(index, str(index))
+make_headers(ws)
+row = ws.get_highest_row() + 1
+term_links = []
+for tier in resources:
+        write_resource(ws, row, tier)
+        index += 1
+        row += 1
 
 write_time = time.clock() - write_time0
 print('Write time: {}'.format(write_time))
 # </editor-fold>
-
-print('broken links: {}'.format(brokenLinks))
 
 wb.save(filename+".xlsx")
