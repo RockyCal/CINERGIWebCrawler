@@ -183,23 +183,29 @@ if mode is 1:
         r = Resource(link)
         print(r)
         r.get_resource_data()
-        resources.append(r)
-        links = r.find_links()
+        tier0.append(r)
+        resources.append(tier0)
+        r.find_links()
+        links = r.links_found
+     #   for each in links:
+         #   print(each)
         if links is not None:
             print("Not none")
             for each2 in links:
-                r.links_found.append(each2)
+              #  print(each2)
+                t = Resource(each2)
+                t.get_resource_data()
 
-                visited.append(link)
-                tier0.append(r)
-                resources.append(r)
+                visited.append(each2)
+                tier1.append(t)
+                resources.append(tier1)
 
                 # Number of threads for second layer (tier1)
-                t1_num_threads = 2
+                t1_num_threads = 1
                 wait = 0
 
                 # Create a size based on length of links found
-                chunksize = int((len(r.links_found))/t1_num_threads)
+                chunksize = int((len(links))/t1_num_threads)
                 threads = []
 
                 # Pass in chunks of res0.links_found to threads to be processed
@@ -244,7 +250,7 @@ if mode is 1:
                 # third layer is larger, naturally
                 # Pass queue instance and thread count
                 wait = 30
-                t2_num_threads = 10
+                t2_num_threads = 2
                 for j in range(t2_num_threads):
                     thread = ThreadClass(q, j, wait)
                     thread.setDaemon(True)
@@ -275,9 +281,12 @@ make_headers(ws)
 row = ws.get_highest_row() + 1
 term_links = []
 for tier in resources:
-        write_resource(ws, row, tier)
-        index += 1
+    for item in tier:
+        write_resource(ws, row, item)
         row += 1
+    index += 1
+    row = 1
+    ws = wb.create_sheet(index, str(index))
 
 write_time = time.clock() - write_time0
 print('Write time: {}'.format(write_time))
