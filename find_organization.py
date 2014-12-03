@@ -1,11 +1,5 @@
 __author__ = 'Anoushka'
 from build_title import build_title
-from urllib.parse import urljoin
-from bs4 import BeautifulSoup
-from visible import visible
-from urllib.request import urlopen
-import urllib.parse
-import re
 
 def find_organization(url):
     basic_org = build_title(url)
