@@ -1,33 +1,13 @@
 from bs4 import BeautifulSoup
 import requests
-# import re
 import queue
 from openpyxl import Workbook, cell
-# from openpyxl.styles import Style, Font
 from urllib.request import urlopen, Request
-# from urllib.error import URLError
-# import urllib.parse
-# import tldextract
 import threading
-# from disciplines_known import disciplinesKnown
-# from resourceTypes import resourceTypesKnown
 from write import write_resource
 import time
-# from urllib.parse import urljoin
-# from build_title import build_title
 from check_link import check_link
-# from check_type import check_type
-# from find_contact_info import find_contact_info
-# from find_disciplines import find_themes
-# from find_links import find_links
-# from find_organization import find_organization
-# from find_resource_types import find_resource_types
-# from find_social_media import find_social_media
-# from visible import visible
 from make_headers import make_headers
-# from find_suffix import find_suffix
-# from link_type import link_type
-# from find_home_page import find_home_page
 from build_text import build_text
 from build_labels import build_labels
 from Resource import Resource
