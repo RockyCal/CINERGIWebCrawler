@@ -9,7 +9,7 @@ from urllib.error import URLError
 from urllib.parse import urljoin
 from build_title import build_title
 from find_resource_types import find_resource_types
-from find_organization import find_organization
+from Organization import Organization
 import re
 
 
@@ -40,18 +40,21 @@ class Resource:
     status = "No status"
     resource_type = ""
     themes = ""
-    org = "Organization not found"
+    org = "No organization found"
     resource_contact_person_name = "No contact individual found"
     resource_contact_org = "No contact org"
     resource_contact_email = "No contact email"
     resource_contact_phone = "No contact phone"
     links_found = []
 
+    def get_org(self):
+        return self.org.string
+
     def get_resource_data(self):
         self.title = build_title(self.link)
         self.resource_type = find_resource_types(self.link)
         self.themes = find_themes(self.link)
-        self.org = find_organization(self.link)
+        self.find_organization()
         self.find_contact_info()
 
     def find_links(self):
@@ -108,3 +111,19 @@ class Resource:
             email = page.find(text=re.compile('[A-Za-z0-9-._]+(@|\(at\)| at )+[A-Za-z0-9-._]+\.[A-Za-z0-9-._]+'))
             if email is not None:
                 self.resource_contact_email = email
+
+    def find_organization(self):
+        # search home page
+        soup = BeautifulSoup(urlopen(self.link).read())
+        home = soup.find('a', {'href': '/index.php'})
+        if home is None:
+            home = soup.find('a', text=re.compile('(H|h)ome'))
+
+        if home is None or not home.has_attr('href'):
+            return
+        else:
+            home_url = urljoin(self.get_base(), home['href'])
+            homepage = BeautifulSoup(urlopen(home_url).read())
+            org = homepage.find('title').text
+            self.org = Organization(org)
+            self.org.validate_in_viaf()

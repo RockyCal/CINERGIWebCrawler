@@ -1,14 +1,6 @@
-from bs4 import BeautifulSoup
-import requests
-from openpyxl import Workbook, cell
 from urllib.request import urlopen
 import threading
-from write import write_resource
 import time
-from check_link import check_link
-from make_headers import make_headers
-from build_text import build_text
-from build_labels import build_labels
 from Resource import Resource
 
 
@@ -87,45 +79,16 @@ print(resource.title)
 print(resource.status)
 print(resource.resource_type)
 print(resource.themes)
-print(resource.org)
+print(resource.get_org())
+print(resource.org.validated)
+if resource.org.validated:
+    print(resource.org.uri)
 print(resource.resource_contact_org)
 print(resource.resource_contact_person_name)
 print(resource.resource_contact_email)
 print(resource.resource_contact_phone)
 
-# <editor-fold desc="country">
-
-# List of country codes
-#country_codes_url = 'http://www.thrall.org/domains.htm'
-
-"""
-# Check functioning of country codes list
-if check_link(country_codes_url) is "working":
-    s = requests.get(country_codes_url)
-    counText = s.text
-    soupCoun = BeautifulSoup(counText)
-    countriesOfficial = build_text(soupCoun)
-    countriesOfficial.append("EU - European Union")
-    # Get rid of first four, random values
-    for t in range(0, 4):
-        countriesOfficial.pop(0)
-
-    ws3 = wb.create_sheet()
-    ws3.title = 'List of Country Codes'
-    if len(countriesOfficial) > 0:
-        start_row = ws3.get_highest_row() + 1
-        last_row = (start_row + len(countriesOfficial)) - 1
-        t = 0
-        for row in ws3.range('%s%s:%s%s' % ('A', start_row, 'A', last_row)):
-            for cell in row:
-                cell.value = countriesOfficial[t]
-                t += 1
-else:
-    print("Error with country codes url")
-"""
-
-# </editor-fold>
-
+# TODO: fix up accuracy of find_resource_types and find_disciplines
 # <editor-fold desc="Write to excel">
 """
 write_time0 = time.clock()
@@ -147,4 +110,3 @@ print('Write time: {}'.format(write_time))
 wb.save(filename+".xlsx")
 """
 # </editor-fold>
-
