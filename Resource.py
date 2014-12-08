@@ -20,20 +20,9 @@ class Resource:
             self.link = url
             self.status = link_status
         else:
-            if 'www' not in url:
-                ext_url = tldextract.extract(url)
-                url_sub = ext_url.subdomain
-                url_dom = ext_url.domain
-                suff = url.split(ext_url.suffix)
-                url_suff = ext_url.suffix + suff[1]
-                link = "http://www." + url_sub + url_dom + "." + url_suff
-                link_status = check_link(link)
-                if link_status is "working":
-                    self.link = link
-                    self.status = link_status
-            else:
-                self.link = link_status
-                self.status = link_status
+            print("Error with url.")
+            print("Please check your link (perhaps use http://www...) and try again")
+            exit()
 
     text = ""
     title = "No title"
