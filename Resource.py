@@ -20,6 +20,7 @@ class Resource:
             self.link = url
             self.status = link_status
         else:
+            print(self.status)
             print("Error with url.")
             print("Please check your link (perhaps use http://www...) and try again")
             exit()
