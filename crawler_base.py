@@ -1,6 +1,3 @@
-from urllib.request import urlopen
-import threading
-import time
 from Resource import Resource
 
 
@@ -8,53 +5,6 @@ from Resource import Resource
 HTTP = 'http://'
 preFTP = 'ftp://'
 # </editor-fold>
-
-
-class Thread(threading.Thread):
-    def __init__(self, stack, tier, count, delay):
-        threading.Thread.__init__(self)
-        self.stack = stack
-        self.tier = tier
-        self.count = count
-        self.delay = delay
-
-    def run(self):
-        crawl(self.stack, self.tier, self.delay)
-
-
-class ThreadClass(threading.Thread):
-    def __init__(self, que, count, delay):
-        threading.Thread.__init__(self)
-        self.queue = que
-        self.count = count
-        self.delay = delay
-
-    def run(self):
-        while True:
-            items = self.queue.get()
-            stack = items[0]
-            new_tier = items[1]
-            crawl(stack, new_tier, self.delay)
-            self.queue.task_done()
-
-
-"""
-name: crawl
-stack is stack of links
-"""
-
-
-def crawl(stack, new_tier, delay):
-    while len(stack) > 0:
-        # Make instance of Resource
-        resource = Resource(stack.pop(0))
-        if resource.status is "working":
-            urlopen(resource.link)
-            if resource.link not in visited:
-                resource.get_resource_data()
-                visited.append(resource.link)
-                new_tier.append(resource)
-        time.sleep(delay)
 
 """
 Program begins.
@@ -74,19 +24,19 @@ url = input("Enter url to crawl: ")
 
 resource = Resource(url)
 resource.get_resource_data()
-print(resource.link)
-print(resource.title)
-print(resource.status)
-print(resource.resource_type)
-print(resource.themes)
-print(resource.get_org())
-print(resource.org.validated)
+print("Resource url: " + resource.link)
+print("Resource title: " + resource.title)
+print("Resource link status: " + resource.status)
+print("Resource types detected: " + resource.resource_type)
+print("Resource disciplines: " + resource.themes)
+print("Resource organization: " + resource.get_org())
+print("Organization validated in VIAF: {}".format(resource.org.validated))
 if resource.org.validated:
-    print(resource.org.uri)
-print(resource.resource_contact_org)
-print(resource.resource_contact_person_name)
-print(resource.resource_contact_email)
-print(resource.resource_contact_phone)
+    print("Organization VIAF id: {} ".format(resource.org.uri))
+print("Resource contact organization: " + resource.resource_contact_org)
+print("Resource contact person name: " + resource.resource_contact_person_name)
+print("Resource contact email: " + resource.resource_contact_email)
+print("Resource contact phone: " + resource.resource_contact_phone)
 
 # TODO: fix up accuracy of find_resource_types and find_disciplines
 # <editor-fold desc="Write to excel">
