@@ -10,7 +10,8 @@ git clone https://github.com/RockyCal/CINERGIWebCrawler.git
 cd CINERGIWebCrawler
 python3.4 crawler_base.py
 
-Prompt will appear:
+Prompt will appear,
+
 Enter url to crawl:
 
 Enter a valid url to crawl for organization, resource type,  discipline (field of science) and contact info
