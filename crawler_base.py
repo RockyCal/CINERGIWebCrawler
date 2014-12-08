@@ -1,4 +1,5 @@
 from Resource import Resource
+import csv
 
 
 # <editor-fold desc="Protocol constants">
@@ -18,27 +19,28 @@ resources = []
 
 
 # Create excel file
-#wb = Workbook()
-#filename = input("Enter a title for the excel file: ")
+# wb = Workbook()
+# filename = input("Enter a title for the excel file: ")
 url = input("Enter url to crawl: ")
 
 resource = Resource(url)
 resource.get_resource_data()
-print("Resource url: " + resource.link)
-print("Resource title: " + resource.title)
-print("Resource link status: " + resource.status)
-print("Resource types detected: " + resource.resource_type)
-print("Resource disciplines: " + resource.themes)
-print("Resource organization: " + resource.get_org())
-print("Organization validated in VIAF: {}".format(resource.org.validated))
-if resource.org.validated:
-    print("Organization VIAF id: {} ".format(resource.org.uri))
-print("Resource contact organization: " + resource.resource_contact_org)
-print("Resource contact person name: " + resource.resource_contact_person_name)
-print("Resource contact email: " + resource.resource_contact_email)
-print("Resource contact phone: " + resource.resource_contact_phone)
+resource_values = {'title': resource.title, 'url': resource.link, 'link status': resource.status,
+                   'resource types': resource.resource_type, 'disciplines': resource.themes,
+                   'organization': resource.get_org(), 'organization validated in VIAF': resource.org.validated,
+                   'VIAF uri': resource.org.uri, 'contact organization': resource.resource_contact_org,
+                   'contact name': resource.resource_contact_person_name,
+                   'contact email': resource.resource_contact_email, 'contact phone': resource.resource_contact_phone}
 
-# TODO: fix up accuracy of find_resource_types and find_disciplines
+fieldnames = ['title', 'url', 'link status', 'resource types', 'disciplines', 'organization',
+              'organization validated in VIAF', 'VIAF uri', 'contact organization', 'contact name', 'contact email',
+              'contact phone']
+
+with open('{}.csv'.format(resource.title), 'w') as csvfile:
+    writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+    writer.writeheader()
+    writer.writerow(resource_values)
+
 # <editor-fold desc="Write to excel">
 """
 write_time0 = time.clock()
