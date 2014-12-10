@@ -20,8 +20,9 @@ class Resource:
             self.link = url
             self.status = link_status
         else:
-            print(self.status)
             print("Error with url.")
+            self.status = link_status
+            print(self.status)
             print("Please check your link (perhaps use http://www...) and try again")
             exit()
 
@@ -31,6 +32,7 @@ class Resource:
     resource_type = ""
     themes = ""
     org = "No organization found"
+    validated = False
     resource_contact_person_name = "No contact individual found"
     resource_contact_org = "No contact org"
     resource_contact_email = "No contact email"
@@ -38,7 +40,7 @@ class Resource:
     links_found = []
 
     def get_org(self):
-        return self.org.string
+        return self.org.name
 
     def get_resource_data(self):
         self.title = build_title(self.link)
@@ -110,7 +112,7 @@ class Resource:
             home = soup.find('a', text=re.compile('(H|h)ome'))
 
         if home is None or not home.has_attr('href'):
-            return
+            self.org = Organization("No organization found")
         else:
             home_url = urljoin(self.get_base(), home['href'])
             homepage = BeautifulSoup(urlopen(home_url).read())

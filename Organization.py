@@ -16,9 +16,10 @@ all_viaf = 'all'
 
 
 class Organization:
-    def __init__(self, name):
-        self.name = name
-        self.string = '{}'.format(name)
+    def __init__(self, title):
+        no_home_stuff = re.sub('(\s*((H|h)ome)\s*|(W|w)elcome\s*)', '', title)
+        self.name = re.sub('[^a-zA-Z0-9 -]', '', no_home_stuff)
+        self.string = '{}'.format(self.name)
     link = ''
     uri = ''
     validated = False
@@ -48,7 +49,8 @@ class Organization:
             ctitle = cluster.find('{http://viaf.org/viaf/terms#}mainHeadings').find('{http://viaf.org/viaf/terms#}data').\
                 find('{http://viaf.org/viaf/terms#}text')
             # Find a generic match
-            if re.search(u'{0:s} \(.*\)$'.format(self.string), str(ctitle.text)) is not None:
+            search_term = re.compile('{}( \(.*\)$)*'.format(self.string), re.IGNORECASE)
+            if re.search(search_term, str(ctitle.text)) is not None:
                 viaf_id = cluster.find('{http://viaf.org/viaf/terms#}viafID')
                 if viaf_id is not None:
                     self.uri = viaf_id.text

@@ -62,7 +62,7 @@ disciplinesKnown = {'Agriculture': ["agriculture", "farming", 'Agronomics', 'Agr
                     'Mineralogy': ['Petrology', 'Geochemistry', 'Crystallography', 'Gemology'],
                     'Mining': ['Drilling', 'Coring', 'Digging', 'Surface/Underground Mining', 'Asteroid Mining',
                                'Extractive Metallurgy', 'Mineral Processing', 'Geometallurgy'],
-                    'Oceanography': ['Marine Biology', 'Marine Geolog', 'Bathymetry', 'Paleoceanography',
+                    'Oceanography': ['Ocean', 'Marine Biology', 'Marine Geolog', 'Bathymetry', 'Paleoceanography',
                                      'Chemical Oceanography', 'Physical Oceanography'],
                     'Paleobiology': ['Paleontology', 'Paleobotany', 'Micropaleontology'],
                     'Paleontology': ['Fossil Collecting', 'Radiometric Dating', 'Natural History', 'Evolution'],
@@ -82,4 +82,4 @@ disciplinesKnown = {'Agriculture': ["agriculture", "farming", 'Agronomics', 'Agr
                     'Spatial': ['Geographic Data', 'Metadata', 'Data Systems', 'GIS', 'Satellite', 'LIDAR',
                                 'Geospatial'],
                     'Taxonomy': ['Biological Classification', 'Biological Species', 'Systematics'],
-                    'Topography': ['Elevation and derived products', 'Altimetry', 'Bathymetry']}
+                    'Topography': ['Topography', 'Elevation and derived products', 'Altimetry', 'Bathymetry']}
