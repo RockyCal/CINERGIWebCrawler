@@ -17,7 +17,7 @@ all_viaf = 'all'
 
 class Organization:
     def __init__(self, title):
-        no_home_stuff = re.sub('(\s*((H|h)ome)\s*|(W|w)elcome\s*)', '', title)
+        no_home_stuff = re.sub('(\s*((H|h)ome)\s*|(W|w)elcome\s*|((T|t)he)\s*)', '', title)
         self.name = re.sub('[^a-zA-Z0-9 -]', '', no_home_stuff)
         self.string = '{}'.format(self.name)
     link = ''
