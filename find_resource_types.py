@@ -17,6 +17,6 @@ def find_resource_types(url):
                 set_of_resources.add(key)
     resos_found = list(set_of_resources)
     if len(resos_found) > 0:
-        return "".join(resos_found)
+        return ", ".join(resos_found)
     else:
         return 'None'
