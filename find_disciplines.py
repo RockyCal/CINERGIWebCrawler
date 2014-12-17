@@ -29,6 +29,6 @@ def find_themes(url):
         # Turn the set of domains back into a list
         disciplines_found = list(set_of_disciplines)
     if len(disciplines_found) > 0:
-        return ", ".join(disciplines_found)
+        return " - ".join(disciplines_found)
     else:
         return 'No disciplines found'
