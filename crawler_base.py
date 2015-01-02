@@ -36,7 +36,7 @@ fieldnames = ['title', 'url', 'link status', 'resource types', 'disciplines', 'o
               'organization validated in VIAF', 'VIAF uri', 'contact organization', 'contact name', 'contact email',
               'contact phone']
 
-with open('{}.csv'.format(resource.title), 'w') as csvfile:
+with open('{}.csv'.format(resource.title.replace("|", "").replace(" ", "_")), 'w') as csvfile:
     writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
     writer.writeheader()
     writer.writerow(resource_values)
