@@ -7,11 +7,9 @@ from bs4 import BeautifulSoup
 from urllib.request import urlopen
 from urllib.error import URLError
 from urllib.parse import urljoin
-from build_title import build_title
 from find_resource_types import find_resource_types
-from Organization import Organization
+from Organization import Organization, generic_terms
 import re
-
 
 class Resource:
     def __init__(self, url):
@@ -43,11 +41,24 @@ class Resource:
         return self.org.name
 
     def get_resource_data(self):
-        self.title = build_title(self.link)
+        self.build_title()
         self.resource_type = find_resource_types(self.link)
         self.themes = find_themes(self.link)
         self.find_organization()
         self.find_contact_info()
+
+    def build_title(self):
+        page_text = BeautifulSoup(urlopen(self.link).read())
+        title = page_text.find('title', text=True)
+        if title is not None:
+            if title.has_attr('string'):
+                no_generics = re.sub(generic_terms, '', title.string)
+                self.title = re.sub('[^a-zA-Z0-9 -]', '', no_generics)
+            else:
+                no_generics = re.sub(generic_terms, '', title.text)
+                self.title = re.sub('[^a-zA-Z0-9 -]', '', no_generics)
+        else:
+            self.title = 'No title'
 
     def find_links(self):
         if self.status is "working":

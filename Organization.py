@@ -14,10 +14,11 @@ corporate_names = 'local.corporateNames'
 # String for searching all of viaf
 all_viaf = 'all'
 
+generic_terms = re.compile('-*(\s*(H|h)ome\s*|(W|w)elcome\s*|(T|t)he\s*|\s*(O|o)verview\s*|\s*(M|m)ain(.*)\s*)')
 
 class Organization:
     def __init__(self, title):
-        no_home_stuff = re.sub('(\s*((H|h)ome)\s*|(W|w)elcome\s*|((T|t)he)\s*)', '', title)
+        no_home_stuff = re.sub(generic_terms, '', title)
         self.name = re.sub('[^a-zA-Z0-9 -]', '', no_home_stuff)
         self.string = '{}'.format(self.name)
     link = ''
