@@ -14,7 +14,8 @@ corporate_names = 'local.corporateNames'
 # String for searching all of viaf
 all_viaf = 'all'
 
-generic_terms = re.compile('-*(\s*(H|h)ome\s*|(W|w)elcome\s*|(T|t)he\s*|\s*(O|o)verview\s*|\s*(M|m)ain(.*)\s*)')
+generic_terms = re.compile('-*(\s*(H|h)ome\s*|(W|w)elcome\s*|(T|t)he\s*|\s*(O|o)verview\s*|\s*(M|m)ain\s*|'
+                           '\s*(P|p)age\s*)')
 
 class Organization:
     def __init__(self, title):

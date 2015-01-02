@@ -119,8 +119,7 @@ class Resource:
         # search home page
         soup = BeautifulSoup(urlopen(self.link).read())
         home = soup.find('a', {'href': '/index.php'})
-        if home is None:
-            home = soup.find('a', text=re.compile('(H|h)ome'))
+        if home is None:            home = soup.find('a', text=re.compile('(H|h)ome'))
 
         if home is None or not home.has_attr('href'):
             self.org = Organization("No organization found")
