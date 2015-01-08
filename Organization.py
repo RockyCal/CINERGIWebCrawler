@@ -6,7 +6,8 @@ import urllib.parse
 import re
 
 # VIAF base url
-viaf_base = 'http://viaf.org/viaf/search'
+viaf_base_search = 'http://viaf.org/viaf/search'
+viaf_base = 'http://viaf.org/viaf/'
 
 # string for searching corporate names
 corporate_names = 'local.corporateNames'
@@ -38,8 +39,18 @@ class Organization:
         data = {'recordSchema': 'BriefVIAF',
                 'sortKeys': 'holdingscount'}
         values = urllib.parse.urlencode(data, 'utf-8')
-        full_url = viaf_base + '?' + query_string + '&' + values
+        full_url = viaf_base_search + '?' + query_string + '&' + values
         self.link = full_url
+        """
+        f = open('results_page_output.txt', 'w+')
+        f.write(urlopen(full_url).read())
+        f.close()
+        tree = ET.parse(urlopen(full_url))
+        root = tree.getroot()
+        f1 = open('results_page_xml.txt', 'w+')
+        f1.write(ET.dump(root))
+        f1.close()
+        """
         tree = ET.parse(urlopen(full_url))
         root = tree.getroot()
         records = root.find('{http://www.loc.gov/zing/srw/}records')
@@ -55,7 +66,7 @@ class Organization:
             if re.search(search_term, str(ctitle.text)) is not None:
                 viaf_id = cluster.find('{http://viaf.org/viaf/terms#}viafID')
                 if viaf_id is not None:
-                    self.uri = viaf_id.text
+                    self.uri = viaf_base + viaf_id.text + '/'
                     self.validated = True
 
 
